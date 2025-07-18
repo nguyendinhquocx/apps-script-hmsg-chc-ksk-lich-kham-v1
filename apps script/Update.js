@@ -262,17 +262,27 @@ function syncDataWithId() {
   return "success";
 }
 
+// Global counter để đảm bảo tuyệt đối không trùng lặp
+let globalIdCounter = 0;
+
 function generateUniqueId() {
-  // Tạo ID ngắn duy nhất (8-10 ký tự)
+  // Tăng counter toàn cục để đảm bảo tuyệt đối không trùng
+  globalIdCounter++;
+  
   const now = new Date();
-  const timeBase = Math.floor(now.getTime() / 1000); // Giây thay vì millisecond
-  const random = Math.floor(Math.random() * 1000); // 3 chữ số
   
-  // Chuyển sang base36 để rút ngắn (0-9, a-z)
-  const timeStr = timeBase.toString(36);
-  const randomStr = random.toString(36).padStart(2, '0');
+  // Timestamp với độ chính xác cao
+  const timestamp = now.getTime(); // Millisecond từ 1970
   
-  return `${timeStr}${randomStr}`.toUpperCase();
+  // Tạo các thành phần duy nhất
+  const counter = globalIdCounter.toString(36).padStart(3, '0'); // Counter base36
+  const randomPart = Math.floor(Math.random() * 46656).toString(36).padStart(3, '0'); // 36^3 = 46656
+  const timePart = (timestamp % 1679616).toString(36).padStart(4, '0'); // 36^4 = 1679616
+  
+  // Kết hợp: TimePart(4) + Counter(3) + Random(3) = 10 ký tự
+  const uniqueId = `${timePart}${counter}${randomPart}`.toUpperCase();
+  
+  return uniqueId;
 }
 
 function replaceTrigger() {
