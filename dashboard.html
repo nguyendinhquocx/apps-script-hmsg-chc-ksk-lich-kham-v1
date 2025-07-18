@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lịch khám sức khoẻ công ty</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <?!= include('dashboard_styles'); ?>
+</head>
+<body>
+  <div class="container">
+    <!-- Header với navigation -->
+    <div class="header">
+      <div class="header-left">
+        <h1>Lịch khám sức khoẻ công ty</h1>
+        <div class="month-nav">
+          <button id="prevMonth" class="nav-btn">‹</button>
+          <span id="currentMonthDisplay">Tháng 6</span>
+          <button id="nextMonth" class="nav-btn">›</button>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <!-- Search và Filters -->
+        <div class="search-filters">
+          <input type="text" id="companySearch" class="search-input" placeholder="Tìm công ty...">
+          
+          <select id="employeeFilter" class="filter-select">
+            <option value="">Tất cả nhân viên</option>
+          </select>
+          
+          <select id="shiftFilter" class="filter-select">
+            <option value="total">Tổng</option>
+            <option value="sang">Sáng</option>
+            <option value="chieu">Chiều</option>
+          </select>
+          
+          <select id="timeFilter" class="time-filter-select">
+            <option value="all">Tất cả thời gian</option>
+            <option value="today">Hôm nay</option>
+            <option value="week">Tuần này</option>
+            <option value="month">Tháng này</option>
+          </select>
+          
+
+          
+          <div class="filter-group">
+            <button id="reloadBtn" class="reload-btn" onclick="refreshData()" title="Tải lại dữ liệu">
+              ↻
+            </button>
+            <label class="filter-label">
+              <input type="checkbox" id="showGold" class="filter-checkbox">
+              <span class="filter-text">Gold</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Đang tải...</div>
+    </div>
+
+    <!-- Error -->
+    <div id="error" class="error" style="display: none;">
+      <div id="errorMessage" class="error-message"></div>
+      <button onclick="loadCurrentMonth()" class="retry-btn">Thử lại</button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div id="dashboard" class="dashboard" style="display: none;">
+      <!-- Statistics - 4 cards sau khi bỏ "Công ty chưa khám" -->
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="totalCompanies">0</div>
+          <div class="stat-label">Tổng số Công ty</div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-value" id="completedCompanies">0</div>
+          <div class="stat-label">Công ty đã khám</div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-value" id="activeCompanies">0</div>
+          <div class="stat-label">Công ty đang khám</div>
+        </div>
+        
+        <div class="stat-item">
+          <div class="stat-value" id="averagePerDay">0</div>
+          <div class="stat-label">Trung bình Người/Ngày</div>
+        </div>
+      </div>
+
+      <!-- Chart: Tổng người khám theo ngày -->
+      <div class="chart-wrapper">
+        <div class="chart-container">
+          <canvas id="totalPeopleChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline-wrapper">
+        <div class="timeline-container">
+          
+          <table id="timelineTable" class="timeline-table">
+            <thead>
+              <tr id="weekdayRow" class="weekday-row">
+                <th class="company-header"></th>
+                <th class="people-header"></th>
+                <!-- weekdays will be inserted here -->
+              </tr>
+              <tr id="dateRow" class="date-row">
+                <th class="company-header">Công ty</th>
+                <th class="people-header">Người</th>
+                <!-- dates will be inserted here -->
+              </tr>
+            </thead>
+            <tbody id="timelineBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Clinical Examination Table -->
+      <div class="clinical-wrapper">
+        <h2 class="section-title">Khám cận lâm sàng</h2>
+        
+        <!-- Chart: Max cận lâm sàng theo ngày -->
+        <div class="chart-container clinical-chart">
+          <canvas id="clinicalMaxChart" width="400" height="200"></canvas>
+        </div>
+        <div class="clinical-container">
+          <!-- Bảng sẽ được tạo động bởi JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal popup cho thông tin chi tiết -->
+    <div id="detailModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-body" id="modalBody">
+          <!-- Nội dung sẽ được điền động -->
+        </div>
+      </div>
+    </div>
+
+    <?!= include('dashboard_scripts'); ?>
+  </div>
+</body>
+</html>
