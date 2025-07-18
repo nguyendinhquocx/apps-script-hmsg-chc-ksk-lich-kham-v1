@@ -125,15 +125,15 @@ export class LichKhamService {
 
       // Áp dụng filters
       if (search.trim()) {
-        query = query.ilike('ten cong ty', `%${search.trim()}%`)
+        query = query.ilike('"ten cong ty"', `%${search.trim()}%`)
       }
 
       if (status.trim()) {
-        query = query.eq('trang thai kham', status.trim())
+        query = query.eq('"trang thai kham"', status.trim())
       }
 
       if (employee.trim()) {
-        query = query.ilike('ten nhan vien', `%${employee.trim()}%`)
+        query = query.ilike('"ten nhan vien"', `%${employee.trim()}%`)
       }
 
       // Gold filter logic - simplified
@@ -144,14 +144,14 @@ export class LichKhamService {
 
       // Column mapping for sorting
       const columnMapping = {
-        'Tên Công Ty': 'ten cong ty',
-        'Ngày Bắt Đầu': 'ngay bat dau kham',
-        'Ngày Kết Thúc': 'ngay ket thuc kham',
-        'Số Người Khám': 'so nguoi kham',
-        'Trạng Thái': 'trang thai kham',
-        'Nhân Viên': 'ten nhan vien'
+        'Tên Công Ty': '"ten cong ty"',
+        'Ngày Bắt Đầu': '"ngay bat dau kham"',
+        'Ngày Kết Thúc': '"ngay ket thuc kham"',
+        'Số Người Khám': '"so nguoi kham"',
+        'Trạng Thái': '"trang thai kham"',
+        'Nhân Viên': '"ten nhan vien"'
       }
-      const actualSortBy = columnMapping[sortBy] || sortBy
+      const actualSortBy = columnMapping[sortBy] || `"${sortBy}"`
       query = query.order(actualSortBy, { ascending: sortOrder === 'asc' })
 
       // Pagination
@@ -194,7 +194,7 @@ export class LichKhamService {
       // Lấy tất cả dữ liệu để tính thống kê
       const { data, error } = await supabase
         .from(this.tableName)
-        .select('so nguoi kham, ten cong ty, trang thai kham, ngay bat dau kham')
+        .select('"so nguoi kham", "ten cong ty", "trang thai kham", "ngay bat dau kham"')
 
       if (error) {
         console.error('Statistics error:', error)
