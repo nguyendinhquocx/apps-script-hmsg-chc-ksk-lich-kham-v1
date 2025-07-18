@@ -33,7 +33,9 @@ function syncData() {
       
       // Điều kiện ngày
       const dateCheck = !config.colfil1 || (() => {
-        const rowDate = row[config.colfil1] && new Date(row[config.colfil1].split('/').reverse().join('/'));
+        // Dữ liệu gốc đã ở định dạng mm/dd/yyyy, không cần reverse
+        const rowDate = row[config.colfil1] && new Date(row[config.colfil1]);
+        // Chỉ reverse ngày cấu hình từ dd/mm/yyyy sang mm/dd/yyyy
         const startDate = config.cd1a && new Date(config.cd1a.split('/').reverse().join('/'));
         const endDate = config.cd1b && new Date(config.cd1b.split('/').reverse().join('/'));
         return (!startDate || rowDate >= startDate) && (!endDate || rowDate <= endDate);
@@ -56,9 +58,11 @@ function syncData() {
                (!config.toNumber || val <= parseFloat(config.toNumber));
       })();
 
-      // Điều kiện null
-      const nullCheck = !config.colNull || !config.nullCondition || 
-                       checkFilterCondition(row[config.colNull], config.nullCondition);
+      // Điều kiện null - hỗ trợ nhiều cột phân tách bằng dấu phẩy
+      const nullCheck = !config.colNull || !config.nullCondition || (() => {
+        const columns = config.colNull.toString().split(',').map(col => col.trim());
+        return columns.every(col => checkFilterCondition(row[col], config.nullCondition));
+      })();
 
       return dateCheck && multiCheck && numCheck && nullCheck;
     };
