@@ -10,6 +10,8 @@ const DataTable = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [totalCount, setTotalCount] = useState(0)
+  const [connectionTest, setConnectionTest] = useState(null)
+
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('')
@@ -66,6 +68,24 @@ const DataTable = () => {
       setLoading(false)
     }
   }
+
+
+
+  // Test connection on component mount
+  useEffect(() => {
+    const testConnection = async () => {
+      console.log('Testing Supabase connection on component mount...')
+      try {
+        const result = await LichKhamService.testConnection()
+        console.log('Connection test result:', result)
+        setConnectionTest(result)
+      } catch (error) {
+        console.error('Connection test error:', error)
+        setConnectionTest({ success: false, error: error.message })
+      }
+    }
+    testConnection()
+  }, [])
 
   // Effect to fetch data when filters change
   useEffect(() => {
@@ -165,6 +185,47 @@ const DataTable = () => {
 
   return (
     <div className="card p-6">
+
+
+      {/* Connection Test Debug */}
+      <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+        <div className="flex items-center justify-between">
+          <p className="font-medium">Debug - Supabase Connection Test</p>
+          <button 
+            onClick={async () => {
+              console.log('Manual test button clicked')
+              alert('Testing connection...')
+              try {
+                const result = await LichKhamService.testConnection()
+                console.log('Manual test result:', result)
+                setConnectionTest(result)
+                alert('Test completed! Check the debug info below.')
+              } catch (error) {
+                console.error('Test error:', error)
+                alert('Test failed: ' + error.message)
+                setConnectionTest({ success: false, error: error.message })
+              }
+            }}
+            className="btn btn-sm btn-primary"
+          >
+            Test Connection
+          </button>
+        </div>
+        
+        {/* Environment Info */}
+        <div className="mt-2 text-xs">
+          <p><strong>Supabase URL:</strong> {import.meta.env.VITE_SUPABASE_URL || 'Not set'}</p>
+          <p><strong>Has Anon Key:</strong> {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Yes' : 'No'}</p>
+          <p><strong>Data Length:</strong> {data.length}</p>
+          <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
+          <p><strong>Error:</strong> {error || 'None'}</p>
+        </div>
+        
+        {connectionTest && (
+          <pre className="text-xs mt-2 whitespace-pre-wrap">{JSON.stringify(connectionTest, null, 2)}</pre>
+        )}
+      </div>
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
         <div>

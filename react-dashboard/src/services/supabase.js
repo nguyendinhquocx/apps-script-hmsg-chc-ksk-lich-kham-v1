@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Cấu hình Supabase
-const supabaseUrl = 'https://glppizdubinvwuncteah.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdscHBpemR1Ymludnd1bmN0ZWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI4NTM2MjYsImV4cCI6MjA2ODQyOTYyNn0.DEvmpyv3ABM1NQH7ag_0s_uNxdM7X1rwP9FnB4AzEMU'
+// Cấu hình Supabase từ environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+// Debug logging để kiểm tra environment variables
+console.log('Supabase Config:', {
+  url: supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+  keyLength: supabaseAnonKey?.length
+})
 
 // Tạo Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -14,9 +21,76 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Service class để quản lý API calls
 export class LichKhamService {
   static tableName = 'lich_kham'  // Tên bảng chính xác từ Supabase
-  
+
   /**
-   * Lấy tất cả dữ liệu lịch khám với pagination và filtering
+   * Test connection và kiểm tra dữ liệu
+   */
+  static async testConnection() {
+    try {
+      console.log('Testing Supabase connection...')
+      console.log('Table name:', this.tableName)
+      console.log('Supabase URL:', supabaseUrl)
+      console.log('Has Anon Key:', !!supabaseAnonKey)
+      
+      // Test 1: Simple select without count
+      console.log('Test 1: Basic select...')
+      const { data: testData, error: testError } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .limit(5)
+      
+      console.log('Test 1 result:', {
+        success: !testError,
+        error: testError?.message,
+        errorDetails: testError,
+        dataCount: testData?.length,
+        sampleData: testData?.[0]
+      })
+      
+      if (testError) {
+        console.error('Basic select failed:', testError)
+        return { 
+          success: false, 
+          error: testError.message, 
+          data: null,
+          rls_issue: testError.message.includes('permission denied') || testError.message.includes('RLS')
+        }
+      }
+      
+      // Test 2: Count query (skip if RLS issues)
+      console.log('Test 2: Count query...')
+      const { count, error: countError } = await supabase
+        .from(this.tableName)
+        .select('*', { count: 'exact', head: true })
+      
+      console.log('Test 2 result:', {
+        success: !countError,
+        error: countError?.message,
+        totalCount: count
+      })
+      
+      return { 
+        success: true, 
+        error: countError?.message || null, 
+        data: testData, 
+        count: count || testData?.length || 0,
+        rls_issue: countError?.message?.includes('permission denied') || countError?.message?.includes('RLS')
+      }
+    } catch (err) {
+      console.error('Connection test failed:', err)
+      return { 
+        success: false, 
+        error: err.message, 
+        data: null,
+        rls_issue: err.message.includes('permission denied') || err.message.includes('RLS')
+      }
+    }
+  }
+  
+
+
+  /**
+   * Lấy dữ liệu lịch khám với phân trang và filter
    * @param {Object} options - Tùy chọn query
    * @param {number} options.page - Trang hiện tại (bắt đầu từ 1)
    * @param {number} options.limit - Số record mỗi trang
@@ -44,10 +118,10 @@ export class LichKhamService {
       // Tính toán offset cho pagination
       const offset = (page - 1) * limit
 
-      // Bắt đầu query
+      // Bắt đầu query - không dùng count nếu có RLS issues
       let query = supabase
         .from(this.tableName)
-        .select('*', { count: 'exact' })
+        .select('*')
 
       // Áp dụng filters
       if (search.trim()) {
@@ -62,21 +136,20 @@ export class LichKhamService {
         query = query.ilike('ten nhan vien', `%${employee.trim()}%`)
       }
 
-      // Gold filter logic
+      // Gold filter logic - simplified
       if (showGold) {
         query = query.or('gold.eq.x,gold.eq.X')
-      } else {
-        query = query.or('gold.is.null,gold.neq.x,gold.neq.X')
       }
+      // When showGold is false, we don't filter by gold (show all records)
 
-      // Sắp xếp - sử dụng tên cột đúng
+      // Column mapping for sorting
       const columnMapping = {
-        'ngay_bat_dau': 'ngay bat dau kham',
-        'ngay_ket_thuc': 'ngay ket thuc kham',
-        'ten_cong_ty': 'ten cong ty',
-        'so_nguoi_kham': 'so nguoi kham',
-        'trang_thai_kham': 'trang thai kham',
-        'ten_nhan_vien': 'ten nhan vien'
+        'Tên Công Ty': 'ten cong ty',
+        'Ngày Bắt Đầu': 'ngay bat dau kham',
+        'Ngày Kết Thúc': 'ngay ket thuc kham',
+        'Số Người Khám': 'so nguoi kham',
+        'Trạng Thái': 'trang thai kham',
+        'Nhân Viên': 'ten nhan vien'
       }
       const actualSortBy = columnMapping[sortBy] || sortBy
       query = query.order(actualSortBy, { ascending: sortOrder === 'asc' })
@@ -84,14 +157,28 @@ export class LichKhamService {
       // Pagination
       query = query.range(offset, offset + limit - 1)
 
-      const { data, error, count } = await query
+      const { data, error } = await query
+
+      // Debug logging
+      console.log('Supabase query result:', { 
+        data: data?.slice(0, 2), // Show first 2 records for debugging
+        error, 
+        dataLength: data?.length, 
+        tableName: this.tableName,
+        totalRecords: data?.length
+      })
+      console.log('Query filters applied:', { search, status, employee, showGold, sortBy, sortOrder })
+      console.log('Sample record structure:', data?.[0] ? Object.keys(data[0]) : 'No data')
 
       if (error) {
         console.error('Supabase error:', error)
         return { data: [], count: 0, error: error.message }
       }
 
-      return { data: data || [], count: count || 0, error: null }
+      // Estimate count based on data length (since we can't use count with RLS)
+      const estimatedCount = data?.length || 0
+      
+      return { data: data || [], count: estimatedCount, error: null }
     } catch (err) {
       console.error('Service error:', err)
       return { data: [], count: 0, error: err.message }
@@ -107,7 +194,7 @@ export class LichKhamService {
       // Lấy tất cả dữ liệu để tính thống kê
       const { data, error } = await supabase
         .from(this.tableName)
-        .select('*')
+        .select('so nguoi kham, ten cong ty, trang thai kham, ngay bat dau kham')
 
       if (error) {
         console.error('Statistics error:', error)

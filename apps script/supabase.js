@@ -5,16 +5,6 @@ function syncSheetToSupabase() {
   const SUPABASE_URL = "https://glppizdubinvwuncteah.supabase.co/rest/v1/lich_kham";
   const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdscHBpemR1Ymludnd1bmN0ZWFoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Mjg1MzYyNiwiZXhwIjoyMDY4NDI5NjI2fQ.78-AHww3LtWEl86DNN0voLD5a_xCkPBctYCrR9LeKjY";
 
-  // ==== Lấy dữ liệu từ sheet ====
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
-  const data = sheet.getDataRange().getValues(); // mảng 2 chiều
-  if (data.length < 2) {
-    Logger.log("Không có dữ liệu để đồng bộ.");
-    return;
-  }
-  const headers = data[0].map(h => h.toString().trim()); // Header chuẩn hóa
-  const rows = data.slice(1);
-
   // ==== Danh sách các cột cần ép kiểu số (integer/bigint) ====
   const numericFields = [
     "so nguoi kham",
@@ -49,6 +39,16 @@ function syncSheetToSupabase() {
     "ngay lay mau"
   ];
 
+  // ==== Lấy dữ liệu từ sheet ====
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues(); // mảng 2 chiều
+  if (data.length < 2) {
+    Logger.log("Không có dữ liệu để đồng bộ.");
+    return;
+  }
+  const headers = data[0].map(h => h.toString().trim()); // Header chuẩn hóa
+  const rows = data.slice(1);
+
   // ==== Chuyển mảng 2 chiều thành array of object, ép kiểu đúng ====
   let records = [];
   rows.forEach(row => {
@@ -74,7 +74,26 @@ function syncSheetToSupabase() {
     return;
   }
 
-  // ==== Gửi dữ liệu lên Supabase ====
+  // ==== XÓA TOÀN BỘ DỮ LIỆU CŨ TRÊN SUPABASE ====
+  try {
+    const deleteOptions = {
+      method: "delete",
+      contentType: "application/json",
+      headers: {
+        "apikey": SUPABASE_SERVICE_KEY,
+        "Authorization": "Bearer " + SUPABASE_SERVICE_KEY
+      },
+      muteHttpExceptions: true
+    };
+    // Supabase REST API yêu cầu DELETE phải có điều kiện, dùng điều kiện luôn đúng
+    const deleteResp = UrlFetchApp.fetch(SUPABASE_URL + "?ID=not.is.null", deleteOptions);
+    Logger.log("Đã xóa dữ liệu cũ: " + deleteResp.getResponseCode());
+  } catch (err) {
+    Logger.log("Lỗi khi xóa dữ liệu Supabase: " + err);
+    return;
+  }
+
+  // ==== Gửi dữ liệu mới lên Supabase ====
   const options = {
     method: "post",
     contentType: "application/json",
