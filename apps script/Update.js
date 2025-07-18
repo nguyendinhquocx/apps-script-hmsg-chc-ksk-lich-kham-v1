@@ -1,7 +1,8 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu('💾Import')
+  ui.createMenu('Import')
       .addItem('Cập nhật', 'syncData')
+      .addItem('Cập nhật + ID', 'syncDataWithId')
       .addToUi();
 }
 
@@ -163,6 +164,115 @@ function clear(spreadsheetId, ranges) {
   if (remainingRows > 0) {
     sheet.deleteRows(startRow + 1, remainingRows);
   }
+}
+
+function syncDataWithId() {
+  const startTime = new Date();
+  const grData = {};
+  get_thong_tin_data().forEach(config => {
+    const data = read(config.idSheetGet, config.rgGet);
+    const columnsToGet = config.colGet?.trim() || getColumnsFromRange(config.rgGet);
+    
+    const processRow = (row, index) => {
+      const processedRow = columnsToGet ? 
+        columnsToGet.split(",").map(i => row[i] || "") : row;
+      
+      // Thêm ID duy nhất vào cuối mỗi row (trừ header)
+      if (index > 0 || !config.includeHeader) {
+        const uniqueId = generateUniqueId();
+        processedRow.push(uniqueId);
+      } else if (config.includeHeader && index === 0) {
+        // Thêm header cho cột ID
+        processedRow.push("ID");
+      }
+      
+      return processedRow;
+    };
+
+    const checkConditions = (row, index) => {
+      if (index === 0) return config.includeHeader;
+      
+      // Điều kiện ngày
+      const dateCheck = !config.colfil1 || (() => {
+        const rowDate = row[config.colfil1] && new Date(row[config.colfil1]);
+        const startDate = config.cd1a && new Date(config.cd1a.split('/').reverse().join('/'));
+        const endDate = config.cd1b && new Date(config.cd1b.split('/').reverse().join('/'));
+        return (!startDate || rowDate >= startDate) && (!endDate || rowDate <= endDate);
+      })();
+
+      // Điều kiện nhiều cột
+      const multiCheck = (() => {
+        if (config.colFil4 && config.cd4 && config.colFil5 && config.cd5) {
+          return checkFilterCondition(row[config.colFil4], config.cd4) || 
+                 checkFilterCondition(row[config.colFil5], config.cd5);
+        }
+        return !(config.colFil4 && config.cd4) || checkFilterCondition(row[config.colFil4], config.cd4);
+      })();
+
+      // Điều kiện number
+      const numCheck = !config.colNumber || (() => {
+        const val = parseFloat(row[config.colNumber]);
+        return !isNaN(val) && 
+               (!config.fromNumber || val >= parseFloat(config.fromNumber)) &&
+               (!config.toNumber || val <= parseFloat(config.toNumber));
+      })();
+
+      // Điều kiện null
+      const nullCheck = !config.colNull || !config.nullCondition || (() => {
+        const columns = config.colNull.toString().split(',').map(col => col.trim());
+        return columns.every(col => checkFilterCondition(row[col], config.nullCondition));
+      })();
+
+      return dateCheck && multiCheck && numCheck && nullCheck;
+    };
+
+    const filteredRows = data
+      .map((row, index) => checkConditions(row, index) ? processRow(row, index) : null)
+      .filter(Boolean);
+
+    if (filteredRows.length) {
+      const key = `${config.idSheetRe}-${config.rgRe}`;
+      grData[key] = grData[key] || { info: [{ range: config.rgRe, values: [] }], idFile: config.idSheetRe };
+      grData[key].info[0].values.push(...filteredRows);
+    }
+  });
+
+  Object.values(grData).forEach(({ info, idFile }) => {
+    const result = update(info[0], idFile);
+    try {
+      const [, col, row] = info[0].range.match(/^(.*?[A-Z])(\d+)$/);
+      const sheet = SpreadsheetApp.openById(idFile).getSheetByName(info[0].range.split('!')[0]);
+      const maxRows = sheet.getMaxRows();
+      const startRow = parseInt(row) + result.totalUpdatedRows;
+      
+      if (startRow <= maxRows) {
+        clear(idFile, [`${col}${startRow}:ZZ`]);
+      }
+    } catch (error) {
+      console.log("Clear skipped");
+    }
+  });
+  
+  const endTime = new Date();
+  const ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Cấu hình");
+  const currentTime = Utilities.formatDate(endTime, Session.getScriptTimeZone(), "dd/MM-HH:mm");
+  ss.getRange("E1").setValue(currentTime);
+  ss.getRange("F1").setValue((endTime - startTime)/1000 + "s");
+  
+  return "success";
+}
+
+function generateUniqueId() {
+  // Tạo ID ngắn duy nhất (8-10 ký tự)
+  const now = new Date();
+  const timeBase = Math.floor(now.getTime() / 1000); // Giây thay vì millisecond
+  const random = Math.floor(Math.random() * 1000); // 3 chữ số
+  
+  // Chuyển sang base36 để rút ngắn (0-9, a-z)
+  const timeStr = timeBase.toString(36);
+  const randomStr = random.toString(36).padStart(2, '0');
+  
+  return `${timeStr}${randomStr}`.toUpperCase();
 }
 
 function replaceTrigger() {
