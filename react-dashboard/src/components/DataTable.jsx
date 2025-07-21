@@ -1,15 +1,37 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { Search, Filter, Download, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { Search, Filter, Download, RefreshCw, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle } from 'lucide-react'
+import { LichKhamService } from '../services/supabase'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import LichKhamService from '../services/supabase'
+import { useNotifications } from './NotificationSystem'
+import LoadingSpinner, { LoadingOverlay, TableSkeleton, LoadingButton } from './LoadingSpinner'
+import { 
+  UI_CONFIG, 
+  STATUS_CONFIG, 
+  ERROR_MESSAGES, 
+  SUCCESS_MESSAGES,
+  EXPORT_CONFIG,
+  FEATURES 
+} from '../constants'
+import { 
+  formatDate, 
+  formatDateTime, 
+  getStatusBadgeClass, 
+  normalizeStatus,
+  sanitizeInput,
+  validatePaginationParams,
+  debounce,
+  getErrorMessage,
+  downloadFile
+} from '../utils'
 
-const DataTable = () => {
-  // State management
+const DataTable = ({ onDataUpdate }) => {
   const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [totalCount, setTotalCount] = useState(0)
+  const [rateLimitInfo, setRateLimitInfo] = useState({ remaining: 0, resetTime: 0 })
+  const { showSuccess, showError, showWarning } = useNotifications()
 
 
   
@@ -17,14 +39,15 @@ const DataTable = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [employeeFilter, setEmployeeFilter] = useState('')
-  const [showGold, setShowGold] = useState(false)
+  const [goldFilter, setGoldFilter] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [itemsPerPage, setItemsPerPage] = useState(UI_CONFIG.PAGINATION?.PAGE_SIZE_OPTIONS?.[1] || 20)
   
   // Sorting states
-  const [sortBy, setSortBy] = useState('ngay bat dau kham')
+  const [sortBy, setSortBy] = useState('created_at')
   const [sortOrder, setSortOrder] = useState('desc')
   
   // Available status options (sẽ được cập nhật từ dữ liệu thực tế)
@@ -36,62 +59,112 @@ const DataTable = () => {
   ])
 
   // Fetch data function
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
+    
+    // Test connection to Supabase first
+    try {
+      console.log('Testing Supabase connection...')
+      const connectionTest = await LichKhamService.testConnection()
+      console.log('Connection test result:', connectionTest)
+      
+      if (!connectionTest.success) {
+        throw new Error(`Supabase connection failed: ${connectionTest.error}`)
+      }
+    } catch (connErr) {
+      console.error('Connection test error:', connErr)
+      setError(`Lỗi kết nối Supabase: ${connErr.message}`)
+      showError('Lỗi kết nối Supabase', connErr.message)
+      setLoading(false)
+      return
+    }
     
     try {
       const result = await LichKhamService.getLichKhamData({
         page: currentPage,
-        limit: pageSize,
-        search: searchTerm,
+        limit: itemsPerPage,
+        search: sanitizeInput(searchTerm),
         status: statusFilter,
         employee: employeeFilter,
-        showGold: showGold,
-        sortBy: sortBy,
-        sortOrder: sortOrder
+        goldStatus: goldFilter,
+        sortBy,
+        sortOrder
       })
       
-      if (result.error) {
-        setError(result.error)
-        setData([])
-        setTotalCount(0)
-      } else {
-        setData(result.data)
-        setTotalCount(result.count)
+      setData(result.data || [])
+      setTotalCount(result.count || 0)
+      
+      // Update rate limit info
+      if (result.rateLimitInfo) {
+        setRateLimitInfo(result.rateLimitInfo)
+      }
+      
+      // Notify parent component about data update
+      if (onDataUpdate) {
+        onDataUpdate(result.data || [])
+      }
+      
+      if (result.data?.length > 0) {
+        showSuccess('Tải dữ liệu thành công', `Đã tải ${result.data.length} bản ghi`)
       }
     } catch (err) {
-      setError('Có lỗi xảy ra khi tải dữ liệu')
+      if (FEATURES.DEBUG_LOGS) {
+        console.error('Error fetching data:', err)
+      }
+      const errorMsg = getErrorMessage(err)
+      setError(errorMsg)
+      showError('Lỗi tải dữ liệu', errorMsg)
       setData([])
       setTotalCount(0)
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentPage, itemsPerPage, searchTerm, statusFilter, employeeFilter, goldFilter, sortBy, sortOrder, onDataUpdate])
 
 
 
 
+
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    debounce((term) => {
+      setCurrentPage(1)
+      fetchData()
+    }, UI_CONFIG.DEBOUNCE_DELAY || 300),
+    []
+  )
+
+  // Effect for search term changes
+  useEffect(() => {
+    if (searchTerm !== undefined) {
+      debouncedSearch(searchTerm)
+    }
+  }, [searchTerm, debouncedSearch])
+
+  // Auto-clear error messages (success messages handled by notification system)
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000) // 5 seconds timeout
+      return () => clearTimeout(timer)
+    }
+  }, [error])
 
   // Effect to fetch data when filters change
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setCurrentPage(1) // Reset to first page when filters change
-      fetchData()
-    }, 300) // Debounce search
-    
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, statusFilter, employeeFilter, showGold, sortBy, sortOrder])
+    setCurrentPage(1)
+    fetchData()
+  }, [statusFilter, employeeFilter, goldFilter, sortBy, sortOrder])
 
   // Effect to fetch data when page changes
   useEffect(() => {
     fetchData()
-  }, [currentPage, pageSize])
+  }, [currentPage, itemsPerPage])
 
   // Calculate pagination info
-  const totalPages = Math.ceil(totalCount / pageSize)
-  const startRecord = (currentPage - 1) * pageSize + 1
-  const endRecord = Math.min(currentPage * pageSize, totalCount)
+  const totalPages = Math.ceil(totalCount / itemsPerPage)
+  const startRecord = (currentPage - 1) * itemsPerPage + 1
+  const endRecord = Math.min(currentPage * itemsPerPage, totalCount)
 
   // Handle sorting
   const handleSort = (column) => {
@@ -106,67 +179,62 @@ const DataTable = () => {
   // Handle export
   const handleExport = async () => {
     try {
-      setLoading(true)
+      setIsExporting(true)
+      setError(null)
+      
       // Lấy tất cả dữ liệu với filter hiện tại (không phân trang)
       const result = await LichKhamService.getLichKhamData({
         page: 1,
-        limit: 10000, // Lấy nhiều records để export
-        search: searchTerm,
+        limit: EXPORT_CONFIG.MAX_EXPORT_RECORDS,
+        search: sanitizeInput(searchTerm),
         status: statusFilter,
         employee: employeeFilter,
-        showGold: showGold,
-        sortBy: sortBy,
-        sortOrder: sortOrder
+        goldStatus: goldFilter,
+        sortBy,
+        sortOrder
       })
       
       if (result.error) {
-        setError('Không thể export dữ liệu: ' + result.error)
+        setError(ERROR_MESSAGES.EXPORT_FAILED + ': ' + result.error)
         return
       }
       
-      const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
-      const filename = `lich_kham_${timestamp}.csv`
+      const timestamp = format(new Date(), EXPORT_CONFIG.FILENAME_DATE_FORMAT)
+      const filename = `${EXPORT_CONFIG.FILENAME_PREFIX}_${timestamp}.csv`
       
-      LichKhamService.downloadCSV(result.data, filename)
+      downloadFile(result.data, filename, 'csv')
+      showSuccess('Xuất dữ liệu thành công', `Đã xuất ${result.data.length} bản ghi`)
     } catch (err) {
-      setError('Có lỗi xảy ra khi export dữ liệu')
+      if (FEATURES.DEBUG_LOGS) {
+        console.error('Export error:', err)
+      }
+      const errorMsg = getErrorMessage(err, ERROR_MESSAGES.EXPORT_FAILED)
+      setError(errorMsg)
+      showError('Lỗi xuất dữ liệu', errorMsg)
     } finally {
-      setLoading(false)
+      setIsExporting(false)
     }
   }
+
+  // Memoized unique values for filters
+  const uniqueStatuses = useMemo(() => {
+    const statuses = [...new Set(data.map(item => item[STATUS_CONFIG.COLUMN_NAME]).filter(Boolean))]
+    return statuses.sort()
+  }, [data])
+
+  const uniqueEmployees = useMemo(() => {
+    const employees = [...new Set(data.map(item => item['ten nhan vien']).filter(Boolean))]
+    return employees.sort()
+  }, [data])
 
   // Reset filters
   const resetFilters = () => {
     setSearchTerm('')
     setStatusFilter('')
     setEmployeeFilter('')
-    setShowGold(false)
+    setGoldFilter('')
     setCurrentPage(1)
-  }
-
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return '-'
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy', { locale: vi })
-    } catch {
-      return dateString
-    }
-  }
-
-  // Get status badge class
-  const getStatusBadgeClass = (status) => {
-    const statusLower = (status || '').toLowerCase().trim()
-    if (statusLower.includes('đã khám xong') || statusLower.includes('da kham xong')) {
-      return 'status-badge status-completed'
-    }
-    if (statusLower.includes('đang khám') || statusLower.includes('dang kham')) {
-      return 'status-badge status-in-progress'
-    }
-    if (statusLower.includes('hủy') || statusLower.includes('huy')) {
-      return 'status-badge status-cancelled'
-    }
-    return 'status-badge status-pending'
+    showSuccess('Đã reset bộ lọc', 'Tất cả bộ lọc đã được xóa')
   }
 
   return (
@@ -190,19 +258,21 @@ const DataTable = () => {
             className="btn btn-outline px-4 py-2"
             title="Xóa bộ lọc"
           >
-            <RotateCcw className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             Reset
           </button>
           
-          <button
+          <LoadingButton
             onClick={handleExport}
+            loading={isExporting}
             disabled={loading || data.length === 0}
+            loadingText="Đang xuất..."
             className="btn btn-primary px-4 py-2"
             title="Xuất file CSV"
           >
             <Download className="w-4 h-4 mr-2" />
             Export CSV
-          </button>
+          </LoadingButton>
         </div>
       </div>
 
@@ -228,7 +298,7 @@ const DataTable = () => {
             className="select"
           >
             <option value="">Tất cả trạng thái</option>
-            {statusOptions.map(status => (
+            {uniqueStatuses.map(status => (
               <option key={status} value={status}>{status}</option>
             ))}
           </select>
@@ -236,48 +306,59 @@ const DataTable = () => {
 
         {/* Employee Filter */}
         <div>
-          <input
-            type="text"
-            placeholder="Lọc theo nhân viên..."
+          <select
             value={employeeFilter}
             onChange={(e) => setEmployeeFilter(e.target.value)}
-            className="input"
-          />
+            className="select"
+          >
+            <option value="">Tất cả nhân viên</option>
+            {uniqueEmployees.map(employee => (
+              <option key={employee} value={employee}>{employee}</option>
+            ))}
+          </select>
         </div>
 
         {/* Gold Filter */}
-        <div className="flex items-center">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showGold}
-              onChange={(e) => setShowGold(e.target.checked)}
-              className="mr-2 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Chỉ hiển thị Gold</span>
-          </label>
+        <div>
+          <select
+            value={goldFilter}
+            onChange={(e) => setGoldFilter(e.target.value)}
+            className="select"
+          >
+            <option value="">Tất cả Gold status</option>
+            <option value="gold">Chỉ Gold</option>
+            <option value="non-gold">Không Gold</option>
+          </select>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">Lỗi:</p>
-          <p>{error}</p>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+          <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Lỗi:</p>
+            <p>{error}</p>
+          </div>
         </div>
       )}
 
+
+
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="loading-spinner w-8 h-8 mr-3"></div>
-          <span className="text-gray-600">Đang tải dữ liệu...</span>
+        <div className="py-12">
+          <LoadingSpinner 
+            size="lg" 
+            text="Đang tải dữ liệu..." 
+            className="py-8"
+          />
         </div>
       )}
 
       {/* Table */}
-      {!loading && (
-        <div className="overflow-x-auto">
+      <LoadingOverlay loading={loading} className="overflow-x-auto">
+        {!loading && data.length > 0 ? (
           <table className="table">
             <thead className="table-header">
               <tr>
@@ -358,7 +439,7 @@ const DataTable = () => {
                       </span>
                     </td>
                     <td className="table-cell">
-                      <span className={getStatusBadgeClass(record['trang thai kham'])}>
+                      <span className={getStatusBadgeClass(normalizeStatus(record['trang thai kham']))}>
                         {record['trang thai kham'] || 'Không xác định'}
                       </span>
                     </td>
@@ -385,8 +466,15 @@ const DataTable = () => {
               )}
             </tbody>
           </table>
-        </div>
-      )}
+        ) : !loading && data.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg mb-2">Không có dữ liệu</p>
+            <p className="text-gray-400 text-sm">Thử thay đổi bộ lọc hoặc tải lại trang</p>
+          </div>
+        ) : (
+          <TableSkeleton rows={10} columns={8} />
+        )}
+      </LoadingOverlay>
 
       {/* Pagination */}
       {!loading && totalCount > 0 && (
@@ -395,17 +483,16 @@ const DataTable = () => {
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-700">Hiển thị:</span>
             <select
-              value={pageSize}
+              value={itemsPerPage}
               onChange={(e) => {
-                setPageSize(Number(e.target.value))
+                setItemsPerPage(Number(e.target.value))
                 setCurrentPage(1)
               }}
               className="select w-20"
             >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
+              {(UI_CONFIG.PAGINATION?.PAGE_SIZE_OPTIONS || [10, 20, 50, 100]).map(size => (
+                <option key={size} value={size}>{size}</option>
+              ))}
             </select>
             <span className="text-sm text-gray-700">bản ghi</span>
           </div>

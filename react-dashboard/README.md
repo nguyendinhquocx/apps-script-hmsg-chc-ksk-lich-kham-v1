@@ -1,35 +1,27 @@
-# Dashboard Lịch Khám - HMSG CHC
+# Hệ thống Quản lý Lịch Khám - React Dashboard
 
-Dashboard frontend React + Vite để quản lý và hiển thị dữ liệu lịch khám sức khỏe từ Supabase.
+Ứng dụng web hiện đại để quản lý và theo dõi lịch khám sức khỏe, được xây dựng với React và Supabase.
 
-## Tính năng
+## 🚀 Tính năng chính
 
-### 📊 Hiển thị dữ liệu
-- **Bảng dữ liệu**: Hiển thị danh sách lịch khám với phân trang
-- **Tìm kiếm**: Tìm kiếm theo tên công ty, nhân viên
-- **Lọc**: Lọc theo trạng thái khám, nhân viên, trạng thái Gold
-- **Sắp xếp**: Sắp xếp theo các cột khác nhau
+- **Quản lý dữ liệu**: Xem, tìm kiếm, lọc và phân trang dữ liệu lịch khám
+- **Thống kê trực quan**: Biểu đồ và báo cáo thống kê chi tiết
+- **Xuất dữ liệu**: Xuất dữ liệu ra file Excel với nhiều tùy chọn
+- **Giao diện responsive**: Tối ưu cho cả desktop và mobile
+- **Bảo mật**: Rate limiting, input validation, và error handling
+- **Hiệu suất cao**: Lazy loading, caching, và optimization
+- **Thông báo thông minh**: Hệ thống notification hiện đại
+- **Xử lý lỗi**: Error boundary và recovery mechanisms
 
-### 📈 Biểu đồ thống kê
-- **Tổng quan**: Tổng lượt khám, số công ty, số bản ghi
-- **Biểu đồ tròn**: Phân bố theo trạng thái khám
-- **Biểu đồ cột**: Top 10 công ty theo lượt khám
-- **Biểu đồ đường**: Xu hướng theo tháng
+## 🛠️ Công nghệ sử dụng
 
-### 🔧 Tính năng khác
-- **Xuất CSV**: Xuất dữ liệu hiện tại ra file CSV
-- **Responsive**: Giao diện thích ứng với mọi thiết bị
-- **Performance**: Tối ưu cho dữ liệu lớn với phân trang
-- **Real-time**: Làm mới dữ liệu theo thời gian thực
-
-## Công nghệ sử dụng
-
-- **Frontend**: React 18 + Vite
-- **Styling**: Tailwind CSS
+- **Frontend**: React 18, Tailwind CSS, Lucide React
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
 - **Charts**: Recharts
-- **Icons**: Lucide React
-- **Database**: Supabase
-- **Date handling**: date-fns
+- **Build Tool**: Vite
+- **Package Manager**: npm/yarn
+- **State Management**: React Hooks, Context API
+- **Styling**: Tailwind CSS với custom components
 
 ## Cài đặt
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   BarChart,
   Bar,
@@ -14,13 +14,79 @@ import {
   Line,
   ResponsiveContainer
 } from 'recharts'
-import { TrendingUp, Users, Building2, Calendar } from 'lucide-react'
-import LichKhamService from '../services/supabase'
+import { Users, Building2, FileText, TrendingUp, AlertCircle, RefreshCw } from 'lucide-react'
+import { LichKhamService } from '../services/supabase'
+import { useNotifications } from './NotificationSystem'
+import LoadingSpinner, { ChartSkeleton, LoadingButton } from './LoadingSpinner'
+import { 
+  CHART_CONFIG, 
+  ERROR_MESSAGES, 
+  SUCCESS_MESSAGES,
+  FEATURES 
+} from '../constants'
+import { 
+  formatNumber, 
+  getErrorMessage,
+  normalizeStatus 
+} from '../utils'
 
 const Charts = () => {
-  const [stats, setStats] = useState({})
+  const [stats, setStats] = useState({
+    totalExaminations: 0,
+    totalCompanies: 0,
+    totalRecords: 0
+  })
+  const [chartData, setChartData] = useState({
+    statusData: [],
+    companyData: [],
+    monthlyData: []
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [rateLimitInfo, setRateLimitInfo] = useState({ remaining: 0, resetTime: 0 })
+  const { showSuccess, showError, showWarning } = useNotifications()
+
+  // Memoized chart data preparation
+  const prepareStatusData = useMemo(() => {
+    return (statusCounts) => {
+      return Object.entries(statusCounts || {}).map(([status, count]) => ({
+        name: normalizeStatus(status),
+        value: count,
+        percentage: ((count / stats.totalExaminations) * 100).toFixed(1)
+      }))
+    }
+  }, [stats.totalExaminations])
+
+  const prepareCompanyData = useMemo(() => {
+    return (topCompanies) => {
+      return (topCompanies || []).slice(0, CHART_CONFIG.MAX_COMPANIES_DISPLAY).map(company => ({
+        name: company.name.length > CHART_CONFIG.MAX_LABEL_LENGTH 
+          ? company.name.substring(0, CHART_CONFIG.MAX_LABEL_LENGTH) + '...' 
+          : company.name,
+        value: company.count,
+        fullName: company.name
+      }))
+    }
+  }, [])
+
+  const prepareMonthlyData = useMemo(() => {
+    return (monthlyStats) => {
+      return (monthlyStats || []).slice(-CHART_CONFIG.MAX_MONTHS_DISPLAY).map(stat => ({
+        month: stat.month,
+        examinations: stat.count,
+        formatted: new Date(stat.month + '-01').toLocaleDateString('vi-VN', { 
+          year: 'numeric', 
+          month: 'short' 
+        })
+      }))
+    }
+  }, [])
+
+  // Refresh statistics
+  const handleRefresh = () => {
+    fetchStatistics()
+  }
 
   // Colors for charts
   const COLORS = {
@@ -41,19 +107,48 @@ const Charts = () => {
   }, [])
 
   const fetchStatistics = async () => {
-    setLoading(true)
-    setError(null)
-    
     try {
+      setLoading(true)
+      setError(null)
+      
       const result = await LichKhamService.getStatistics()
       
-      if (result.error) {
-        setError(result.error)
+      const { stats } = result
+      setStats(stats)
+      setLastUpdated(new Date())
+      
+      // Update rate limit info
+      if (stats.rateLimitInfo) {
+        setRateLimitInfo(stats.rateLimitInfo)
+      }
+      
+      // Prepare chart data
+      setChartData({
+        statusData: prepareStatusData(stats.statusCounts),
+        companyData: prepareCompanyData(stats.topCompanies),
+        monthlyData: prepareMonthlyData(stats.monthlyStats)
+      })
+      
+      // Show appropriate message based on data type
+      if (stats.isMockData) {
+        showWarning('Dữ liệu mẫu', 'Đang hiển thị dữ liệu mẫu. Vui lòng tạo bảng trong Supabase để xem dữ liệu thực.')
       } else {
-        setStats(result.stats)
+        showSuccess('Cập nhật thống kê', 'Dữ liệu thống kê đã được tải thành công')
+      }
+      
+      // Only show error if there's an actual error and no stats
+      if (result.error && !stats.isMockData) {
+        const errorMsg = getErrorMessage(result.error)
+        setError(errorMsg)
+        showError('Lỗi tải thống kê', errorMsg)
       }
     } catch (err) {
-      setError('Có lỗi xảy ra khi tải thống kê')
+      if (FEATURES.DEBUG_LOGS) {
+        console.error('Error fetching statistics:', err)
+      }
+      const errorMsg = getErrorMessage(err, ERROR_MESSAGES.STATS_LOAD_FAILED)
+      setError(errorMsg)
+      showError('Lỗi hệ thống', errorMsg)
     } finally {
       setLoading(false)
     }
@@ -133,6 +228,49 @@ const Charts = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with refresh button */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">Thống kê và Biểu đồ</h2>
+        <div className="flex items-center space-x-4">
+          {lastUpdated && (
+            <span className="text-sm text-gray-500">
+              Cập nhật lần cuối: {lastUpdated.toLocaleTimeString('vi-VN')}
+            </span>
+          )}
+          <LoadingButton
+            onClick={handleRefresh}
+            loading={loading}
+            loadingText="Đang tải..."
+            className="btn btn-secondary px-4 py-2"
+            title="Làm mới dữ liệu"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Làm mới
+          </LoadingButton>
+        </div>
+      </div>
+      
+      {/* Mock Data Warning */}
+      {stats.isMockData && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded flex items-start">
+          <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Dữ liệu mẫu</p>
+            <p className="text-sm">Đang hiển thị dữ liệu mẫu vì bảng 'lich_kham' chưa tồn tại trong cơ sở dữ liệu Supabase. Vui lòng tạo bảng này trong dự án Supabase của bạn để xem dữ liệu thực.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Rate Limit Info */}
+      {FEATURES.DEBUG_LOGS && rateLimitInfo.remaining < 10 && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+          <p className="text-sm">
+            Còn lại {rateLimitInfo.remaining} requests. 
+            Reset sau {Math.ceil(rateLimitInfo.resetTime / 1000)}s
+          </p>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card p-6">
@@ -143,7 +281,11 @@ const Charts = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng lượt khám</p>
               <p className="text-2xl font-bold text-gray-900">
-                {(stats.totalExaminations || 0).toLocaleString()}
+                {loading ? (
+                  <LoadingSpinner size="sm" showText={false} />
+                ) : (
+                  formatNumber(stats.totalExaminations || 0)
+                )}
               </p>
             </div>
           </div>
@@ -157,7 +299,11 @@ const Charts = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng công ty</p>
               <p className="text-2xl font-bold text-gray-900">
-                {(stats.totalCompanies || 0).toLocaleString()}
+                {loading ? (
+                  <LoadingSpinner size="sm" showText={false} />
+                ) : (
+                  formatNumber(stats.totalCompanies || 0)
+                )}
               </p>
             </div>
           </div>
@@ -166,12 +312,16 @@ const Charts = () => {
         <div className="card p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
-              <Calendar className="w-6 h-6" />
+              <FileText className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">Tổng bản ghi</p>
               <p className="text-2xl font-bold text-gray-900">
-                {(stats.totalRecords || 0).toLocaleString()}
+                {loading ? (
+                  <LoadingSpinner size="sm" showText={false} />
+                ) : (
+                  formatNumber(stats.totalRecords || 0)
+                )}
               </p>
             </div>
           </div>
@@ -185,10 +335,13 @@ const Charts = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">TB khám/công ty</p>
               <p className="text-2xl font-bold text-gray-900">
-                {stats.totalCompanies > 0 
-                  ? Math.round(stats.totalExaminations / stats.totalCompanies).toLocaleString()
-                  : 0
-                }
+                {loading ? (
+                  <LoadingSpinner size="sm" showText={false} />
+                ) : (
+                  stats.totalCompanies > 0 
+                    ? formatNumber(Math.round(stats.totalExaminations / stats.totalCompanies))
+                    : 0
+                )}
               </p>
             </div>
           </div>
@@ -200,30 +353,35 @@ const Charts = () => {
         {/* Status Distribution Pie Chart */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Phân bố theo trạng thái</h3>
-          {statusChartData.length > 0 ? (
+          {loading ? (
+            <ChartSkeleton height={300} />
+          ) : chartData.statusData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={statusChartData}
+                  data={chartData.statusData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percentage }) => `${name} (${percentage}%)`}
+                  label={({ name, percentage }) => `${name} ${percentage}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {statusChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  {chartData.statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_CONFIG.COLORS ? CHART_CONFIG.COLORS[index % CHART_CONFIG.COLORS.length] : PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip type="percentage" />} />
+                <Tooltip formatter={(value, name) => [formatNumber(value), name]} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-64 text-gray-500">
-              Không có dữ liệu
+              <div className="text-center">
+                <AlertCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p>Không có dữ liệu trạng thái</p>
+              </div>
             </div>
           )}
         </div>
@@ -231,10 +389,12 @@ const Charts = () => {
         {/* Top Companies Bar Chart */}
         <div className="card p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Top 10 công ty theo lượt khám</h3>
-          {topCompaniesData.length > 0 ? (
+          {loading ? (
+            <ChartSkeleton height={300} />
+          ) : chartData.companyData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
-                data={topCompaniesData}
+                data={chartData.companyData}
                 margin={{
                   top: 5,
                   right: 30,
@@ -249,45 +409,40 @@ const Charts = () => {
                   textAnchor="end"
                   height={80}
                   fontSize={12}
+                  interval={0}
                 />
                 <YAxis />
                 <Tooltip 
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload
-                      return (
-                        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
-                          <p className="font-medium text-gray-900 mb-2">{data.fullName}</p>
-                          <p className="text-sm text-blue-600">
-                            Lượt khám: {data.examinations.toLocaleString()}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Số bản ghi: {data.records}
-                          </p>
-                        </div>
-                      )
-                    }
-                    return null
-                  }}
+                  formatter={(value, name, props) => [
+                    formatNumber(value), 
+                    'Số lượt khám',
+                    props.payload.fullName
+                  ]}
                 />
-                <Bar dataKey="examinations" fill={COLORS.primary} />
+                <Legend />
+                <Bar dataKey="value" fill={CHART_CONFIG.COLORS ? CHART_CONFIG.COLORS[1] : COLORS.primary} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-64 text-gray-500">
-              Không có dữ liệu
+              <div className="text-center">
+                <AlertCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p>Không có dữ liệu công ty</p>
+              </div>
             </div>
           )}
         </div>
       </div>
 
       {/* Monthly Trend Chart */}
-      {monthlyTrendData.length > 0 && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Xu hướng theo tháng</h3>
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Xu hướng theo tháng</h3>
+        {loading ? (
+          <ChartSkeleton height={400} />
+        ) : chartData.monthlyData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart
-              data={monthlyTrendData}
+              data={chartData.monthlyData}
               margin={{
                 top: 5,
                 right: 30,
@@ -296,24 +451,35 @@ const Charts = () => {
               }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
-              <Tooltip content={<CustomTooltip />} />
+              <XAxis 
+                dataKey="formatted" 
+                fontSize={12}
+              />
+              <YAxis />
+              <Tooltip 
+                formatter={(value) => [formatNumber(value), 'Số lượt khám']}
+                labelFormatter={(label) => `Tháng: ${label}`}
+              />
               <Legend />
-              <Bar yAxisId="left" dataKey="examinations" fill={COLORS.primary} name="Lượt khám" />
               <Line 
-                yAxisId="right" 
                 type="monotone" 
-                dataKey="companies" 
-                stroke={COLORS.secondary} 
-                strokeWidth={3}
-                name="Số công ty"
+                dataKey="examinations" 
+                stroke={CHART_CONFIG.COLORS ? CHART_CONFIG.COLORS[2] : COLORS.accent} 
+                strokeWidth={2}
+                dot={{ fill: CHART_CONFIG.COLORS ? CHART_CONFIG.COLORS[2] : COLORS.accent }}
+                name="Số lượt khám"
               />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center justify-center h-96 text-gray-500">
+            <div className="text-center">
+              <AlertCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+              <p>Không có dữ liệu xu hướng</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Detailed Statistics Table */}
       <div className="card p-6">
