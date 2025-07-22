@@ -549,7 +549,7 @@ const DataTable = ({ globalFilters = {} }) => {
                 {dailyTotals.map((total, index) => (
                   <td key={index} className="px-1 py-1.5 text-center">
                     {total > 0 && (
-                      <div className="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-light border-2" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#00c49a'}}>
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-[10px] font-light border-2 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#184e77'}}>
                         {total.toLocaleString('vi-VN')}
                       </div>
                     )}
@@ -568,7 +568,7 @@ const DataTable = ({ globalFilters = {} }) => {
                 data.map((record, index) => {
                   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
                   return (
-                    <tr key={record['ID'] || record.id || index} className="hover:bg-gray-50">
+                    <tr key={record['ID'] || record.id || index}>
                       <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-20" style={{width: '200px', color: isCompleted ? '#1e40af' : '#000000'}}>
                          <div 
                            className="truncate" 
@@ -585,7 +585,7 @@ const DataTable = ({ globalFilters = {} }) => {
                         return (
                           <td key={dateIndex} className="px-1 py-1.5 text-center">
                             {examCount > 0 && (
-                              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-light border-2" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#00c49a'}}>
+                              <div className="inline-flex items-center justify-center w-9 h-9 rounded-full text-[10px] font-light border-2 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#184e77'}}>
                                 {examCount.toLocaleString('vi-VN')}
                               </div>
                             )}

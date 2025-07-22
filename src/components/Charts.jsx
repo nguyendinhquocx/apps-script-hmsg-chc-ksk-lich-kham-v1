@@ -137,7 +137,7 @@ const Charts = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="card p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer">
               <Users className="w-6 h-6" />
             </div>
             <div>
@@ -151,7 +151,7 @@ const Charts = () => {
 
         <div className="card p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+            <div className="p-3 rounded-full bg-green-100 text-green-600 mr-4 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer">
               <Building2 className="w-6 h-6" />
             </div>
             <div>
@@ -165,7 +165,7 @@ const Charts = () => {
 
         <div className="card p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer">
               <Calendar className="w-6 h-6" />
             </div>
             <div>
@@ -179,7 +179,7 @@ const Charts = () => {
 
         <div className="card p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+            <div className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer">
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
@@ -345,7 +345,7 @@ const Charts = () => {
               {(stats.topCompanies || []).slice(0, 5).map((company, index) => (
                 <div key={company.name} className="flex justify-between items-center py-2 border-b border-gray-100">
                   <div className="flex items-center">
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-600 text-xs font-medium mr-3">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-100 text-[10px] font-medium mr-3 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer" style={{color: '#184e77'}}>
                       {index + 1}
                     </span>
                     <span className="text-sm text-gray-700 truncate" title={company.name}>
