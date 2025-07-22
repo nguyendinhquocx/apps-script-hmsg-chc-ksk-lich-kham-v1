@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Download, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import LichKhamService from '../services/supabase'
@@ -80,10 +80,10 @@ const DataTable = ({ globalFilters = {} }) => {
           )
         }
         
-        // Filter by Gold - Hide Gold companies by default, show only when checkbox is checked
-        if (!showGold) {
+        // Filter by Gold - Show only Gold companies when checkbox is checked, show all when unchecked
+        if (showGold) {
           filteredData = filteredData.filter(item => 
-            !item['gold'] || (item['gold'] !== 'x' && item['gold'] !== 'X')
+            item['gold'] === 'x' || item['gold'] === 'X'
           )
         }
         
@@ -197,122 +197,7 @@ const DataTable = ({ globalFilters = {} }) => {
     }
   }
 
-  // Handle CSV export
-  const handleExportCSV = async () => {
-    try {
-      setLoading(true)
-      // Get all filtered data
-      const result = await LichKhamService.getLichKhamData({
-        page: 1,
-        limit: 10000,
-        search: '',
-        status: '',
-        employee: '',
-        showGold: false,
-        sortBy: sortBy,
-        sortOrder: sortOrder
-      })
-      
-      if (result.error) {
-        setError('Không thể export dữ liệu: ' + result.error)
-        return
-      }
-      
-      // Apply same filters as display
-      let filteredData = result.data
-      
-      if (searchTerm) {
-        filteredData = filteredData.filter(item => 
-          matchesSearch(item['ten cong ty'], searchTerm)
-        )
-      }
-      
-      if (statusFilter) {
-        filteredData = filteredData.filter(item => 
-          item['trang thai kham'] === statusFilter
-        )
-      }
-      
-      if (employeeFilter) {
-        filteredData = filteredData.filter(item => 
-          matchesSearch(item['ten nhan vien'], employeeFilter)
-        )
-      }
-      
-      if (!showGold) {
-        filteredData = filteredData.filter(item => 
-          !item['gold'] || (item['gold'] !== 'x' && item['gold'] !== 'X')
-        )
-      }
-      
-      if (monthFilter) {
-        filteredData = filteredData.filter(item => {
-          const startDate = item['ngay bat dau kham']
-          const endDate = item['ngay ket thuc kham']
-          return isDateInMonth(startDate, monthFilter.month, monthFilter.year) ||
-                 isDateInMonth(endDate, monthFilter.month, monthFilter.year)
-        })
-      }
-      
-      // Filter by date range
-      if (dateFilter.startDate || dateFilter.endDate) {
-        filteredData = filteredData.filter(item => {
-          const startDate = item['ngay bat dau kham']
-          const endDate = item['ngay ket thuc kham']
-          
-          if (dateFilter.startDate && dateFilter.endDate) {
-            // Both dates specified - check if examination period overlaps with filter range
-            const filterStart = new Date(dateFilter.startDate)
-            const filterEnd = new Date(dateFilter.endDate)
-            const examStart = new Date(startDate)
-            const examEnd = new Date(endDate || startDate)
-            
-            return (examStart <= filterEnd && examEnd >= filterStart)
-          } else if (dateFilter.startDate) {
-            // Only start date specified
-            const filterStart = new Date(dateFilter.startDate)
-            const examEnd = new Date(endDate || startDate)
-            return examEnd >= filterStart
-          } else if (dateFilter.endDate) {
-            // Only end date specified
-            const filterEnd = new Date(dateFilter.endDate)
-            const examStart = new Date(startDate)
-            return examStart <= filterEnd
-          }
-          
-          return true
-        })
-      }
-      
-      // Custom sorting: "Chưa khám xong" first (by số người khám desc), then "Đã khám xong" (by số người khám desc)
-      filteredData = filteredData.sort((a, b) => {
-        const statusA = a['trang thai kham']
-        const statusB = b['trang thai kham']
-        const peopleA = parseInt(a['so nguoi kham']) || 0
-        const peopleB = parseInt(b['so nguoi kham']) || 0
-        
-        // Priority: "Chưa khám xong" comes first
-        if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
-          return -1
-        }
-        if (statusA !== 'Chưa khám xong' && statusB === 'Chưa khám xong') {
-          return 1
-        }
-        
-        // Within same status group, sort by số người khám (descending)
-        return peopleB - peopleA
-      })
-      
-      const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
-      const filename = `lich_kham_${timestamp}.csv`
-      
-      LichKhamService.downloadCSV(filteredData, filename)
-    } catch (err) {
-      setError('Có lỗi xảy ra khi export CSV')
-    } finally {
-      setLoading(false)
-    }
-  }
+
   
   // Handle Excel export
   const handleExportExcel = async () => {
@@ -480,18 +365,9 @@ const DataTable = ({ globalFilters = {} }) => {
           
           <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
             <button
-              onClick={handleExportCSV}
-              disabled={loading || totalCount === 0}
-              className="btn btn-primary px-4 py-2"
-              title="Xuất file CSV"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </button>
-            <button
               onClick={handleExportExcel}
               disabled={loading || totalCount === 0}
-              className="btn btn-secondary px-4 py-2"
+              className="btn btn-primary px-4 py-2"
               title="Xuất file Excel"
             >
               <FileSpreadsheet className="w-4 h-4 mr-2" />
