@@ -456,16 +456,13 @@ const DataTable = ({ globalFilters = {} }) => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Danh sách lịch khám</h2>
-            <p className="text-gray-600">
-              Hiển thị {startRecord}-{endRecord} trong tổng số {totalCount} bản ghi
-            </p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
             <button
               onClick={handleExportExcel}
               disabled={loading || totalCount === 0}
-              className="btn btn-primary px-4 py-2"
+              className="inline-flex items-center px-4 py-2 bg-white text-black text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
               title="Xuất file Excel"
             >
               <FileSpreadsheet className="w-4 h-4 mr-2" />
@@ -493,14 +490,14 @@ const DataTable = ({ globalFilters = {} }) => {
       {/* Table */}
       {!loading && (
         <div className="overflow-x-auto">
-          <table className="table">
+          <table className="min-w-full">
             <thead className="bg-white">
               {/* Day of week row */}
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '250px', minWidth: '150px' }}></th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '120px' }}></th>
+              <tr className="bg-white">
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-0 bg-white z-20" style={{ width: '200px', minWidth: '200px' }}></th>
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-[200px] bg-white z-10" style={{ width: '80px' }}></th>
                 {dateRange.map((date, index) => (
-                  <th key={index} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '60px', minWidth: '60px' }}>
+                  <th key={index} className="px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider" style={{ width: '50px', minWidth: '50px' }}>
                     <div className="text-xs font-medium text-gray-600">
                       {getDayOfWeek(date)}
                     </div>
@@ -509,11 +506,11 @@ const DataTable = ({ globalFilters = {} }) => {
               </tr>
               
               {/* Date numbers row */}
-              <tr>
+              <tr className="bg-white">
                 <th 
-                  className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100 sticky left-0 bg-white z-20"
                   onClick={() => handleSort('ten cong ty')}
-                  style={{ width: '250px', minWidth: '150px' }}
+                  style={{ width: '200px', minWidth: '200px' }}
                 >
                   <div className="flex items-center">
                     Tên Công Ty
@@ -523,9 +520,9 @@ const DataTable = ({ globalFilters = {} }) => {
                   </div>
                 </th>
                 <th 
-                  className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100 sticky left-[200px] bg-white z-10"
                   onClick={() => handleSort('so nguoi kham')}
-                  style={{ width: '120px' }}
+                  style={{ width: '80px' }}
                 >
                   <div className="flex items-center">
                     Người
@@ -535,7 +532,7 @@ const DataTable = ({ globalFilters = {} }) => {
                   </div>
                 </th>
                 {dateRange.map((date, index) => (
-                  <th key={index} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '60px', minWidth: '60px' }}>
+                  <th key={index} className="px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider" style={{ width: '50px', minWidth: '50px' }}>
                     <div className="text-sm font-semibold">
                       {date.getDate()}
                     </div>
@@ -544,15 +541,15 @@ const DataTable = ({ globalFilters = {} }) => {
               </tr>
               
               {/* Total row */}
-              <tr className="bg-white border-b border-gray-200">
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-normal">TỔNG</td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-normal">
+              <tr className="bg-white border-b-2 border-gray-300">
+                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-0 bg-white z-20">TỔNG</td>
+                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-[200px] bg-white z-10">
                   {data.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0).toLocaleString('vi-VN')}
                 </td>
                 {dailyTotals.map((total, index) => (
-                  <td key={index} className="px-2 py-2 whitespace-nowrap text-center">
+                  <td key={index} className="px-1 py-1.5 text-center">
                     {total > 0 && (
-                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-xs font-medium" style={{backgroundColor: '#b7ffd8', color: '#184e77'}}>
+                      <div className="inline-flex items-center justify-center w-9 h-9 rounded-full text-xs font-light border-2" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#00c49a'}}>
                         {total.toLocaleString('vi-VN')}
                       </div>
                     )}
@@ -572,7 +569,7 @@ const DataTable = ({ globalFilters = {} }) => {
                   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
                   return (
                     <tr key={record['ID'] || record.id || index} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 whitespace-nowrap text-sm font-normal" style={{color: isCompleted ? '#22c55e' : '#000000'}}>
+                      <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-20" style={{width: '200px', color: isCompleted ? '#1e40af' : '#000000'}}>
                          <div 
                            className="truncate" 
                            title={getTooltipCompanyName(record['ten cong ty'])}
@@ -580,15 +577,15 @@ const DataTable = ({ globalFilters = {} }) => {
                            {getDisplayCompanyName(record['ten cong ty']) || '-'}
                          </div>
                        </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-normal">
+                      <td className="px-3 py-1.5 text-sm font-normal sticky left-[200px] bg-white z-10" style={{width: '80px', color: isCompleted ? '#1e40af' : '#000000'}}>
                         {parseInt(record['so nguoi kham'] || 0).toLocaleString('vi-VN')}
                       </td>
                       {dateRange.map((date, dateIndex) => {
                         const examCount = getExamCountForDate(record, date)
                         return (
-                          <td key={dateIndex} className="px-2 py-2 whitespace-nowrap text-center">
+                          <td key={dateIndex} className="px-1 py-1.5 text-center">
                             {examCount > 0 && (
-                              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-xs font-medium" style={{backgroundColor: '#b7ffd8', color: '#184e77'}}>
+                              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-light border-2" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#00c49a'}}>
                                 {examCount.toLocaleString('vi-VN')}
                               </div>
                             )}
@@ -606,7 +603,7 @@ const DataTable = ({ globalFilters = {} }) => {
 
       {/* Pagination */}
       {!loading && totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-end mt-6 gap-4">
           {/* Page Size Selector */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-700">Hiển thị:</span>
