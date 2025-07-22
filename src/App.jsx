@@ -4,8 +4,10 @@ import './index.css'
 
 function App() {
   return (
-    <div className="App">
-      <Dashboard />
+    <div className="App min-h-screen bg-gray-50">
+      <div className="container-full">
+        <Dashboard />
+      </div>
     </div>
   )
 }

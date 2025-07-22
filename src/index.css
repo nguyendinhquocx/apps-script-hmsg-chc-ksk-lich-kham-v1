@@ -144,6 +144,56 @@ body {
   }
 }
 
+/* Container optimization */
+.container-optimized {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.container-full {
+  @apply max-w-full mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Layout improvements */
+.layout-grid {
+  @apply grid gap-4;
+}
+
+.layout-grid-6 {
+  @apply grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6;
+}
+
+.layout-flex-responsive {
+  @apply flex flex-col lg:flex-row gap-4 items-start lg:items-center;
+}
+
+/* Table responsive improvements */
+.table-container {
+  @apply overflow-x-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg;
+}
+
+.table-responsive {
+  @apply min-w-full divide-y divide-gray-300;
+}
+
+/* Button group styles */
+.btn-group {
+  @apply flex flex-col sm:flex-row gap-2;
+}
+
+/* Month filter styles */
+.month-filter {
+  @apply flex items-center justify-center gap-2 bg-gray-50 rounded-lg px-3 py-2;
+}
+
+.month-nav-btn {
+  @apply p-1 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Footer styles */
+.footer-right {
+  @apply text-right text-sm text-gray-500;
+}
+
 /* Responsive utilities */
 @media (max-width: 640px) {
   .table th,
@@ -153,5 +203,26 @@ body {
   
   .btn {
     @apply text-xs px-2 py-1;
+  }
+  
+  .container-optimized,
+  .container-full {
+    @apply px-2;
+  }
+  
+  .layout-grid-6 {
+    @apply grid-cols-1;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .layout-grid-6 {
+    @apply grid-cols-2;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .layout-grid-6 {
+    @apply grid-cols-3;
   }
 }

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Download, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import LichKhamService from '../services/supabase'
 import StatsCards from './StatsCards'
 import LineChart from './LineChart'
+import { matchesSearch, isDateInMonth } from '../utils/vietnamese'
 
 const DataTable = ({ globalFilters = {} }) => {
   // State management
@@ -16,22 +17,20 @@ const DataTable = ({ globalFilters = {} }) => {
 
   
   // Extract global filters
-  const { searchTerm = '', statusFilter = '', employeeFilter = '', showGold = false } = globalFilters
+  const { searchTerm = '', statusFilter = '', employeeFilter = '', showGold = false, monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() } } = globalFilters
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(1000) // Show all records by default
   
   // Sorting states
   const [sortBy, setSortBy] = useState('ngay bat dau kham')
   const [sortOrder, setSortOrder] = useState('desc')
   
-  // Available status options (sẽ được cập nhật từ dữ liệu thực tế)
+  // Available status options
   const [statusOptions, setStatusOptions] = useState([
     'Đã khám xong',
-    'Chưa khám xong',
-    'Đang khám',
-    'Hủy khám'
+    'Chưa khám xong'
   ])
 
   // Fetch data function
@@ -41,12 +40,12 @@ const DataTable = ({ globalFilters = {} }) => {
     
     try {
       const result = await LichKhamService.getLichKhamData({
-        page: currentPage,
-        limit: pageSize,
-        search: searchTerm,
-        status: statusFilter,
-        employee: employeeFilter,
-        showGold: showGold,
+        page: 1,
+        limit: 10000, // Get all data for client-side filtering
+        search: '',
+        status: '',
+        employee: '',
+        showGold: false,
         sortBy: sortBy,
         sortOrder: sortOrder
       })
@@ -56,8 +55,54 @@ const DataTable = ({ globalFilters = {} }) => {
         setData([])
         setTotalCount(0)
       } else {
-        setData(result.data)
-        setTotalCount(result.count)
+        // Apply client-side filtering
+        let filteredData = result.data
+        
+        // Filter by search term
+        if (searchTerm) {
+          filteredData = filteredData.filter(item => 
+            matchesSearch(item['ten cong ty'], searchTerm)
+          )
+        }
+        
+        // Filter by status
+        if (statusFilter) {
+          filteredData = filteredData.filter(item => 
+            item['trang thai kham'] === statusFilter
+          )
+        }
+        
+        // Filter by employee (with diacritics support)
+        if (employeeFilter) {
+          filteredData = filteredData.filter(item => 
+            matchesSearch(item['ten nhan vien'], employeeFilter)
+          )
+        }
+        
+        // Filter by Gold
+        if (showGold) {
+          filteredData = filteredData.filter(item => 
+            item['gold'] === 'x' || item['gold'] === 'X'
+          )
+        }
+        
+        // Filter by month
+        if (monthFilter) {
+          filteredData = filteredData.filter(item => {
+            const startDate = item['ngay bat dau kham']
+            const endDate = item['ngay ket thuc kham']
+            return isDateInMonth(startDate, monthFilter.month, monthFilter.year) ||
+                   isDateInMonth(endDate, monthFilter.month, monthFilter.year)
+          })
+        }
+        
+        // Apply pagination
+        const startIndex = (currentPage - 1) * pageSize
+        const endIndex = startIndex + pageSize
+        const paginatedData = filteredData.slice(startIndex, endIndex)
+        
+        setData(paginatedData)
+        setTotalCount(filteredData.length)
       }
     } catch (err) {
       setError('Có lỗi xảy ra khi tải dữ liệu')
@@ -102,18 +147,18 @@ const DataTable = ({ globalFilters = {} }) => {
     }
   }
 
-  // Handle export
-  const handleExport = async () => {
+  // Handle CSV export
+  const handleExportCSV = async () => {
     try {
       setLoading(true)
-      // Lấy tất cả dữ liệu với filter hiện tại (không phân trang)
+      // Get all filtered data
       const result = await LichKhamService.getLichKhamData({
         page: 1,
-        limit: 10000, // Lấy nhiều records để export
-        search: searchTerm,
-        status: statusFilter,
-        employee: employeeFilter,
-        showGold: showGold,
+        limit: 10000,
+        search: '',
+        status: '',
+        employee: '',
+        showGold: false,
         sortBy: sortBy,
         sortOrder: sortOrder
       })
@@ -123,12 +168,117 @@ const DataTable = ({ globalFilters = {} }) => {
         return
       }
       
+      // Apply same filters as display
+      let filteredData = result.data
+      
+      if (searchTerm) {
+        filteredData = filteredData.filter(item => 
+          matchesSearch(item['ten cong ty'], searchTerm)
+        )
+      }
+      
+      if (statusFilter) {
+        filteredData = filteredData.filter(item => 
+          item['trang thai kham'] === statusFilter
+        )
+      }
+      
+      if (employeeFilter) {
+        filteredData = filteredData.filter(item => 
+          matchesSearch(item['ten nhan vien'], employeeFilter)
+        )
+      }
+      
+      if (showGold) {
+        filteredData = filteredData.filter(item => 
+          item['gold'] === 'x' || item['gold'] === 'X'
+        )
+      }
+      
+      if (monthFilter) {
+        filteredData = filteredData.filter(item => {
+          const startDate = item['ngay bat dau kham']
+          const endDate = item['ngay ket thuc kham']
+          return isDateInMonth(startDate, monthFilter.month, monthFilter.year) ||
+                 isDateInMonth(endDate, monthFilter.month, monthFilter.year)
+        })
+      }
+      
       const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
       const filename = `lich_kham_${timestamp}.csv`
       
-      LichKhamService.downloadCSV(result.data, filename)
+      LichKhamService.downloadCSV(filteredData, filename)
     } catch (err) {
-      setError('Có lỗi xảy ra khi export dữ liệu')
+      setError('Có lỗi xảy ra khi export CSV')
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  // Handle Excel export
+  const handleExportExcel = async () => {
+    try {
+      setLoading(true)
+      // Get all filtered data (same logic as CSV)
+      const result = await LichKhamService.getLichKhamData({
+        page: 1,
+        limit: 10000,
+        search: '',
+        status: '',
+        employee: '',
+        showGold: false,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      })
+      
+      if (result.error) {
+        setError('Không thể export dữ liệu: ' + result.error)
+        return
+      }
+      
+      // Apply same filters as display
+      let filteredData = result.data
+      
+      if (searchTerm) {
+        filteredData = filteredData.filter(item => 
+          matchesSearch(item['ten cong ty'], searchTerm)
+        )
+      }
+      
+      if (statusFilter) {
+        filteredData = filteredData.filter(item => 
+          item['trang thai kham'] === statusFilter
+        )
+      }
+      
+      if (employeeFilter) {
+        filteredData = filteredData.filter(item => 
+          matchesSearch(item['ten nhan vien'], employeeFilter)
+        )
+      }
+      
+      if (showGold) {
+        filteredData = filteredData.filter(item => 
+          item['gold'] === 'x' || item['gold'] === 'X'
+        )
+      }
+      
+      if (monthFilter) {
+        filteredData = filteredData.filter(item => {
+          const startDate = item['ngay bat dau kham']
+          const endDate = item['ngay ket thuc kham']
+          return isDateInMonth(startDate, monthFilter.month, monthFilter.year) ||
+                 isDateInMonth(endDate, monthFilter.month, monthFilter.year)
+        })
+      }
+      
+      const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
+      const filename = `lich_kham_${timestamp}.xlsx`
+      
+      // Convert to Excel format
+      LichKhamService.downloadExcel(filteredData, filename)
+    } catch (err) {
+      setError('Có lỗi xảy ra khi export Excel')
     } finally {
       setLoading(false)
     }
@@ -182,14 +332,23 @@ const DataTable = ({ globalFilters = {} }) => {
           
           <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
             <button
-              onClick={handleExport}
-              disabled={loading || data.length === 0}
+              onClick={handleExportCSV}
+              disabled={loading || totalCount === 0}
               className="btn btn-primary px-4 py-2"
-            title="Xuất file CSV"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </button>
+              title="Xuất file CSV"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={loading || totalCount === 0}
+              className="btn btn-secondary px-4 py-2"
+              title="Xuất file Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Export Excel
+            </button>
           </div>
         </div>
 

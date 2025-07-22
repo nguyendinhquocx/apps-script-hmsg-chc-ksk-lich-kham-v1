@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import * as XLSX from 'xlsx'
 
 // Cấu hình Supabase từ environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -368,6 +369,78 @@ export class LichKhamService {
       link.click()
       document.body.removeChild(link)
     }
+  }
+
+  /**
+   * Export dữ liệu ra Excel
+   * @param {Array} data - Dữ liệu cần export
+   * @returns {Object} - Excel workbook
+   */
+  static exportToExcel(data) {
+    if (!data || data.length === 0) {
+      return null
+    }
+
+    // Định nghĩa headers theo schema từ Apps Script
+    const headers = [
+      'ID',
+      'Tên Công Ty',
+      'Ngày Bắt Đầu',
+      'Ngày Kết Thúc',
+      'Số Người Khám',
+      'Trạng Thái Khám',
+      'Tên Nhân Viên',
+      'Sáng',
+      'Chiều',
+      'Tổng Số Ngày Khám',
+      'Trung Bình Ngày',
+      'Các Ngày Khám Thực Tế',
+      'Ngày Lấy Máu',
+      'Gold'
+    ]
+
+    // Chuyển đổi dữ liệu thành format cho Excel
+    const excelData = data.map(record => ({
+      'ID': record['ID'] || record.id || '',
+      'Tên Công Ty': record['ten cong ty'] || '',
+      'Ngày Bắt Đầu': record['ngay bat dau kham'] || '',
+      'Ngày Kết Thúc': record['ngay ket thuc kham'] || '',
+      'Số Người Khám': record['so nguoi kham'] || '',
+      'Trạng Thái Khám': record['trang thai kham'] || '',
+      'Tên Nhân Viên': record['ten nhan vien'] || '',
+      'Sáng': record['trung binh ngay sang'] || '',
+      'Chiều': record['trung binh ngay chieu'] || '',
+      'Tổng Số Ngày Khám': record['tong so ngay kham thuc te'] || '',
+      'Trung Bình Ngày': record['trung binh ngay'] || '',
+      'Các Ngày Khám Thực Tế': record['cac ngay kham thuc te'] || '',
+      'Ngày Lấy Máu': record['ngay lay mau'] || '',
+      'Gold': record['gold'] || ''
+    }))
+
+    // Tạo worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData)
+    
+    // Tạo workbook
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Lịch Khám')
+    
+    return workbook
+  }
+
+  /**
+   * Download Excel file
+   * @param {Array} data - Dữ liệu cần export
+   * @param {string} filename - Tên file
+   */
+  static downloadExcel(data, filename = 'lich_kham_export.xlsx') {
+    const workbook = this.exportToExcel(data)
+    if (!workbook) {
+      console.error('Không thể tạo file Excel: Dữ liệu trống')
+      return
+    }
+    
+    // Tạo file Excel và download
+    XLSX.writeFile(workbook, filename)
   }
 }
 

@@ -3,6 +3,7 @@ import { BarChart3, Table, RefreshCw } from 'lucide-react'
 import DataTable from './DataTable'
 import Charts from './Charts'
 import GlobalFilters from './GlobalFilters'
+import { getCurrentMonth } from '../utils/vietnamese'
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('table')
@@ -13,7 +14,8 @@ const Dashboard = () => {
     searchTerm: '',
     statusFilter: '',
     employeeFilter: '',
-    showGold: false
+    showGold: false,
+    monthFilter: getCurrentMonth()
   })
 
   const handleRefresh = () => {
@@ -24,12 +26,14 @@ const Dashboard = () => {
     setGlobalFilters(prev => ({ ...prev, [key]: value }))
   }
   
+  // Reset global filters
   const resetGlobalFilters = () => {
     setGlobalFilters({
       searchTerm: '',
       statusFilter: '',
       employeeFilter: '',
-      showGold: false
+      showGold: false,
+      monthFilter: getCurrentMonth()
     })
   }
 
@@ -116,13 +120,15 @@ const Dashboard = () => {
         {/* Global Filters */}
         <GlobalFilters
           searchTerm={globalFilters.searchTerm}
-          setSearchTerm={(value) => updateGlobalFilter('searchTerm', value)}
           statusFilter={globalFilters.statusFilter}
-          setStatusFilter={(value) => updateGlobalFilter('statusFilter', value)}
           employeeFilter={globalFilters.employeeFilter}
-          setEmployeeFilter={(value) => updateGlobalFilter('employeeFilter', value)}
           showGold={globalFilters.showGold}
-          setShowGold={(value) => updateGlobalFilter('showGold', value)}
+          monthFilter={globalFilters.monthFilter}
+          setMonthFilter={(monthFilter) => updateGlobalFilter('monthFilter', monthFilter)}
+          onSearchChange={(value) => updateGlobalFilter('searchTerm', value)}
+          onStatusChange={(value) => updateGlobalFilter('statusFilter', value)}
+          onEmployeeChange={(value) => updateGlobalFilter('employeeFilter', value)}
+          onGoldChange={(value) => updateGlobalFilter('showGold', value)}
           onReset={resetGlobalFilters}
         />
         
@@ -136,14 +142,10 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-500">
-              © 2024 HMSG CHC - Hệ thống quản lý lịch khám sức khỏe
+              © 2024 Dashboard Lịch Khám
             </div>
-            <div className="flex items-center space-x-6 text-sm text-gray-500">
-              <span>Phiên bản: 1.0.0</span>
-              <span>•</span>
-              <span>Dữ liệu từ: Supabase</span>
-              <span>•</span>
-              <span>Đồng bộ: Google Apps Script</span>
+            <div className="footer-right">
+              Phiên bản: 1.0.0
             </div>
           </div>
         </div>
