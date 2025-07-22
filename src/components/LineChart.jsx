@@ -146,11 +146,12 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis 
-              dataKey="displayDate" 
-              stroke="#6b7280"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
+              dataKey="date" 
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => {
+                const date = new Date(value);
+                return date.getDate().toString();
+              }}
             />
             <YAxis 
               stroke="#6b7280"

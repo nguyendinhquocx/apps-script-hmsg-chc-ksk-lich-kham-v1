@@ -127,6 +127,25 @@ const DataTable = ({ globalFilters = {} }) => {
           })
         }
         
+        // Custom sorting: "Chưa khám xong" first (by số người khám desc), then "Đã khám xong" (by số người khám desc)
+        filteredData = filteredData.sort((a, b) => {
+          const statusA = a['trang thai kham']
+          const statusB = b['trang thai kham']
+          const peopleA = parseInt(a['so nguoi kham']) || 0
+          const peopleB = parseInt(b['so nguoi kham']) || 0
+          
+          // Priority: "Chưa khám xong" comes first
+          if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
+            return -1
+          }
+          if (statusA !== 'Chưa khám xong' && statusB === 'Chưa khám xong') {
+            return 1
+          }
+          
+          // Within same status group, sort by số người khám (descending)
+          return peopleB - peopleA
+        })
+        
         // Apply pagination
         const startIndex = (currentPage - 1) * pageSize
         const endIndex = startIndex + pageSize
@@ -265,6 +284,25 @@ const DataTable = ({ globalFilters = {} }) => {
         })
       }
       
+      // Custom sorting: "Chưa khám xong" first (by số người khám desc), then "Đã khám xong" (by số người khám desc)
+      filteredData = filteredData.sort((a, b) => {
+        const statusA = a['trang thai kham']
+        const statusB = b['trang thai kham']
+        const peopleA = parseInt(a['so nguoi kham']) || 0
+        const peopleB = parseInt(b['so nguoi kham']) || 0
+        
+        // Priority: "Chưa khám xong" comes first
+        if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
+          return -1
+        }
+        if (statusA !== 'Chưa khám xong' && statusB === 'Chưa khám xong') {
+          return 1
+        }
+        
+        // Within same status group, sort by số người khám (descending)
+        return peopleB - peopleA
+      })
+      
       const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
       const filename = `lich_kham_${timestamp}.csv`
       
@@ -362,6 +400,25 @@ const DataTable = ({ globalFilters = {} }) => {
           return true
         })
       }
+      
+      // Custom sorting: "Chưa khám xong" first (by số người khám desc), then "Đã khám xong" (by số người khám desc)
+      filteredData = filteredData.sort((a, b) => {
+        const statusA = a['trang thai kham']
+        const statusB = b['trang thai kham']
+        const peopleA = parseInt(a['so nguoi kham']) || 0
+        const peopleB = parseInt(b['so nguoi kham']) || 0
+        
+        // Priority: "Chưa khám xong" comes first
+        if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
+          return -1
+        }
+        if (statusA !== 'Chưa khám xong' && statusB === 'Chưa khám xong') {
+          return 1
+        }
+        
+        // Within same status group, sort by số người khám (descending)
+        return peopleB - peopleA
+      })
       
       const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
       const filename = `lich_kham_${timestamp}.xlsx`
