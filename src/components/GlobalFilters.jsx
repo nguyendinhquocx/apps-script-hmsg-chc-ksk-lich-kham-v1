@@ -39,7 +39,7 @@ const GlobalFilters = ({
   return (
     <div className="w-full p-6 mb-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
-        {/* Month Filter - Moved to first position */}
+        {/* Month Filter - First position */}
         <div>
           <div className="flex items-center space-x-2">
             <button
@@ -67,7 +67,7 @@ const GlobalFilters = ({
           </div>
         </div>
 
-        {/* Date Range Filter */}
+        {/* Date Range Filter - Second position */}
         <div className="flex gap-2">
           <input
             type="date"

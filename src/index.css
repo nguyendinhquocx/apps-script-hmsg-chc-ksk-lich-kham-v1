@@ -198,6 +198,42 @@ html {
 }
 
 /* Month filter styles */
+
+/* Resizable table columns */
+.table th.resize-x {
+  resize: horizontal;
+  overflow: auto;
+  position: relative;
+}
+
+.table th.resize-x::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+}
+
+.table th.resize-x:hover::after {
+  background: #cbd5e1;
+}
+
+/* Company name cell styles */
+.company-name-cell {
+  max-width: 300px;
+  min-width: 150px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.company-name-cell .truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .month-filter {
   @apply flex items-center justify-center gap-2 bg-gray-50 rounded-lg px-3 py-2;
 }

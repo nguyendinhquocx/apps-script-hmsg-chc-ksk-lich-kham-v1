@@ -6,6 +6,7 @@ import LichKhamService from '../services/supabase'
 import StatsCards from './StatsCards'
 import LineChart from './LineChart'
 import { matchesSearch, isDateInMonth } from '../utils/vietnamese'
+import { getDisplayCompanyName, getTooltipCompanyName } from '../utils/companyName'
 
 const DataTable = ({ globalFilters = {} }) => {
   // State management
@@ -79,10 +80,10 @@ const DataTable = ({ globalFilters = {} }) => {
           )
         }
         
-        // Filter by Gold
-        if (showGold) {
+        // Filter by Gold - Hide Gold companies by default, show only when checkbox is checked
+        if (!showGold) {
           filteredData = filteredData.filter(item => 
-            item['gold'] === 'x' || item['gold'] === 'X'
+            !item['gold'] || (item['gold'] !== 'x' && item['gold'] !== 'X')
           )
         }
         
@@ -219,9 +220,9 @@ const DataTable = ({ globalFilters = {} }) => {
         )
       }
       
-      if (showGold) {
+      if (!showGold) {
         filteredData = filteredData.filter(item => 
-          item['gold'] === 'x' || item['gold'] === 'X'
+          !item['gold'] || (item['gold'] !== 'x' && item['gold'] !== 'X')
         )
       }
       
@@ -407,7 +408,7 @@ const DataTable = ({ globalFilters = {} }) => {
       <StatsCards data={data} />
       
       {/* Line Chart */}
-      <LineChart data={data} monthFilter={monthFilter} />
+      <LineChart data={data} monthFilter={monthFilter} dateFilter={dateFilter} />
       
       {/* Data Table */}
       <div className="card p-6">
@@ -465,8 +466,9 @@ const DataTable = ({ globalFilters = {} }) => {
             <thead className="table-header">
               <tr>
                 <th 
-                  className="table-head cursor-pointer hover:bg-gray-100"
+                  className="table-head cursor-pointer hover:bg-gray-100 resize-x"
                   onClick={() => handleSort('ten cong ty')}
+                  style={{ width: '250px', minWidth: '150px', maxWidth: '400px' }}
                 >
                   <div className="flex items-center">
                     Tên Công Ty
@@ -524,11 +526,14 @@ const DataTable = ({ globalFilters = {} }) => {
               ) : (
                 data.map((record, index) => (
                   <tr key={record['ID'] || record.id || index} className="table-row">
-                    <td className="table-cell">
-                      <div className="font-medium text-gray-900">
-                        {record['ten cong ty'] || '-'}
-                      </div>
-                    </td>
+                    <td className="table-cell company-name-cell">
+                       <div 
+                         className="font-medium text-gray-900 truncate" 
+                         title={getTooltipCompanyName(record['ten cong ty'])}
+                       >
+                         {getDisplayCompanyName(record['ten cong ty']) || '-'}
+                       </div>
+                     </td>
                     <td className="table-cell">
                       {formatDate(record['ngay bat dau kham'])}
                     </td>

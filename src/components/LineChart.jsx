@@ -3,22 +3,31 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, differenceInDays } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
-const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() } }) => {
-  // Process data to create chart data grouped by date for the selected month
+const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } }) => {
+  // Process data to create chart data grouped by date
   const chartData = useMemo(() => {
-    const { month, year } = monthFilter
-    const selectedDate = new Date(year, month - 1, 1)
-    const monthStart = startOfMonth(selectedDate)
-    const monthEnd = endOfMonth(selectedDate)
+    let chartStart, chartEnd
+    
+    // Use date filter if both dates are provided, otherwise use month filter
+    if (dateFilter.startDate && dateFilter.endDate) {
+      chartStart = parseISO(dateFilter.startDate)
+      chartEnd = parseISO(dateFilter.endDate)
+    } else {
+      const { month, year } = monthFilter
+      const selectedDate = new Date(year, month - 1, 1)
+      chartStart = startOfMonth(selectedDate)
+      chartEnd = endOfMonth(selectedDate)
+    }
+    
     const today = new Date()
     
-    // Create all days in the month, excluding Sundays (getDay() === 0)
-    const allDaysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd })
+    // Create all days in the range, excluding Sundays (getDay() === 0)
+    const allDaysInRange = eachDayOfInterval({ start: chartStart, end: chartEnd })
       .filter(date => getDay(date) !== 0) // Exclude Sundays
     const dateMap = new Map()
     
     // Initialize all days with 0 values
-    allDaysInMonth.forEach(date => {
+    allDaysInRange.forEach(date => {
       const dateKey = format(date, 'yyyy-MM-dd')
       dateMap.set(dateKey, {
         date: dateKey,
@@ -48,8 +57,8 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
             const peoplePerDay = peopleCount / examDays.length
             
             examDays.forEach(examDate => {
-              // Only include data from the selected month
-              if (examDate >= monthStart && examDate <= monthEnd) {
+              // Only include data from the selected range
+              if (examDate >= chartStart && examDate <= chartEnd) {
                 const dateKey = format(examDate, 'yyyy-MM-dd')
                 const existing = dateMap.get(dateKey)
                 if (existing) {
@@ -69,8 +78,8 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
         // Fallback to old logic if endDate is missing
         try {
           const itemDate = parseISO(startDate)
-          // Only include data from the selected month and exclude Sundays
-          if (itemDate >= monthStart && itemDate <= monthEnd && getDay(itemDate) !== 0) {
+          // Only include data from the selected range and exclude Sundays
+          if (itemDate >= chartStart && itemDate <= chartEnd && getDay(itemDate) !== 0) {
             const dateKey = format(itemDate, 'yyyy-MM-dd')
             const existing = dateMap.get(dateKey)
             if (existing) {
@@ -96,7 +105,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
         companies: Math.round(item.companies * 100) / 100, // Round to 2 decimal places
         displayDate: format(new Date(item.date), 'dd/MM', { locale: vi })
       }))
-  }, [data, monthFilter])
+  }, [data, monthFilter, dateFilter])
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
