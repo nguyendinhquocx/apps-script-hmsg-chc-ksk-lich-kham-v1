@@ -203,7 +203,7 @@ const DataTable = ({ globalFilters = {} }) => {
   const handleExportExcel = async () => {
     try {
       setLoading(true)
-      // Get all filtered data (same logic as CSV)
+      // Get all filtered data
       const result = await LichKhamService.getLichKhamData({
         page: 1,
         limit: 10000,
@@ -305,11 +305,47 @@ const DataTable = ({ globalFilters = {} }) => {
         return peopleB - peopleA
       })
       
+      // Prepare data for new table format
+      const exportDateRange = getDateRange()
+      const exportData = []
+      
+      // Add header rows
+      const dayOfWeekRow = ['', 'Người', ...exportDateRange.map(date => getDayOfWeek(date))]
+      const dateRow = ['Tên Công Ty', 'Người', ...exportDateRange.map(date => date.getDate())]
+      
+      // Add total row
+      const totalRow = ['TỔNG', filteredData.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0)]
+      exportDateRange.forEach(date => {
+        const dailyTotal = filteredData.reduce((total, record) => {
+          return total + getExamCountForDate(record, date)
+        }, 0)
+        totalRow.push(dailyTotal || '')
+      })
+      
+      exportData.push(dayOfWeekRow)
+      exportData.push(dateRow)
+      exportData.push(totalRow)
+      
+      // Add company data rows
+      filteredData.forEach(record => {
+        const row = [
+          getDisplayCompanyName(record['ten cong ty']) || '-',
+          parseInt(record['so nguoi kham'] || 0)
+        ]
+        
+        exportDateRange.forEach(date => {
+          const examCount = getExamCountForDate(record, date)
+          row.push(examCount || '')
+        })
+        
+        exportData.push(row)
+      })
+      
       const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
       const filename = `lich_kham_${timestamp}.xlsx`
       
-      // Convert to Excel format
-      LichKhamService.downloadExcel(filteredData, filename)
+      // Convert to Excel format with new structure
+      LichKhamService.downloadExcelFromArray(exportData, filename)
     } catch (err) {
       setError('Có lỗi xảy ra khi export Excel')
     } finally {
@@ -343,6 +379,68 @@ const DataTable = ({ globalFilters = {} }) => {
     }
     return 'status-badge status-pending'
   }
+
+  // Generate date range for table columns
+  const getDateRange = () => {
+    if (dateFilter.startDate && dateFilter.endDate) {
+      const start = new Date(dateFilter.startDate)
+      const end = new Date(dateFilter.endDate)
+      const dates = []
+      const current = new Date(start)
+      
+      while (current <= end) {
+        dates.push(new Date(current))
+        current.setDate(current.getDate() + 1)
+      }
+      return dates
+    } else {
+      // Default to current month
+      const year = monthFilter.year
+      const month = monthFilter.month
+      const daysInMonth = new Date(year, month, 0).getDate()
+      const dates = []
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        dates.push(new Date(year, month - 1, day))
+      }
+      return dates
+    }
+  }
+
+  // Get day of week in Vietnamese
+  const getDayOfWeek = (date) => {
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+    return days[date.getDay()]
+  }
+
+  // Check if a company has examination on a specific date
+  const getExamCountForDate = (record, date) => {
+    const startDate = new Date(record['ngay bat dau kham'])
+    const endDate = new Date(record['ngay ket thuc kham'] || record['ngay bat dau kham'])
+    const checkDate = new Date(date)
+    
+    // Reset time to compare only dates
+    startDate.setHours(0, 0, 0, 0)
+    endDate.setHours(0, 0, 0, 0)
+    checkDate.setHours(0, 0, 0, 0)
+    
+    if (checkDate >= startDate && checkDate <= endDate) {
+      return parseInt(record['so nguoi kham']) || 0
+    }
+    return 0
+  }
+
+  // Calculate total for each date
+  const calculateDailyTotals = (dates) => {
+    return dates.map(date => {
+      return data.reduce((total, record) => {
+        return total + getExamCountForDate(record, date)
+      }, 0)
+    })
+  }
+
+  const dateRange = getDateRange()
+  const dailyTotals = calculateDailyTotals(dateRange)
 
   return (
     <div className="space-y-8">
@@ -396,12 +494,26 @@ const DataTable = ({ globalFilters = {} }) => {
       {!loading && (
         <div className="overflow-x-auto">
           <table className="table">
-            <thead className="table-header">
+            <thead className="bg-white">
+              {/* Day of week row */}
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '250px', minWidth: '150px' }}></th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '120px' }}></th>
+                {dateRange.map((date, index) => (
+                  <th key={index} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '60px', minWidth: '60px' }}>
+                    <div className="text-xs font-medium text-gray-600">
+                      {getDayOfWeek(date)}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+              
+              {/* Date numbers row */}
               <tr>
                 <th 
-                  className="table-head cursor-pointer hover:bg-gray-100 resize-x"
+                  className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('ten cong ty')}
-                  style={{ width: '250px', minWidth: '150px', maxWidth: '400px' }}
+                  style={{ width: '250px', minWidth: '150px' }}
                 >
                   <div className="flex items-center">
                     Tên Công Ty
@@ -411,98 +523,81 @@ const DataTable = ({ globalFilters = {} }) => {
                   </div>
                 </th>
                 <th 
-                  className="table-head cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('ngay bat dau kham')}
-                >
-                  <div className="flex items-center">
-                    Ngày Bắt Đầu
-                    {sortBy === 'ngay bat dau kham' && (
-                      <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="table-head cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('ngay ket thuc kham')}
-                >
-                  <div className="flex items-center">
-                    Ngày Kết Thúc
-                    {sortBy === 'ngay ket thuc kham' && (
-                      <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="table-head cursor-pointer hover:bg-gray-100"
+                  className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('so nguoi kham')}
+                  style={{ width: '120px' }}
                 >
                   <div className="flex items-center">
-                    Số Người Khám
+                    Người
                     {sortBy === 'so nguoi kham' && (
                       <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                 </th>
-                <th className="table-head">Trạng Thái</th>
-                <th className="table-head">Nhân Viên</th>
-                <th className="table-head">Sáng/Chiều</th>
-                <th className="table-head">Gold</th>
+                {dateRange.map((date, index) => (
+                  <th key={index} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: '60px', minWidth: '60px' }}>
+                    <div className="text-sm font-semibold">
+                      {date.getDate()}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+              
+              {/* Total row */}
+              <tr className="bg-white border-b border-gray-200">
+                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-normal">TỔNG</td>
+                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-normal">
+                  {data.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0).toLocaleString('vi-VN')}
+                </td>
+                {dailyTotals.map((total, index) => (
+                  <td key={index} className="px-2 py-2 whitespace-nowrap text-center">
+                    {total > 0 && (
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-xs font-medium" style={{backgroundColor: '#b7ffd8', color: '#184e77'}}>
+                        {total.toLocaleString('vi-VN')}
+                      </div>
+                    )}
+                  </td>
+                ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white">
               {data.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="table-cell text-center py-12 text-gray-500">
+                  <td colSpan={dateRange.length + 2} className="px-4 py-12 text-center text-gray-500">
                     {error ? 'Có lỗi xảy ra khi tải dữ liệu' : 'Không có dữ liệu'}
                   </td>
                 </tr>
               ) : (
-                data.map((record, index) => (
-                  <tr key={record['ID'] || record.id || index} className="table-row">
-                    <td className="table-cell company-name-cell">
-                       <div 
-                         className="font-medium text-gray-900 truncate" 
-                         title={getTooltipCompanyName(record['ten cong ty'])}
-                       >
-                         {getDisplayCompanyName(record['ten cong ty']) || '-'}
-                       </div>
-                     </td>
-                    <td className="table-cell">
-                      {formatDate(record['ngay bat dau kham'])}
-                    </td>
-                    <td className="table-cell">
-                      {formatDate(record['ngay ket thuc kham'])}
-                    </td>
-                    <td className="table-cell">
-                      <span className="font-semibold text-primary-600">
-                        {record['so nguoi kham'] || 0}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <span className={getStatusBadgeClass(record['trang thai kham'])}>
-                        {record['trang thai kham'] || 'Không xác định'}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <span className="text-gray-700">
-                        {record['ten nhan vien'] || '-'}
-                      </span>
-                    </td>
-                    <td className="table-cell">
-                      <div className="text-sm">
-                        <div>S: {record['trung binh ngay sang'] || 0}</div>
-                        <div>C: {record['trung binh ngay chieu'] || 0}</div>
-                      </div>
-                    </td>
-                    <td className="table-cell">
-                      {(record['gold'] === 'x' || record['gold'] === 'X') && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          ⭐ Gold
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                data.map((record, index) => {
+                  const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+                  return (
+                    <tr key={record['ID'] || record.id || index} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 whitespace-nowrap text-sm font-normal" style={{color: isCompleted ? '#22c55e' : '#000000'}}>
+                         <div 
+                           className="truncate" 
+                           title={getTooltipCompanyName(record['ten cong ty'])}
+                         >
+                           {getDisplayCompanyName(record['ten cong ty']) || '-'}
+                         </div>
+                       </td>
+                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900 font-normal">
+                        {parseInt(record['so nguoi kham'] || 0).toLocaleString('vi-VN')}
+                      </td>
+                      {dateRange.map((date, dateIndex) => {
+                        const examCount = getExamCountForDate(record, date)
+                        return (
+                          <td key={dateIndex} className="px-2 py-2 whitespace-nowrap text-center">
+                            {examCount > 0 && (
+                              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-xs font-medium" style={{backgroundColor: '#b7ffd8', color: '#184e77'}}>
+                                {examCount.toLocaleString('vi-VN')}
+                              </div>
+                            )}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

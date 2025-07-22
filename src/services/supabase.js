@@ -442,6 +442,28 @@ export class LichKhamService {
     // Tạo file Excel và download
     XLSX.writeFile(workbook, filename)
   }
+
+  /**
+   * Download Excel file from array data (for calendar view)
+   * @param {Array} arrayData - Dữ liệu dạng mảng 2D đã được format
+   * @param {string} filename - Tên file
+   */
+  static downloadExcelFromArray(arrayData, filename = 'lich_kham_calendar.xlsx') {
+    if (!arrayData || arrayData.length === 0) {
+      console.error('Không thể tạo file Excel: Dữ liệu trống')
+      return
+    }
+    
+    // Tạo worksheet từ array data
+    const worksheet = XLSX.utils.aoa_to_sheet(arrayData)
+    
+    // Tạo workbook
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Lịch Khám')
+    
+    // Tạo file Excel và download
+    XLSX.writeFile(workbook, filename)
+  }
 }
 
 export default LichKhamService
