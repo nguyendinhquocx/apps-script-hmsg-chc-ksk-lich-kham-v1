@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Search, Filter, Download, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import { Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import LichKhamService from '../services/supabase'
+import StatsCards from './StatsCards'
+import LineChart from './LineChart'
 
-const DataTable = () => {
+const DataTable = ({ globalFilters = {} }) => {
   // State management
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,11 +15,8 @@ const DataTable = () => {
 
 
   
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [employeeFilter, setEmployeeFilter] = useState('')
-  const [showGold, setShowGold] = useState(false)
+  // Extract global filters
+  const { searchTerm = '', statusFilter = '', employeeFilter = '', showGold = false } = globalFilters
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -81,7 +80,7 @@ const DataTable = () => {
     }, 300) // Debounce search
     
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, statusFilter, employeeFilter, showGold, sortBy, sortOrder])
+  }, [globalFilters, sortBy, sortOrder])
 
   // Effect to fetch data when page changes
   useEffect(() => {
@@ -135,14 +134,7 @@ const DataTable = () => {
     }
   }
 
-  // Reset filters
-  const resetFilters = () => {
-    setSearchTerm('')
-    setStatusFilter('')
-    setEmployeeFilter('')
-    setShowGold(false)
-    setCurrentPage(1)
-  }
+
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -170,94 +162,36 @@ const DataTable = () => {
   }
 
   return (
-    <div className="card p-6">
-
-
-
-
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Danh sách lịch khám</h2>
-          <p className="text-gray-600">
-            Hiển thị {startRecord}-{endRecord} trong tổng số {totalCount} bản ghi
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
-          <button
-            onClick={resetFilters}
-            className="btn btn-outline px-4 py-2"
-            title="Xóa bộ lọc"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset
-          </button>
+    <div className="space-y-8">
+      {/* Stats Cards */}
+      <StatsCards data={data} />
+      
+      {/* Line Chart */}
+      <LineChart data={data} />
+      
+      {/* Data Table */}
+      <div className="card p-6">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Danh sách lịch khám</h2>
+            <p className="text-gray-600">
+              Hiển thị {startRecord}-{endRecord} trong tổng số {totalCount} bản ghi
+            </p>
+          </div>
           
-          <button
-            onClick={handleExport}
-            disabled={loading || data.length === 0}
-            className="btn btn-primary px-4 py-2"
+          <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
+            <button
+              onClick={handleExport}
+              disabled={loading || data.length === 0}
+              className="btn btn-primary px-4 py-2"
             title="Xuất file CSV"
           >
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </button>
+          </div>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm công ty..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input pl-10"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="select"
-          >
-            <option value="">Tất cả trạng thái</option>
-            {statusOptions.map(status => (
-              <option key={status} value={status}>{status}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Employee Filter */}
-        <div>
-          <input
-            type="text"
-            placeholder="Lọc theo nhân viên..."
-            value={employeeFilter}
-            onChange={(e) => setEmployeeFilter(e.target.value)}
-            className="input"
-          />
-        </div>
-
-        {/* Gold Filter */}
-        <div className="flex items-center">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showGold}
-              onChange={(e) => setShowGold(e.target.checked)}
-              className="mr-2 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Chỉ hiển thị Gold</span>
-          </label>
-        </div>
-      </div>
 
       {/* Error Message */}
       {error && (
@@ -465,6 +399,7 @@ const DataTable = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

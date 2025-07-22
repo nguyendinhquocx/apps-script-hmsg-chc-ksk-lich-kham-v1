@@ -2,13 +2,35 @@ import React, { useState } from 'react'
 import { BarChart3, Table, RefreshCw } from 'lucide-react'
 import DataTable from './DataTable'
 import Charts from './Charts'
+import GlobalFilters from './GlobalFilters'
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('table')
   const [refreshKey, setRefreshKey] = useState(0)
+  
+  // Global filter states
+  const [globalFilters, setGlobalFilters] = useState({
+    searchTerm: '',
+    statusFilter: '',
+    employeeFilter: '',
+    showGold: false
+  })
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1)
+  }
+  
+  const updateGlobalFilter = (key, value) => {
+    setGlobalFilters(prev => ({ ...prev, [key]: value }))
+  }
+  
+  const resetGlobalFilters = () => {
+    setGlobalFilters({
+      searchTerm: '',
+      statusFilter: '',
+      employeeFilter: '',
+      showGold: false
+    })
   }
 
   const tabs = [
@@ -29,7 +51,7 @@ const Dashboard = () => {
   const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,8 +113,21 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Global Filters */}
+        <GlobalFilters
+          searchTerm={globalFilters.searchTerm}
+          setSearchTerm={(value) => updateGlobalFilter('searchTerm', value)}
+          statusFilter={globalFilters.statusFilter}
+          setStatusFilter={(value) => updateGlobalFilter('statusFilter', value)}
+          employeeFilter={globalFilters.employeeFilter}
+          setEmployeeFilter={(value) => updateGlobalFilter('employeeFilter', value)}
+          showGold={globalFilters.showGold}
+          setShowGold={(value) => updateGlobalFilter('showGold', value)}
+          onReset={resetGlobalFilters}
+        />
+        
         <div className="fade-in">
-          {ActiveComponent && <ActiveComponent key={refreshKey} />}
+          {ActiveComponent && <ActiveComponent key={refreshKey} globalFilters={globalFilters} />}
         </div>
       </main>
 
