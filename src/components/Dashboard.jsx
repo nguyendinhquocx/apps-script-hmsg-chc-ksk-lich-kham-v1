@@ -15,7 +15,11 @@ const Dashboard = () => {
     statusFilter: '',
     employeeFilter: '',
     showGold: false,
-    monthFilter: getCurrentMonth()
+    monthFilter: getCurrentMonth(),
+    dateFilter: {
+      startDate: '',
+      endDate: ''
+    }
   })
 
   const handleRefresh = () => {
@@ -33,7 +37,11 @@ const Dashboard = () => {
       statusFilter: '',
       employeeFilter: '',
       showGold: false,
-      monthFilter: getCurrentMonth()
+      monthFilter: getCurrentMonth(),
+      dateFilter: {
+        startDate: '',
+        endDate: ''
+      }
     })
   }
 
@@ -57,8 +65,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-white">
+        <div className="w-full px-6">
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -88,8 +96,8 @@ const Dashboard = () => {
       </header>
 
       {/* Navigation Tabs */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-white">
+        <div className="w-full px-6">
           <div className="flex space-x-8">
             {tabs.map((tab) => {
               const Icon = tab.icon
@@ -116,7 +124,7 @@ const Dashboard = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-6 py-8">
         {/* Global Filters */}
         <GlobalFilters
           searchTerm={globalFilters.searchTerm}
@@ -124,7 +132,9 @@ const Dashboard = () => {
           employeeFilter={globalFilters.employeeFilter}
           showGold={globalFilters.showGold}
           monthFilter={globalFilters.monthFilter}
+          dateFilter={globalFilters.dateFilter}
           setMonthFilter={(monthFilter) => updateGlobalFilter('monthFilter', monthFilter)}
+          onDateFilterChange={(dateFilter) => updateGlobalFilter('dateFilter', dateFilter)}
           onSearchChange={(value) => updateGlobalFilter('searchTerm', value)}
           onStatusChange={(value) => updateGlobalFilter('statusFilter', value)}
           onEmployeeChange={(value) => updateGlobalFilter('employeeFilter', value)}
@@ -138,8 +148,8 @@ const Dashboard = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <footer className="bg-white mt-12">
+        <div className="w-full px-6 py-6">
           <div className="flex justify-between items-center">
             <div className="text-sm text-gray-500">
               © 2024 Dashboard Lịch Khám

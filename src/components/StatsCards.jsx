@@ -10,8 +10,22 @@ const StatsCards = ({ data = [] }) => {
   }).length
   
   const inProgressCompanies = data.filter(item => {
-    const status = (item['trang thai kham'] || '').toLowerCase().trim()
-    return status.includes('đang khám') || status.includes('dang kham')
+    const startDate = item['ngay bat dau kham']
+    const endDate = item['ngay ket thuc kham']
+    
+    if (!startDate || !endDate) return false
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const start = new Date(startDate)
+    start.setHours(0, 0, 0, 0)
+    
+    const end = new Date(endDate)
+    end.setHours(23, 59, 59, 999)
+    
+    // Công ty đang khám nếu ngày hôm nay nằm trong khoảng từ ngày bắt đầu đến ngày kết thúc
+    return today >= start && today <= end
   }).length
   
   // Calculate average people per day

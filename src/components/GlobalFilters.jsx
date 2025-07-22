@@ -1,18 +1,20 @@
 import React from 'react'
-import { Search, Filter, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getCurrentMonth, getMonthName } from '../utils/vietnamese'
 
 const GlobalFilters = ({ 
   searchTerm, 
-  setSearchTerm,
+  onSearchChange,
   statusFilter, 
-  setStatusFilter,
+  onStatusChange,
   employeeFilter, 
-  setEmployeeFilter,
+  onEmployeeChange,
   showGold, 
-  setShowGold,
+  onGoldChange,
   monthFilter,
   setMonthFilter,
+  dateFilter,
+  onDateFilterChange,
   onReset
 }) => {
   const statusOptions = [
@@ -35,52 +37,9 @@ const GlobalFilters = ({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-2">
-          <Filter className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Bộ lọc dữ liệu</h3>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-        {/* Search */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Tìm kiếm công ty..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input pl-10"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="select"
-          >
-            <option value="">Tất cả trạng thái</option>
-            {statusOptions.map(status => (
-              <option key={status} value={status}>{status}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Employee Filter */}
-        <div>
-          <input
-            type="text"
-            placeholder="Lọc theo nhân viên..."
-            value={employeeFilter}
-            onChange={(e) => setEmployeeFilter(e.target.value)}
-            className="input"
-          />
-        </div>
-        
-        {/* Month Filter */}
+    <div className="w-full p-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
+        {/* Month Filter - Moved to first position */}
         <div>
           <div className="flex items-center space-x-2">
             <button
@@ -108,29 +67,79 @@ const GlobalFilters = ({
           </div>
         </div>
 
-        {/* Gold Filter */}
-        <div className="flex items-center">
-          <label className="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showGold}
-              onChange={(e) => setShowGold(e.target.checked)}
-              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm font-medium text-gray-700">Gold</span>
-          </label>
+        {/* Date Range Filter */}
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={dateFilter.startDate}
+            onChange={(e) => onDateFilterChange({ ...dateFilter, startDate: e.target.value })}
+            className="input text-xs"
+            title="Từ ngày"
+          />
+          <input
+            type="date"
+            value={dateFilter.endDate}
+            onChange={(e) => onDateFilterChange({ ...dateFilter, endDate: e.target.value })}
+            className="input text-xs"
+            title="Đến ngày"
+          />
         </div>
-        
-        {/* Reset Button */}
+
+        {/* Search */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Tìm kiếm công ty..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="input"
+          />
+        </div>
+
+        {/* Status Filter */}
         <div>
+          <select
+            value={statusFilter}
+            onChange={(e) => onStatusChange(e.target.value)}
+            className="select"
+          >
+            <option value="">Tất cả trạng thái</option>
+            {statusOptions.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Employee Filter */}
+        <div>
+          <input
+            type="text"
+            placeholder="Lọc theo nhân viên..."
+            value={employeeFilter}
+            onChange={(e) => onEmployeeChange(e.target.value)}
+            className="input"
+          />
+        </div>
+
+        {/* Reset Button and Gold Filter */}
+        <div className="flex gap-2 items-center">
           <button
             onClick={onReset}
-            className="btn btn-outline px-4 py-2 text-sm w-full"
+            className="btn btn-outline px-4 py-2 text-sm"
             title="Xóa tất cả bộ lọc"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset
           </button>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showGold}
+              onChange={(e) => onGoldChange(e.target.checked)}
+              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Gold</span>
+          </label>
         </div>
       </div>
     </div>

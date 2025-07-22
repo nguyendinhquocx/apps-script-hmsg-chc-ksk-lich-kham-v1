@@ -17,7 +17,7 @@ const DataTable = ({ globalFilters = {} }) => {
 
   
   // Extract global filters
-  const { searchTerm = '', statusFilter = '', employeeFilter = '', showGold = false, monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() } } = globalFilters
+  const { searchTerm = '', statusFilter = '', employeeFilter = '', showGold = false, monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } } = globalFilters
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -93,6 +93,36 @@ const DataTable = ({ globalFilters = {} }) => {
             const endDate = item['ngay ket thuc kham']
             return isDateInMonth(startDate, monthFilter.month, monthFilter.year) ||
                    isDateInMonth(endDate, monthFilter.month, monthFilter.year)
+          })
+        }
+        
+        // Filter by date range
+        if (dateFilter.startDate || dateFilter.endDate) {
+          filteredData = filteredData.filter(item => {
+            const startDate = item['ngay bat dau kham']
+            const endDate = item['ngay ket thuc kham']
+            
+            if (dateFilter.startDate && dateFilter.endDate) {
+              // Both dates specified - check if examination period overlaps with filter range
+              const filterStart = new Date(dateFilter.startDate)
+              const filterEnd = new Date(dateFilter.endDate)
+              const examStart = new Date(startDate)
+              const examEnd = new Date(endDate || startDate)
+              
+              return (examStart <= filterEnd && examEnd >= filterStart)
+            } else if (dateFilter.startDate) {
+              // Only start date specified
+              const filterStart = new Date(dateFilter.startDate)
+              const examEnd = new Date(endDate || startDate)
+              return examEnd >= filterStart
+            } else if (dateFilter.endDate) {
+              // Only end date specified
+              const filterEnd = new Date(dateFilter.endDate)
+              const examStart = new Date(startDate)
+              return examStart <= filterEnd
+            }
+            
+            return true
           })
         }
         
@@ -204,6 +234,36 @@ const DataTable = ({ globalFilters = {} }) => {
         })
       }
       
+      // Filter by date range
+      if (dateFilter.startDate || dateFilter.endDate) {
+        filteredData = filteredData.filter(item => {
+          const startDate = item['ngay bat dau kham']
+          const endDate = item['ngay ket thuc kham']
+          
+          if (dateFilter.startDate && dateFilter.endDate) {
+            // Both dates specified - check if examination period overlaps with filter range
+            const filterStart = new Date(dateFilter.startDate)
+            const filterEnd = new Date(dateFilter.endDate)
+            const examStart = new Date(startDate)
+            const examEnd = new Date(endDate || startDate)
+            
+            return (examStart <= filterEnd && examEnd >= filterStart)
+          } else if (dateFilter.startDate) {
+            // Only start date specified
+            const filterStart = new Date(dateFilter.startDate)
+            const examEnd = new Date(endDate || startDate)
+            return examEnd >= filterStart
+          } else if (dateFilter.endDate) {
+            // Only end date specified
+            const filterEnd = new Date(dateFilter.endDate)
+            const examStart = new Date(startDate)
+            return examStart <= filterEnd
+          }
+          
+          return true
+        })
+      }
+      
       const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
       const filename = `lich_kham_${timestamp}.csv`
       
@@ -272,6 +332,36 @@ const DataTable = ({ globalFilters = {} }) => {
         })
       }
       
+      // Filter by date range
+      if (dateFilter.startDate || dateFilter.endDate) {
+        filteredData = filteredData.filter(item => {
+          const startDate = item['ngay bat dau kham']
+          const endDate = item['ngay ket thuc kham']
+          
+          if (dateFilter.startDate && dateFilter.endDate) {
+            // Both dates specified - check if examination period overlaps with filter range
+            const filterStart = new Date(dateFilter.startDate)
+            const filterEnd = new Date(dateFilter.endDate)
+            const examStart = new Date(startDate)
+            const examEnd = new Date(endDate || startDate)
+            
+            return (examStart <= filterEnd && examEnd >= filterStart)
+          } else if (dateFilter.startDate) {
+            // Only start date specified
+            const filterStart = new Date(dateFilter.startDate)
+            const examEnd = new Date(endDate || startDate)
+            return examEnd >= filterStart
+          } else if (dateFilter.endDate) {
+            // Only end date specified
+            const filterEnd = new Date(dateFilter.endDate)
+            const examStart = new Date(startDate)
+            return examStart <= filterEnd
+          }
+          
+          return true
+        })
+      }
+      
       const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
       const filename = `lich_kham_${timestamp}.xlsx`
       
@@ -317,7 +407,7 @@ const DataTable = ({ globalFilters = {} }) => {
       <StatsCards data={data} />
       
       {/* Line Chart */}
-      <LineChart data={data} />
+      <LineChart data={data} monthFilter={monthFilter} />
       
       {/* Data Table */}
       <div className="card p-6">
