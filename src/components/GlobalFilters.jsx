@@ -46,7 +46,7 @@ const GlobalFilters = ({
             <div className="flex items-center space-x-2">
               <button
                 onClick={handlePreviousMonth}
-                className="btn btn-outline p-2"
+                className="p-2 bg-white text-gray-600 hover:bg-gray-50 transition-colors duration-200"
                 title="Tháng trước"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -61,7 +61,7 @@ const GlobalFilters = ({
               </div>
               <button
                 onClick={handleNextMonth}
-                className="btn btn-outline p-2"
+                className="p-2 bg-white text-gray-600 hover:bg-gray-50 transition-colors duration-200"
                 title="Tháng sau"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -75,14 +75,14 @@ const GlobalFilters = ({
               type="date"
               value={dateFilter.startDate}
               onChange={(e) => onDateFilterChange({ ...dateFilter, startDate: e.target.value })}
-              className="input text-xs"
+              className="px-3 py-2 bg-white text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Từ ngày"
             />
             <input
               type="date"
               value={dateFilter.endDate}
               onChange={(e) => onDateFilterChange({ ...dateFilter, endDate: e.target.value })}
-              className="input text-xs"
+              className="px-3 py-2 bg-white text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Đến ngày"
             />
           </div>
@@ -97,7 +97,7 @@ const GlobalFilters = ({
               placeholder="Tìm kiếm công ty..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="input"
+              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -106,7 +106,7 @@ const GlobalFilters = ({
             <select
               value={statusFilter}
               onChange={(e) => onStatusChange(e.target.value)}
-              className="select"
+              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Tất cả trạng thái</option>
               {statusOptions.map(status => (
@@ -122,7 +122,7 @@ const GlobalFilters = ({
               placeholder="Lọc theo nhân viên..."
               value={employeeFilter}
               onChange={(e) => onEmployeeChange(e.target.value)}
-              className="input"
+              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -130,7 +130,7 @@ const GlobalFilters = ({
           <div className="flex gap-2 items-center">
             <button
               onClick={onReset}
-              className="btn btn-outline px-4 py-2 text-sm"
+              className="px-4 py-2 bg-white text-gray-600 text-sm hover:bg-gray-50 transition-colors duration-200"
               title="Xóa tất cả bộ lọc"
             >
               <RotateCcw className="w-4 h-4 mr-2" />

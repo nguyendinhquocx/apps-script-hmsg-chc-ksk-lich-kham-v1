@@ -144,7 +144,6 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis 
               dataKey="date" 
               tick={{ fontSize: 12 }}
@@ -163,7 +162,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
             <Line 
               type="monotone" 
               dataKey="people" 
-              stroke="#3b82f6" 
+              stroke="#000000" 
               strokeWidth={2}
               dot={(props) => {
                 const { cx, cy, payload } = props
@@ -173,13 +172,13 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                     cx={cx}
                     cy={cy}
                     r={isToday ? 6 : 4}
-                    fill={isToday ? '#10b981' : '#3b82f6'}
-                    stroke={isToday ? '#10b981' : '#3b82f6'}
+                    fill={isToday ? '#10b981' : '#000000'}
+                    stroke={isToday ? '#10b981' : '#000000'}
                     strokeWidth={2}
                   />
                 )
               }}
-              activeDot={{ r: 8, stroke: '#3b82f6', strokeWidth: 2, fill: '#ffffff' }}
+              activeDot={{ r: 8, stroke: '#000000', strokeWidth: 2, fill: '#ffffff' }}
             />
           </LineChart>
         </ResponsiveContainer>

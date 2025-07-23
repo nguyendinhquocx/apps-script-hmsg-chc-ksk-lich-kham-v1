@@ -549,7 +549,7 @@ const DataTable = ({ globalFilters = {} }) => {
                 {dailyTotals.map((total, index) => (
                   <td key={index} className="px-1 py-1.5 text-center">
                     {total > 0 && (
-                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-[10px] font-light border-2 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#184e77'}}>
+                      <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 border border-green-600 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
                         {total.toLocaleString('vi-VN')}
                       </div>
                     )}
@@ -585,7 +585,7 @@ const DataTable = ({ globalFilters = {} }) => {
                         return (
                           <td key={dateIndex} className="px-1 py-1.5 text-center">
                             {examCount > 0 && (
-                              <div className="inline-flex items-center justify-center w-9 h-9 rounded-full text-[10px] font-light border-2 transition-all duration-200 hover:scale-110 hover:shadow-lg cursor-pointer" style={{backgroundColor: '#c7f9cc', borderColor: '#06d6a0', color: '#184e77'}}>
+                              <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 border border-green-600 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
                                 {examCount.toLocaleString('vi-VN')}
                               </div>
                             )}
@@ -598,84 +598,6 @@ const DataTable = ({ globalFilters = {} }) => {
               )}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {!loading && totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-end mt-6 gap-4">
-          {/* Page Size Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700">Hiển thị:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
-                setCurrentPage(1)
-              }}
-              className="select w-20"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-            <span className="text-sm text-gray-700">bản ghi</span>
-          </div>
-
-          {/* Pagination Controls */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="btn btn-outline p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            
-            <div className="flex items-center gap-1">
-              {/* Page numbers */}
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum
-                if (totalPages <= 5) {
-                  pageNum = i + 1
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i
-                } else {
-                  pageNum = currentPage - 2 + i
-                }
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 text-sm rounded ${
-                      currentPage === pageNum
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              })}
-            </div>
-            
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="btn btn-outline p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Page Info */}
-          <div className="text-sm text-gray-700">
-            Trang {currentPage} / {totalPages}
-          </div>
         </div>
       )}
       </div>

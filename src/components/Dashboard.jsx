@@ -67,15 +67,15 @@ const Dashboard = () => {
         <div className="w-full px-6">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                HMSG | Khám sức khoẻ
+              <h1 className="text-2xl font-bold text-gray-900">
+                HMSG | Khám sức khoẻ doanh nghiệp
               </h1>
             </div>
             
             <div className="flex items-center space-x-4">
               <button
                 onClick={handleRefresh}
-                className="btn btn-secondary flex items-center space-x-2 px-4 py-2"
+                className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-600 hover:bg-gray-50 transition-colors duration-200"
                 title="Làm mới dữ liệu"
               >
                 <RefreshCw className="w-4 h-4" />
