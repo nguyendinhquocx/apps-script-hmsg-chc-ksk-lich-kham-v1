@@ -496,13 +496,16 @@ const DataTable = ({ globalFilters = {} }) => {
               <tr className="bg-white">
                 <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-0 bg-white z-20" style={{ width: '200px', minWidth: '200px' }}></th>
                 <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-[200px] bg-white z-10" style={{ width: '80px' }}></th>
-                {dateRange.map((date, index) => (
-                  <th key={index} className="px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider" style={{ width: '50px', minWidth: '50px' }}>
-                    <div className="text-xs font-medium text-gray-600">
-                      {getDayOfWeek(date)}
-                    </div>
-                  </th>
-                ))}
+                {dateRange.map((date, index) => {
+                  const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                  return (
+                    <th key={index} className={`px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider ${isToday ? 'bg-[#f8f9fa]' : ''}`} style={{ width: '50px', minWidth: '50px' }}>
+                      <div className="text-xs font-medium text-gray-600">
+                        {getDayOfWeek(date)}
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
               
               {/* Date numbers row */}
@@ -531,13 +534,16 @@ const DataTable = ({ globalFilters = {} }) => {
                     )}
                   </div>
                 </th>
-                {dateRange.map((date, index) => (
-                  <th key={index} className="px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider" style={{ width: '50px', minWidth: '50px' }}>
-                    <div className="text-sm font-semibold">
-                      {date.getDate()}
-                    </div>
-                  </th>
-                ))}
+                {dateRange.map((date, index) => {
+                  const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                  return (
+                    <th key={index} className={`px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider ${isToday ? 'bg-[#f8f9fa]' : ''}`} style={{ width: '50px', minWidth: '50px' }}>
+                      <div className="text-sm font-semibold">
+                        {date.getDate()}
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
               
               {/* Total row */}
@@ -546,15 +552,18 @@ const DataTable = ({ globalFilters = {} }) => {
                 <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-[200px] bg-white z-10">
                   {data.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0).toLocaleString('vi-VN')}
                 </td>
-                {dailyTotals.map((total, index) => (
-                  <td key={index} className="px-1 py-1.5 text-center">
-                    {total > 0 && (
-                      <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
-                        {total.toLocaleString('vi-VN')}
-                      </div>
-                    )}
-                  </td>
-                ))}
+                {dailyTotals.map((total, index) => {
+                  const isToday = dateRange[index] && dateRange[index].toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                  return (
+                    <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
+                      {total > 0 && (
+                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
+                          {total.toLocaleString('vi-VN')}
+                        </div>
+                      )}
+                    </td>
+                  )
+                })}
               </tr>
             </thead>
             <tbody className="bg-white">
@@ -582,8 +591,9 @@ const DataTable = ({ globalFilters = {} }) => {
                       </td>
                       {dateRange.map((date, dateIndex) => {
                         const examCount = getExamCountForDate(record, date)
+                        const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
                         return (
-                          <td key={dateIndex} className="px-1 py-1.5 text-center">
+                          <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
                             {examCount > 0 && (
                               <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
                                 {examCount.toLocaleString('vi-VN')}
