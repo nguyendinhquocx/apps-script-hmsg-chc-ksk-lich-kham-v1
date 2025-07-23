@@ -419,7 +419,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
           <h2 className="text-lg text-black">Bảng Cận Lâm Sàng</h2>
           <button
             onClick={exportToExcel}
-            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-200"
+            className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 text-black text-sm rounded-lg hover:bg-gray-50 transition-colors duration-200"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Xuất Excel</span>
@@ -438,7 +438,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                 <th rowSpan={2} className="px-3 py-2 text-left text-xs text-black">
                   Max
                 </th>
-                <th colSpan={examCategories.length} className="px-3 py-2 text-center text-xs text-black border-r border-gray-300">
+                <th colSpan={examCategories.length} className="px-3 py-2 text-center text-xs text-black">
                   Sáng
                 </th>
                 <th colSpan={examCategories.length} className="px-3 py-2 text-center text-xs text-black">
@@ -493,9 +493,8 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     {/* Các cột sáng */}
                     {examCategories.map((category, categoryIndex) => {
                       const count = getExamCount(dayInfo.date, categoryIndex, 'morning')
-                      const isLastMorning = categoryIndex === examCategories.length - 1
                       return (
-                        <td key={`morning-${categoryIndex}`} className={`px-2 py-2 whitespace-nowrap text-center ${isLastMorning ? 'border-r border-gray-300' : ''}`}>
+                        <td key={`morning-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                           {count > 0 && (
                             <button className={`inline-flex items-center justify-center w-8 h-8 ${count > 100 ? 'bg-red-100 border-red-600 text-red-800' : 'bg-green-100 border-green-600 text-green-800'} text-xs font-medium rounded-full transition-transform duration-200 cursor-pointer hover:scale-110`}>
                               {count}

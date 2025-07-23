@@ -48,14 +48,12 @@ const Dashboard = () => {
   const tabs = [
     {
       id: 'table',
-      name: 'Bảng lịch khám',
-      icon: Table,
+      name: 'Lịch khám',
       component: DataTable
     },
     {
       id: 'charts',
-      name: 'Bảng cận lâm sàng',
-      icon: BarChart3,
+      name: 'Cận lâm sàng',
       component: Charts
     }
   ]
@@ -70,7 +68,7 @@ const Dashboard = () => {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Dashboard Lịch Khám
+                HMSG | Khám sức khoẻ
               </h1>
             </div>
             
@@ -83,10 +81,6 @@ const Dashboard = () => {
                 <RefreshCw className="w-4 h-4" />
                 <span>Làm mới</span>
               </button>
-              
-              <div className="text-sm text-gray-500">
-                Cập nhật: {new Date().toLocaleString('vi-VN')}
-              </div>
             </div>
           </div>
         </div>
@@ -97,7 +91,6 @@ const Dashboard = () => {
         <div className="w-full px-6">
           <div className="flex space-x-8">
             {tabs.map((tab) => {
-              const Icon = tab.icon
               return (
                 <button
                   key={tab.id}
@@ -111,7 +104,6 @@ const Dashboard = () => {
                     }
                   `}
                 >
-                  <Icon className="w-5 h-5" />
                   <span>{tab.name}</span>
                 </button>
               )
@@ -154,20 +146,6 @@ const Dashboard = () => {
           )}
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-white mt-12">
-        <div className="w-full px-6 py-6">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-500">
-              © 2024 Dashboard Lịch Khám
-            </div>
-            <div className="footer-right">
-              Phiên bản: 1.0.0
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }
