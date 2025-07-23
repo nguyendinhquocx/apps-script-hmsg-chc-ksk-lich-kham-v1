@@ -11,15 +11,15 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
   const examCategories = [
     { name: 'Siêu âm bụng', morning: 'sieu am bung sang', afternoon: 'sieu am bung chieu' },
     { name: 'Siêu âm vú', morning: 'sieu am vu sang', afternoon: 'sieu am vu chieu' },
-    { name: 'Khám phụ khoa', morning: 'kham phu khoa sang', afternoon: 'kham phu khoa chieu' },
+    { name: 'Siêu âm giáp', morning: 'sieu am giap sang', afternoon: 'sieu am giap chieu' },
     { name: 'Siêu âm tim', morning: 'sieu am tim sang', afternoon: 'sieu am tim chieu' },
-    { name: 'Nội soi', morning: 'noi soi sang', afternoon: 'noi soi chieu' },
+    { name: 'SA động mạch cảnh', morning: 'sieu am dong mach canh sang', afternoon: 'sieu am dong mach canh chieu' },
+    { name: 'SA đàn hồi mô gan', morning: 'sieu am dan hoi mo gan sang', afternoon: 'sieu am dan hoi mo gan chieu' },
     { name: 'X-quang', morning: 'x quang sang', afternoon: 'x quang chieu' },
-    { name: 'CT Scanner', morning: 'ct scanner sang', afternoon: 'ct scanner chieu' },
-    { name: 'MRI', morning: 'mri sang', afternoon: 'mri chieu' },
-    { name: 'Xét nghiệm máu', morning: 'xet nghiem mau sang', afternoon: 'xet nghiem mau chieu' },
-    { name: 'Xét nghiệm nước tiểu', morning: 'xet nghiem nuoc tieu sang', afternoon: 'xet nghiem nuoc tieu chieu' },
-    { name: 'Điện tim', morning: 'dien tim sang', afternoon: 'dien tim chieu' }
+    { name: 'Điện tâm đồ', morning: 'dien tam do sang', afternoon: 'dien tam do chieu' },
+    { name: 'Khám phụ khoa', morning: 'kham phu khoa sang', afternoon: 'kham phu khoa chieu' },
+    { name: 'SA đầu dò âm đạo', morning: 'sieu am dau do am dao sang', afternoon: 'sieu am dau do am dao chieu' },
+    { name: 'Đo loãng xương', morning: 'do loang xuong sang', afternoon: 'do loang xuong chieu' }
   ]
 
   // Lấy dữ liệu
@@ -88,8 +88,29 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     fetchData()
   }, [])
 
-  // Tạo danh sách ngày trong tháng
-  const getDaysInMonth = () => {
+  // Tạo danh sách ngày dựa trên bộ lọc
+  const getDaysToShow = () => {
+    // Nếu có dateFilter với startDate và endDate, hiển thị theo khoảng ngày đó
+    if (globalFilters.dateFilter && globalFilters.dateFilter.startDate && globalFilters.dateFilter.endDate) {
+      const startDate = new Date(globalFilters.dateFilter.startDate)
+      const endDate = new Date(globalFilters.dateFilter.endDate)
+      const days = []
+      
+      for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+        // Chỉ thêm các ngày không phải chủ nhật
+        if (date.getDay() !== 0) {
+          days.push({
+            day: date.getDate(),
+            date: date.toISOString().split('T')[0],
+            dayOfWeek: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][date.getDay()]
+          })
+        }
+      }
+      
+      return days
+    }
+    
+    // Nếu không có dateFilter, hiển thị theo tháng
     const { monthFilter } = globalFilters
     const { month, year } = monthFilter || { month: new Date().getMonth() + 1, year: new Date().getFullYear() }
     const daysInMonth = new Date(year, month, 0).getDate()
@@ -97,11 +118,14 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month - 1, day)
-      days.push({
-        day,
-        date: date.toISOString().split('T')[0],
-        dayOfWeek: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][date.getDay()]
-      })
+      // Chỉ thêm các ngày không phải chủ nhật
+      if (date.getDay() !== 0) {
+        days.push({
+          day,
+          date: date.toISOString().split('T')[0],
+          dayOfWeek: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][date.getDay()]
+        })
+      }
     }
     
     return days
@@ -140,17 +164,21 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
         if (item['ten nhan vien'] !== globalFilters.employeeFilter) return false
       }
       
-      // Lọc theo ngày
-      if (globalFilters.dateFilter) {
-        const startDate = new Date(item['ngay bat dau kham']).toISOString().split('T')[0]
-        const endDate = new Date(item['ngay ket thuc kham']).toISOString().split('T')[0]
-        if (globalFilters.dateFilter < startDate || globalFilters.dateFilter > endDate) {
+      // Lọc theo khoảng ngày
+      if (globalFilters.dateFilter && globalFilters.dateFilter.startDate && globalFilters.dateFilter.endDate) {
+        const itemStartDate = new Date(item['ngay bat dau kham'])
+        const itemEndDate = new Date(item['ngay ket thuc kham'])
+        const filterStartDate = new Date(globalFilters.dateFilter.startDate)
+        const filterEndDate = new Date(globalFilters.dateFilter.endDate)
+        
+        // Kiểm tra xem khoảng thời gian khám có giao với khoảng lọc không
+        if (itemEndDate < filterStartDate || itemStartDate > filterEndDate) {
           return false
         }
       }
       
-      // Lọc theo tháng
-      if (globalFilters.monthFilter) {
+      // Lọc theo tháng (chỉ khi không có dateFilter)
+      if (globalFilters.monthFilter && !globalFilters.dateFilter?.startDate && !globalFilters.dateFilter?.endDate) {
         const startDate = new Date(item['ngay bat dau kham'])
         const endDate = new Date(item['ngay ket thuc kham'])
         const { month, year } = globalFilters.monthFilter
@@ -172,26 +200,21 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     const category = examCategories[categoryIndex]
     const columnName = period === 'morning' ? category.morning : category.afternoon
     
-    // Debug: Log để kiểm tra dữ liệu
-    if (categoryIndex === 0 && period === 'morning' && date.endsWith('01')) {
-      console.log('Debug getExamCount:', {
-        date,
-        columnName,
-        filteredDataLength: filteredData.length,
-        sampleData: filteredData.slice(0, 2)
-      })
-    }
-    
-    // Lọc dữ liệu cho ngày cụ thể
+    // Lọc dữ liệu cho ngày cụ thể (tính cho các ngày trong tuần trừ chủ nhật)
     const dayData = filteredData.filter(item => {
-      const startDate = new Date(item['ngay bat dau kham']).toISOString().split('T')[0]
-      const endDate = new Date(item['ngay ket thuc kham']).toISOString().split('T')[0]
+      const startDate = new Date(item['ngay bat dau kham'])
+      const endDate = new Date(item['ngay ket thuc kham'])
+      const currentDate = new Date(date)
       
       // Kiểm tra xem ngày có nằm trong khoảng thời gian khám không
-      return date >= startDate && date <= endDate
+      // và không phải chủ nhật (0 = chủ nhật)
+      const isInRange = currentDate >= startDate && currentDate <= endDate
+      const isNotSunday = currentDate.getDay() !== 0
+      
+      return isInRange && isNotSunday
     })
     
-    // Tính tổng số lượng từ cột tương ứng
+    // Tính tổng số lượng từ cột tương ứng cho ngày đó
     let totalCount = 0
     dayData.forEach(item => {
       const count = parseInt(item[columnName]) || 0
@@ -201,14 +224,21 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     return totalCount
   }
 
-  // Tính số max cho mỗi ngày từ dữ liệu thực
+  // Tính số max cho mỗi ngày từ dữ liệu thực (trừ chủ nhật)
   const getMaxForDay = (date) => {
+    const currentDate = new Date(date)
+    
+    // Không tính chủ nhật
+    if (currentDate.getDay() === 0) {
+      return 0
+    }
+    
     const dayData = filteredData.filter(item => {
-      const startDate = new Date(item['ngay bat dau kham']).toISOString().split('T')[0]
-      const endDate = new Date(item['ngay ket thuc kham']).toISOString().split('T')[0]
+      const startDate = new Date(item['ngay bat dau kham'])
+      const endDate = new Date(item['ngay ket thuc kham'])
       
       // Kiểm tra xem ngày có nằm trong khoảng thời gian khám không
-      return date >= startDate && date <= endDate
+      return currentDate >= startDate && currentDate <= endDate
     })
     
     // Tính tổng số người khám trong ngày
@@ -217,7 +247,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     }, 0)
   }
 
-  const days = getDaysInMonth().filter(day => day.dayOfWeek !== 'CN') // Loại bỏ chủ nhật
+  const days = getDaysToShow() // Đã loại bỏ chủ nhật trong function
 
   if (loading) {
     return (
