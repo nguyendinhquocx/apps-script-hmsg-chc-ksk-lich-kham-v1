@@ -139,7 +139,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+    <div className="bg-white p-6 mb-8">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Biểu đồ số người khám theo ngày</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
@@ -172,8 +172,8 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                     cx={cx}
                     cy={cy}
                     r={isToday ? 6 : 4}
-                    fill={isToday ? '#10b981' : '#000000'}
-                    stroke={isToday ? '#10b981' : '#000000'}
+                    fill={isToday ? '#3b82f6' : '#000000'}
+                    stroke={isToday ? '#3b82f6' : '#000000'}
                     strokeWidth={2}
                   />
                 )

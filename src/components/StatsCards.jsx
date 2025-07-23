@@ -63,8 +63,8 @@ const StatsCards = ({ data = [] }) => {
           <div key={index} className="bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                <p className="text-3xl font-bold text-gray-900">{stat.value.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value.toLocaleString()}</p>
+                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
               </div>
             </div>
           </div>

@@ -67,8 +67,8 @@ const Dashboard = () => {
         <div className="w-full px-6">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                HMSG | Khám sức khoẻ doanh nghiệp
+              <h1 className="text-2xl text-gray-900">
+                <span className="font-bold">HMSG</span> | Khám sức khoẻ doanh nghiệp
               </h1>
             </div>
             

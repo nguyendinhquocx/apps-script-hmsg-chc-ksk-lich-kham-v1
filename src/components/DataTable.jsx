@@ -451,11 +451,11 @@ const DataTable = ({ globalFilters = {} }) => {
       <LineChart data={data} monthFilter={monthFilter} dateFilter={dateFilter} />
       
       {/* Data Table */}
-      <div className="card p-6">
+      <div className="p-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Danh sách lịch khám</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Danh sách lịch khám</h2>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
@@ -585,7 +585,7 @@ const DataTable = ({ globalFilters = {} }) => {
                         return (
                           <td key={dateIndex} className="px-1 py-1.5 text-center">
                             {examCount > 0 && (
-                              <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 border border-green-600 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
+                              <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
                                 {examCount.toLocaleString('vi-VN')}
                               </div>
                             )}

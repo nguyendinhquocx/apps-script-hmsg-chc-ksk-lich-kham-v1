@@ -1,5 +1,5 @@
 import React from 'react'
-import { RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getCurrentMonth, getMonthName } from '../utils/vietnamese'
 
 const GlobalFilters = ({ 
@@ -101,6 +101,17 @@ const GlobalFilters = ({
             />
           </div>
 
+          {/* Employee Filter - First */}
+          <div>
+            <input
+              type="text"
+              placeholder="Lọc theo nhân viên..."
+              value={employeeFilter}
+              onChange={(e) => onEmployeeChange(e.target.value)}
+              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           {/* Status Filter */}
           <div>
             <select
@@ -115,17 +126,6 @@ const GlobalFilters = ({
             </select>
           </div>
 
-          {/* Employee Filter */}
-          <div>
-            <input
-              type="text"
-              placeholder="Lọc theo nhân viên..."
-              value={employeeFilter}
-              onChange={(e) => onEmployeeChange(e.target.value)}
-              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
           {/* Reset Button and Gold Filter */}
           <div className="flex gap-2 items-center">
             <button
@@ -133,7 +133,6 @@ const GlobalFilters = ({
               className="px-4 py-2 bg-white text-gray-600 text-sm hover:bg-gray-50 transition-colors duration-200"
               title="Xóa tất cả bộ lọc"
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
               Reset
             </button>
             <label className="flex items-center cursor-pointer">
