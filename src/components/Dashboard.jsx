@@ -72,9 +72,6 @@ const Dashboard = () => {
               <h1 className="text-3xl font-bold text-gray-900">
                 Dashboard Lịch Khám
               </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Hệ thống quản lý lịch khám sức khỏe - HMSG CHC
-              </p>
             </div>
             
             <div className="flex items-center space-x-4">

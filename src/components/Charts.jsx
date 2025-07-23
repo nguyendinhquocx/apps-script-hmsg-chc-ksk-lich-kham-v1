@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import GlobalFilters from './GlobalFilters'
 import LichKhamService from '../services/supabase'
+import { matchesSearch } from '../utils/vietnamese'
 
 const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
   const [data, setData] = useState([])
@@ -15,10 +16,10 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     { name: 'Siêu âm tim', morning: 'sieu am tim sang', afternoon: 'sieu am tim chieu' },
     { name: 'SA động mạch cảnh', morning: 'sieu am dong mach canh sang', afternoon: 'sieu am dong mach canh chieu' },
     { name: 'SA đàn hồi mô gan', morning: 'sieu am dan hoi mo gan sang', afternoon: 'sieu am dan hoi mo gan chieu' },
+    { name: 'SA đầu dò âm đạo', morning: 'sieu am dau do am dao sang', afternoon: 'sieu am dau do am dao chieu' },
     { name: 'X-quang', morning: 'x quang sang', afternoon: 'x quang chieu' },
     { name: 'Điện tâm đồ', morning: 'dien tam do sang', afternoon: 'dien tam do chieu' },
     { name: 'Khám phụ khoa', morning: 'kham phu khoa sang', afternoon: 'kham phu khoa chieu' },
-    { name: 'SA đầu dò âm đạo', morning: 'sieu am dau do am dao sang', afternoon: 'sieu am dau do am dao chieu' },
     { name: 'Đo loãng xương', morning: 'do loang xuong sang', afternoon: 'do loang xuong chieu' }
   ]
 
@@ -147,11 +148,9 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     return data.filter(item => {
       // Lọc theo tìm kiếm
       if (globalFilters.searchTerm) {
-        const searchLower = globalFilters.searchTerm.toLowerCase()
-        const matchesSearch = 
-          item['ten cong ty']?.toLowerCase().includes(searchLower) ||
-          item['ten nhan vien']?.toLowerCase().includes(searchLower)
-        if (!matchesSearch) return false
+        const matchesCompany = matchesSearch(item['ten cong ty'], globalFilters.searchTerm)
+        const matchesEmployee = matchesSearch(item['ten nhan vien'], globalFilters.searchTerm)
+        if (!matchesCompany && !matchesEmployee) return false
       }
       
       // Lọc theo trạng thái
@@ -161,7 +160,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
       
       // Lọc theo nhân viên
       if (globalFilters.employeeFilter && globalFilters.employeeFilter !== 'all') {
-        if (item['ten nhan vien'] !== globalFilters.employeeFilter) return false
+        if (!matchesSearch(item['ten nhan vien'], globalFilters.employeeFilter)) return false
       }
       
       // Lọc theo khoảng ngày
@@ -214,6 +213,19 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
       return isInRange && isNotSunday
     })
     
+    // Debug: Log cho thứ hai (dayOfWeek = 1)
+    const currentDate = new Date(date)
+    if (currentDate.getDay() === 1 && categoryIndex === 0 && period === 'morning') {
+      console.log('Debug Monday data:', {
+        date,
+        dayOfWeek: currentDate.getDay(),
+        dayData: dayData.length,
+        filteredDataTotal: filteredData.length,
+        columnName,
+        sampleItem: dayData[0]
+      })
+    }
+    
     // Tính tổng số lượng từ cột tương ứng cho ngày đó
     let totalCount = 0
     dayData.forEach(item => {
@@ -224,7 +236,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
     return totalCount
   }
 
-  // Tính số max cho mỗi ngày từ dữ liệu thực (trừ chủ nhật)
+  // Tính số max cho mỗi ngày từ dữ liệu thực (trừ chủ nhật) - lấy giá trị lớn nhất
   const getMaxForDay = (date) => {
     const currentDate = new Date(date)
     
@@ -241,10 +253,18 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
       return currentDate >= startDate && currentDate <= endDate
     })
     
-    // Tính tổng số người khám trong ngày
-    return dayData.reduce((total, item) => {
-      return total + (parseInt(item['so nguoi kham']) || 0)
-    }, 0)
+    // Tìm giá trị lớn nhất trong tất cả các hạng mục cận lâm sàng của ngày đó
+    let maxCount = 0
+    
+    dayData.forEach(item => {
+      examCategories.forEach(category => {
+        const morningCount = parseInt(item[category.morning]) || 0
+        const afternoonCount = parseInt(item[category.afternoon]) || 0
+        maxCount = Math.max(maxCount, morningCount, afternoonCount)
+      })
+    })
+    
+    return maxCount
   }
 
   const days = getDaysToShow() // Đã loại bỏ chủ nhật trong function
@@ -374,7 +394,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     
                     {/* Cột Max */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-white border border-black text-black text-xs font-medium rounded-full">
+                      <span className="inline-flex items-center justify-center w-6 h-6 bg-white border border-black text-black text-xs font-medium rounded-full hover:scale-110 transition-transform duration-200 cursor-pointer">
                         {getMaxForDay(dayInfo.date)}
                       </span>
                     </td>
@@ -386,7 +406,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       return (
                         <td key={`morning-${categoryIndex}`} className={`px-2 py-2 whitespace-nowrap text-center ${isLastMorning ? 'border-r border-gray-300' : ''}`}>
                           {count > 0 && (
-                            <button className={`inline-flex items-center justify-center w-6 h-6 ${count > 100 ? 'bg-red-500 border-red-500 text-white hover:bg-red-600' : 'bg-white border border-black hover:bg-black hover:text-white text-black'} text-xs font-medium rounded-full transition-all duration-200 cursor-pointer`}>
+                            <button className={`inline-flex items-center justify-center w-6 h-6 ${count > 100 ? 'bg-red-500 border-red-500 text-white hover:bg-red-600' : 'bg-white border border-black hover:bg-black hover:text-white text-black'} text-xs font-medium rounded-full transition-all duration-200 cursor-pointer hover:scale-110`}>
                               {count}
                             </button>
                           )}
@@ -400,7 +420,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       return (
                         <td key={`afternoon-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                           {count > 0 && (
-                            <button className={`inline-flex items-center justify-center w-6 h-6 ${count > 100 ? 'bg-red-500 border-red-500 text-white hover:bg-red-600' : 'bg-white border border-black hover:bg-black hover:text-white text-black'} text-xs font-medium rounded-full transition-all duration-200 cursor-pointer`}>
+                            <button className={`inline-flex items-center justify-center w-6 h-6 ${count > 100 ? 'bg-red-500 border-red-500 text-white hover:bg-red-600' : 'bg-white border border-black hover:bg-black hover:text-white text-black'} text-xs font-medium rounded-full transition-all duration-200 cursor-pointer hover:scale-110`}>
                               {count}
                             </button>
                           )}
