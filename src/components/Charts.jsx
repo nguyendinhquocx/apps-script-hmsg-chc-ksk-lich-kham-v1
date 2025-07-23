@@ -414,12 +414,12 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
 
       
       {/* Bảng cận lâm sàng */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg text-black">Bảng Cận Lâm Sàng</h2>
+      <div className="overflow-hidden">
+        <div className="px-6 py-4 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-900">Bảng Cận Lâm Sàng</h2>
           <button
             onClick={exportToExcel}
-            className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 text-black text-sm rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            className="flex items-center space-x-2 px-4 py-2 bg-white text-black text-sm rounded-lg hover:bg-gray-50 transition-colors duration-200"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Xuất Excel</span>
@@ -432,28 +432,28 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
             <thead>
               {/* Hàng tiêu đề chính */}
               <tr className="bg-white">
-                <th rowSpan={2} className="px-3 py-2 text-left text-xs text-black border-r border-gray-300">
+                <th rowSpan={2} className="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Ngày
                 </th>
-                <th rowSpan={2} className="px-3 py-2 text-left text-xs text-black">
+                <th rowSpan={2} className="px-3 py-2 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Max
                 </th>
-                <th colSpan={examCategories.length} className="px-3 py-2 text-center text-xs text-black">
+                <th colSpan={examCategories.length} className="px-3 py-2 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Sáng
                 </th>
-                <th colSpan={examCategories.length} className="px-3 py-2 text-center text-xs text-black">
+                <th colSpan={examCategories.length} className="px-3 py-2 text-center text-xs font-medium text-gray-900 uppercase tracking-wider">
                   Chiều
                 </th>
               </tr>
               {/* Hàng tiêu đề mục khám */}
               <tr className="bg-white border-b border-gray-300">
                 {examCategories.map((category, index) => (
-                  <th key={`morning-${index}`} className="px-2 py-2 text-center text-xs text-black">
+                  <th key={`morning-${index}`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-900 uppercase tracking-wider">
                     {category.name}
                   </th>
                 ))}
                 {examCategories.map((category, index) => (
-                  <th key={`afternoon-${index}`} className="px-2 py-2 text-center text-xs text-black">
+                  <th key={`afternoon-${index}`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-900 uppercase tracking-wider">
                     {category.name}
                   </th>
                 ))}
@@ -478,14 +478,14 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                 return (
                   <tr key={dayInfo.date} className={isToday ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]'}>
                     {/* Cột ngày */}
-                    <td className="px-3 py-2 whitespace-nowrap text-sm border-r border-gray-300">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm">
                       <div className="text-black font-medium">{dayInfo.day}</div>
                       <div className="text-gray-500 text-xs">{dayInfo.dayOfWeek}</div>
                     </td>
                     
                     {/* Cột Max */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 border border-green-600 text-green-800 text-xs font-medium rounded-full hover:scale-110 transition-transform duration-200 cursor-pointer">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:scale-110 transition-transform duration-200 cursor-pointer">
                         {getMaxForDay(dayInfo.date)}
                       </span>
                     </td>

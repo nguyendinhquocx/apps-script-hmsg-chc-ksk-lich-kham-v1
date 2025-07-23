@@ -128,13 +128,6 @@ const GlobalFilters = ({
 
           {/* Reset Button and Gold Filter */}
           <div className="flex gap-2 items-center">
-            <button
-              onClick={onReset}
-              className="px-4 py-2 bg-white text-black text-sm transition-colors duration-200"
-              title="Xóa tất cả bộ lọc"
-            >
-              Reset
-            </button>
             <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -144,6 +137,13 @@ const GlobalFilters = ({
               />
               <span className="text-sm font-medium text-gray-700">Gold</span>
             </label>
+            <button
+              onClick={onReset}
+              className="px-4 py-2 bg-white text-black text-sm hover:bg-gray-100 transition-colors duration-200"
+              title="Xóa tất cả bộ lọc"
+            >
+              Reset
+            </button>
           </div>
         </div>
       </div>
