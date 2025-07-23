@@ -125,25 +125,36 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="w-full px-6 py-8">
-        {/* Global Filters */}
-        <GlobalFilters
-          searchTerm={globalFilters.searchTerm}
-          statusFilter={globalFilters.statusFilter}
-          employeeFilter={globalFilters.employeeFilter}
-          showGold={globalFilters.showGold}
-          monthFilter={globalFilters.monthFilter}
-          dateFilter={globalFilters.dateFilter}
-          setMonthFilter={(monthFilter) => updateGlobalFilter('monthFilter', monthFilter)}
-          onDateFilterChange={(dateFilter) => updateGlobalFilter('dateFilter', dateFilter)}
-          onSearchChange={(value) => updateGlobalFilter('searchTerm', value)}
-          onStatusChange={(value) => updateGlobalFilter('statusFilter', value)}
-          onEmployeeChange={(value) => updateGlobalFilter('employeeFilter', value)}
-          onGoldChange={(value) => updateGlobalFilter('showGold', value)}
-          onReset={resetGlobalFilters}
-        />
-        
         <div className="fade-in">
-          {ActiveComponent && <ActiveComponent key={refreshKey} globalFilters={globalFilters} />}
+          {activeTab === 'table' && (
+            <>
+              {/* Global Filters for DataTable */}
+              <GlobalFilters
+                searchTerm={globalFilters.searchTerm}
+                statusFilter={globalFilters.statusFilter}
+                employeeFilter={globalFilters.employeeFilter}
+                showGold={globalFilters.showGold}
+                monthFilter={globalFilters.monthFilter}
+                dateFilter={globalFilters.dateFilter}
+                setMonthFilter={(monthFilter) => updateGlobalFilter('monthFilter', monthFilter)}
+                onDateFilterChange={(dateFilter) => updateGlobalFilter('dateFilter', dateFilter)}
+                onSearchChange={(value) => updateGlobalFilter('searchTerm', value)}
+                onStatusChange={(value) => updateGlobalFilter('statusFilter', value)}
+                onEmployeeChange={(value) => updateGlobalFilter('employeeFilter', value)}
+                onGoldChange={(value) => updateGlobalFilter('showGold', value)}
+                onReset={resetGlobalFilters}
+              />
+              <DataTable key={refreshKey} globalFilters={globalFilters} />
+            </>
+          )}
+          {activeTab === 'charts' && (
+            <Charts 
+              key={refreshKey} 
+              globalFilters={globalFilters}
+              updateGlobalFilter={updateGlobalFilter}
+              resetGlobalFilters={resetGlobalFilters}
+            />
+          )}
         </div>
       </main>
 
