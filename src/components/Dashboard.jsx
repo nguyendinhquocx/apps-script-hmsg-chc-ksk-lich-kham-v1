@@ -48,13 +48,13 @@ const Dashboard = () => {
   const tabs = [
     {
       id: 'table',
-      name: 'Bảng dữ liệu',
+      name: 'Bảng lịch khám',
       icon: Table,
       component: DataTable
     },
     {
       id: 'charts',
-      name: 'Biểu đồ thống kê',
+      name: 'Bảng cận lâm sàng',
       icon: BarChart3,
       component: Charts
     }
