@@ -462,7 +462,7 @@ const DataTable = ({ globalFilters = {} }) => {
             <button
               onClick={handleExportExcel}
               disabled={loading || totalCount === 0}
-              className="inline-flex items-center px-4 py-2 bg-white text-black text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
               title="Xuất file Excel"
             >
               <FileSpreadsheet className="w-4 h-4 mr-2" />
@@ -549,7 +549,7 @@ const DataTable = ({ globalFilters = {} }) => {
                 {dailyTotals.map((total, index) => (
                   <td key={index} className="px-1 py-1.5 text-center">
                     {total > 0 && (
-                      <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 border border-green-600 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
+                      <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
                         {total.toLocaleString('vi-VN')}
                       </div>
                     )}

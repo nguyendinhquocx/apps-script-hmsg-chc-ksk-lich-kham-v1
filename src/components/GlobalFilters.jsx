@@ -130,7 +130,7 @@ const GlobalFilters = ({
           <div className="flex gap-2 items-center">
             <button
               onClick={onReset}
-              className="px-4 py-2 bg-white text-gray-600 text-sm hover:bg-gray-50 transition-colors duration-200"
+              className="px-4 py-2 bg-white text-black text-sm transition-colors duration-200"
               title="Xóa tất cả bộ lọc"
             >
               Reset

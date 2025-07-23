@@ -140,7 +140,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
 
   return (
     <div className="bg-white p-6 mb-8">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Biểu đồ số người khám theo ngày</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Số người khám theo ngày</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -171,10 +171,10 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                   <circle
                     cx={cx}
                     cy={cy}
-                    r={isToday ? 6 : 4}
-                    fill={isToday ? '#3b82f6' : '#000000'}
-                    stroke={isToday ? '#3b82f6' : '#000000'}
-                    strokeWidth={2}
+                    r={isToday ? 7 : 4}
+                    fill={isToday ? '#ffffff' : '#000000'}
+                    stroke={isToday ? '#000000' : '#000000'}
+                    strokeWidth={isToday ? 2 : 2}
                   />
                 )
               }}
