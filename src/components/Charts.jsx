@@ -476,7 +476,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                 if (!hasData) return null
                 
                 return (
-                  <tr key={dayInfo.date} className={isToday ? 'bg-[#e9edc9]' : 'bg-[#fefae0]'}>
+                  <tr key={dayInfo.date} className={isToday ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]'}>
                     {/* Cột ngày */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm border-r border-gray-300">
                       <div className="text-black font-medium">{dayInfo.day}</div>
