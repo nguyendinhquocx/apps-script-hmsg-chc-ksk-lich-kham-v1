@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { FileSpreadsheet } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import GlobalFilters from './GlobalFilters'
 import LichKhamService from '../services/supabase'
 import { matchesSearch } from '../utils/vietnamese'
@@ -213,19 +215,6 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
       return isInRange && isNotSunday
     })
     
-    // Debug: Log cho thứ hai (dayOfWeek = 1)
-    const currentDate = new Date(date)
-    if (currentDate.getDay() === 1 && categoryIndex === 0 && period === 'morning') {
-      console.log('Debug Monday data:', {
-        date,
-        dayOfWeek: currentDate.getDay(),
-        dayData: dayData.length,
-        filteredDataTotal: filteredData.length,
-        columnName,
-        sampleItem: dayData[0]
-      })
-    }
-    
     // Tính tổng số lượng từ cột tương ứng cho ngày đó
     let totalCount = 0
     dayData.forEach(item => {
@@ -268,6 +257,90 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
   }
 
   const days = getDaysToShow() // Đã loại bỏ chủ nhật trong function
+
+  // Hàm xuất Excel cho bảng cận lâm sàng
+  const exportToExcel = () => {
+    // Tạo dữ liệu cho Excel
+    const excelData = []
+    
+    // Header row 1 - Tiêu đề chính
+    const header1 = ['Ngày', 'Max']
+    examCategories.forEach(() => header1.push('Sáng'))
+    examCategories.forEach(() => header1.push('Chiều'))
+    
+    // Header row 2 - Tên hạng mục
+    const header2 = ['', '']
+    examCategories.forEach(cat => header2.push(cat.name))
+    examCategories.forEach(cat => header2.push(cat.name))
+    
+    excelData.push(header1)
+    excelData.push(header2)
+    
+    // Dữ liệu từng ngày
+    days.forEach(dayInfo => {
+      const row = [
+        `${dayInfo.day} (${dayInfo.dayOfWeek})`,
+        getMaxForDay(dayInfo.date)
+      ]
+      
+      // Thêm dữ liệu sáng
+      examCategories.forEach((category, index) => {
+        const count = getExamCount(dayInfo.date, index, 'morning')
+        row.push(count > 0 ? count : '')
+      })
+      
+      // Thêm dữ liệu chiều
+      examCategories.forEach((category, index) => {
+        const count = getExamCount(dayInfo.date, index, 'afternoon')
+        row.push(count > 0 ? count : '')
+      })
+      
+      excelData.push(row)
+    })
+    
+    // Tạo workbook và worksheet
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet(excelData)
+    
+    // Styling cho header
+    const range = XLSX.utils.decode_range(ws['!ref'])
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cell1 = XLSX.utils.encode_cell({ r: 0, c: C })
+      const cell2 = XLSX.utils.encode_cell({ r: 1, c: C })
+      
+      if (ws[cell1]) {
+        ws[cell1].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: "EEEEEE" } },
+          alignment: { horizontal: "center" }
+        }
+      }
+      
+      if (ws[cell2]) {
+        ws[cell2].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: "F8F8F8" } },
+          alignment: { horizontal: "center" }
+        }
+      }
+    }
+    
+    // Set column widths
+    ws['!cols'] = [
+      { width: 15 }, // Ngày
+      { width: 8 },  // Max
+      ...Array(examCategories.length * 2).fill({ width: 12 }) // Các hạng mục
+    ]
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Bảng Cận Lâm Sàng')
+    
+    // Tạo tên file với ngày hiện tại
+    const today = new Date()
+    const dateStr = today.toISOString().split('T')[0]
+    const fileName = `Bang_Can_Lam_Sang_${dateStr}.xlsx`
+    
+    XLSX.writeFile(wb, fileName)
+  }
 
   if (loading) {
     return (
@@ -342,8 +415,15 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
       
       {/* Bảng cận lâm sàng */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-black">Bảng Cận Lâm Sàng</h2>
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-lg text-black">Bảng Cận Lâm Sàng</h2>
+          <button
+            onClick={exportToExcel}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-200"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Xuất Excel</span>
+          </button>
         </div>
         
         <div className="overflow-x-auto">
@@ -384,8 +464,19 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
             <tbody className="bg-white">
               {days.map((dayInfo, dayIndex) => {
                 const isToday = dayInfo.date === new Date().toISOString().split('T')[0]
+                
+                // Kiểm tra xem ngày này có dữ liệu không
+                const hasData = getMaxForDay(dayInfo.date) > 0 || 
+                  examCategories.some((category, index) => 
+                    getExamCount(dayInfo.date, index, 'morning') > 0 || 
+                    getExamCount(dayInfo.date, index, 'afternoon') > 0
+                  )
+                
+                // Nếu không có dữ liệu thì không hiển thị hàng
+                if (!hasData) return null
+                
                 return (
-                  <tr key={dayInfo.date} className={isToday ? 'bg-gray-50' : 'bg-white'}>
+                  <tr key={dayInfo.date} className={isToday ? 'bg-[#e9edc9]' : 'bg-[#fefae0]'}>
                     {/* Cột ngày */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm border-r border-gray-300">
                       <div className="text-black font-medium">{dayInfo.day}</div>
@@ -394,7 +485,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     
                     {/* Cột Max */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-center">
-                      <span className="inline-flex items-center justify-center w-6 h-6 bg-white border border-black text-black text-xs font-medium rounded-full hover:scale-110 transition-transform duration-200 cursor-pointer">
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 border border-green-600 text-green-800 text-xs font-medium rounded-full hover:scale-110 transition-transform duration-200 cursor-pointer">
                         {getMaxForDay(dayInfo.date)}
                       </span>
                     </td>
@@ -406,7 +497,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       return (
                         <td key={`morning-${categoryIndex}`} className={`px-2 py-2 whitespace-nowrap text-center ${isLastMorning ? 'border-r border-gray-300' : ''}`}>
                           {count > 0 && (
-                            <button className={`inline-flex items-center justify-center w-6 h-6 ${count > 100 ? 'bg-red-500 border-red-500 text-white hover:bg-red-600' : 'bg-white border border-black hover:bg-black hover:text-white text-black'} text-xs font-medium rounded-full transition-all duration-200 cursor-pointer hover:scale-110`}>
+                            <button className={`inline-flex items-center justify-center w-8 h-8 ${count > 100 ? 'bg-red-100 border-red-600 text-red-800' : 'bg-green-100 border-green-600 text-green-800'} text-xs font-medium rounded-full transition-transform duration-200 cursor-pointer hover:scale-110`}>
                               {count}
                             </button>
                           )}
@@ -420,7 +511,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       return (
                         <td key={`afternoon-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                           {count > 0 && (
-                            <button className={`inline-flex items-center justify-center w-6 h-6 ${count > 100 ? 'bg-red-500 border-red-500 text-white hover:bg-red-600' : 'bg-white border border-black hover:bg-black hover:text-white text-black'} text-xs font-medium rounded-full transition-all duration-200 cursor-pointer hover:scale-110`}>
+                            <button className={`inline-flex items-center justify-center w-8 h-8 ${count > 100 ? 'bg-red-100 border-red-600 text-red-800' : 'bg-green-100 border-green-600 text-green-800'} text-xs font-medium rounded-full transition-transform duration-200 cursor-pointer hover:scale-110`}>
                               {count}
                             </button>
                           )}
@@ -429,7 +520,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     })}
                   </tr>
                 )
-              })}
+              }).filter(Boolean)} {/* Lọc bỏ null values */}
             </tbody>
           </table>
         </div>
