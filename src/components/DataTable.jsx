@@ -818,7 +818,7 @@ const DataTable = ({ globalFilters = {} }) => {
                     <tr key={record['ID'] || record.id || index}>
                       <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-30" style={{width: '200px', color: isCompleted ? '#2962ff' : '#000000'}}>
                          <div 
-                           className="truncate cursor-pointer rounded px-2 py-1 hover:bg-gray-100 transition-colors" 
+                           className="truncate cursor-pointer rounded-lg px-2 py-1 hover:bg-gray-100 transition-colors" 
                            title={getTooltipCompanyName(record['ten cong ty'])}
                            onClick={() => handleCompanyClick(record)}
                          >

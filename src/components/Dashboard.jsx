@@ -75,7 +75,7 @@ const Dashboard = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={handleRefresh}
-                className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-600 hover:bg-gray-50 transition-colors duration-200"
+                className="flex items-center space-x-2 px-4 py-2 bg-white text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
                 title="Làm mới dữ liệu"
               >
                 <RefreshCw className="w-4 h-4" />
