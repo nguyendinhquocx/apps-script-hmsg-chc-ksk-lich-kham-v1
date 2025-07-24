@@ -15,9 +15,13 @@ const StatsCards = ({ data = [] }) => {
     return status.includes('chưa khám xong') || status.includes('chua kham xong')
   }).length
   
-  // Calculate average people per day
-  const totalPeople = data.reduce((sum, item) => sum + (parseInt(item['so nguoi kham']) || 0), 0)
-  const avgPeoplePerDay = totalCompanies > 0 ? Math.round(totalPeople / totalCompanies) : 0
+  // Calculate people examined vs in progress
+  const completedPeople = data
+    .filter(item => {
+      const status = (item['trang thai kham'] || '').toLowerCase().trim()
+      return status.includes('đã khám xong') || status.includes('da kham xong')
+    })
+    .reduce((sum, item) => sum + (parseInt(item['so nguoi kham']) || 0), 0)
 
   const stats = [
     {
@@ -39,8 +43,8 @@ const StatsCards = ({ data = [] }) => {
       color: 'orange'
     },
     {
-      title: 'Trung bình Người/Ngày',
-      value: avgPeoplePerDay,
+      title: 'Số người đã khám',
+      value: completedPeople,
       icon: Users,
       color: 'purple'
     }
