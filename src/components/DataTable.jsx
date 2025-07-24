@@ -442,6 +442,62 @@ const DataTable = ({ globalFilters = {} }) => {
     return 0
   }
 
+  // Check blood test date display for a specific date
+  const getBloodTestDisplay = (record, date) => {
+    const startDateStr = record['ngay bat dau kham']
+    const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
+    const bloodTestDateStr = record['ngay lay mau']
+    
+    if (!startDateStr) return null
+    
+    // Create dates using local time to avoid timezone shifts
+    const startDate = new Date(startDateStr + 'T00:00:00')
+    const endDate = new Date(endDateStr + 'T00:00:00')
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    
+    // Check if the date is within examination period
+    const isInExamPeriod = checkDate >= startDate && checkDate <= endDate
+    
+    if (isInExamPeriod) {
+      const examCount = getExamCountForDate(record, date)
+      
+      // If there's a blood test date
+      if (bloodTestDateStr) {
+        const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
+        
+        // If blood test date matches the current exam date
+        if (checkDate.getTime() === bloodTestDate.getTime()) {
+          return {
+            type: 'exam_with_blood',
+            value: examCount,
+            isBold: true
+          }
+        }
+      }
+      
+      // Regular exam date
+      return {
+        type: 'exam_only',
+        value: examCount,
+        isBold: false
+      }
+    }
+    
+    // If not in exam period, check if it's a standalone blood test date
+    if (bloodTestDateStr) {
+      const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
+      if (checkDate.getTime() === bloodTestDate.getTime()) {
+        return {
+          type: 'blood_only',
+          value: '-',
+          isBold: true
+        }
+      }
+    }
+    
+    return null
+  }
+
   // Calculate total for each date
   const calculateDailyTotals = (dates) => {
     return dates.map(date => {
@@ -602,13 +658,46 @@ const DataTable = ({ globalFilters = {} }) => {
                         {parseInt(record['so nguoi kham'] || 0).toLocaleString('vi-VN')}
                       </td>
                       {dateRange.map((date, dateIndex) => {
-                        const examCount = getExamCountForDate(record, date)
+                        const bloodTestDisplay = getBloodTestDisplay(record, date)
                         const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                        
                         return (
                           <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
-                            {examCount > 0 && (
-                              <span className="text-xs font-normal" style={{color: '#000000'}}>
-                                {examCount.toLocaleString('vi-VN')}
+                            {bloodTestDisplay && bloodTestDisplay.value !== '-' && bloodTestDisplay.value > 0 && (
+                              <span 
+                                className={`text-xs ${bloodTestDisplay.isBold ? 'font-bold' : 'font-normal'}`} 
+                                style={{
+                                  color: isCompleted ? '#2962ff' : '#000000',
+                                  fontWeight: bloodTestDisplay.isBold ? 'bold' : 'normal',
+                                  ...(bloodTestDisplay.isBold ? {
+                                    display: 'inline-block',
+                                    padding: '2px 6px',
+                                    border: `1px solid ${isCompleted ? '#2962ff' : '#000000'}`,
+                                    borderRadius: '50%',
+                                    minWidth: '20px',
+                                    minHeight: '20px',
+                                    lineHeight: '16px'
+                                  } : {})
+                                }}
+                              >
+                                {bloodTestDisplay.value.toLocaleString('vi-VN')}
+                              </span>
+                            )}
+                            {bloodTestDisplay && bloodTestDisplay.value === '-' && (
+                              <span 
+                                className="text-xs font-bold" 
+                                style={{
+                                  color: isCompleted ? '#2962ff' : '#000000',
+                                  display: 'inline-block',
+                                  padding: '2px 6px',
+                                  border: `1px solid ${isCompleted ? '#2962ff' : '#000000'}`,
+                                  borderRadius: '50%',
+                                  minWidth: '20px',
+                                  minHeight: '20px',
+                                  lineHeight: '16px'
+                                }}
+                              >
+                                -
                               </span>
                             )}
                           </td>
