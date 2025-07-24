@@ -42,60 +42,91 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
     data.forEach(item => {
       const startDate = item['ngay bat dau kham']
       const endDate = item['ngay ket thuc kham']
+      const specificDatesStr = item['cac ngay kham thuc te']
       const peopleCount = parseInt(item['so nguoi kham']) || 0
       
-      if (startDate && endDate) {
+      if (startDate) {
         try {
-          // Parse dates carefully to avoid timezone issues
-          const startDateObj = new Date(startDate + 'T00:00:00')
-          const endDateObj = new Date(endDate + 'T00:00:00')
-          
-          // Calculate the number of working days (excluding Sundays) in the examination period
-          const examDays = eachDayOfInterval({ start: startDateObj, end: endDateObj })
-            .filter(date => getDay(date) !== 0) // Exclude Sundays
-          
-          if (examDays.length > 0) {
-            // Use daily average from Supabase data instead of even distribution
+          // Check if there are specific examination dates
+          if (specificDatesStr && specificDatesStr.trim()) {
+            // Parse specific dates (format: MM/dd, MM/dd, ...)
+            const specificDates = specificDatesStr.split(',').map(dateStr => {
+              const trimmed = dateStr.trim()
+              if (trimmed.includes('/')) {
+                const [month, day] = trimmed.split('/')
+                const year = chartStart.getFullYear() // Use current year from the date range
+                return new Date(year, parseInt(month) - 1, parseInt(day))
+              }
+              return null
+            }).filter(d => d !== null)
+            
+            // Use daily average from Supabase data
             const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
             const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
             const dailyCount = morningAvg + afternoonAvg
             
-            examDays.forEach(examDate => {
-              // Only include data from the selected range
-              if (examDate >= chartStart && examDate <= chartEnd) {
+            specificDates.forEach(examDate => {
+              // Only include data from the selected range and exclude Sundays
+              if (examDate >= chartStart && examDate <= chartEnd && getDay(examDate) !== 0) {
                 const dateKey = format(examDate, 'yyyy-MM-dd')
                 const existing = dateMap.get(dateKey)
                 if (existing) {
                   dateMap.set(dateKey, {
                     ...existing,
                     people: existing.people + dailyCount,
-                    companies: existing.companies + (1 / examDays.length) // Distribute company count as well
+                    companies: existing.companies + 1
                   })
                 }
               }
             })
-          }
-        } catch (error) {
-          console.warn('Invalid date format:', startDate, endDate)
-        }
-      } else if (startDate) {
-        // Fallback to old logic if endDate is missing
-        try {
-          const itemDate = new Date(startDate + 'T00:00:00')
-          // Only include data from the selected range and exclude Sundays
-          if (itemDate >= chartStart && itemDate <= chartEnd && getDay(itemDate) !== 0) {
-            const dateKey = format(itemDate, 'yyyy-MM-dd')
-            const existing = dateMap.get(dateKey)
-            if (existing) {
-              dateMap.set(dateKey, {
-                ...existing,
-                people: existing.people + peopleCount,
-                companies: existing.companies + 1
+          } else if (endDate) {
+            // Use original logic with start and end dates
+            const startDateObj = new Date(startDate + 'T00:00:00')
+            const endDateObj = new Date(endDate + 'T00:00:00')
+            
+            // Calculate the number of working days (excluding Sundays) in the examination period
+            const examDays = eachDayOfInterval({ start: startDateObj, end: endDateObj })
+              .filter(date => getDay(date) !== 0) // Exclude Sundays
+            
+            if (examDays.length > 0) {
+              // Use daily average from Supabase data instead of even distribution
+              const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+              const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+              const dailyCount = morningAvg + afternoonAvg
+              
+              examDays.forEach(examDate => {
+                // Only include data from the selected range
+                if (examDate >= chartStart && examDate <= chartEnd) {
+                  const dateKey = format(examDate, 'yyyy-MM-dd')
+                  const existing = dateMap.get(dateKey)
+                  if (existing) {
+                    dateMap.set(dateKey, {
+                      ...existing,
+                      people: existing.people + dailyCount,
+                      companies: existing.companies + (1 / examDays.length) // Distribute company count as well
+                    })
+                  }
+                }
               })
+            }
+          } else {
+            // Fallback to single date logic if endDate is missing
+            const itemDate = new Date(startDate + 'T00:00:00')
+            // Only include data from the selected range and exclude Sundays
+            if (itemDate >= chartStart && itemDate <= chartEnd && getDay(itemDate) !== 0) {
+              const dateKey = format(itemDate, 'yyyy-MM-dd')
+              const existing = dateMap.get(dateKey)
+              if (existing) {
+                dateMap.set(dateKey, {
+                  ...existing,
+                  people: existing.people + peopleCount,
+                  companies: existing.companies + 1
+                })
+              }
             }
           }
         } catch (error) {
-          console.warn('Invalid date format:', startDate)
+          console.warn('Invalid date format:', startDate, endDate)
         }
       }
     })

@@ -419,27 +419,55 @@ const DataTable = ({ globalFilters = {} }) => {
     // Parse dates carefully to avoid timezone issues
     const startDateStr = record['ngay bat dau kham']
     const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
+    const specificDatesStr = record['cac ngay kham thuc te']
     
     if (!startDateStr) return 0
     
     // Create dates using local time to avoid timezone shifts
-    const startDate = new Date(startDateStr + 'T00:00:00')
-    const endDate = new Date(endDateStr + 'T00:00:00')
     const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
     
-    // Check if the date is within examination period
-    if (checkDate >= startDate && checkDate <= endDate) {
-      // Get total exam days and daily counts from Supabase data
-      const totalExamDays = parseInt(record['tong so ngay kham thuc te']) || 1
-      const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
-      const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+    // Check if there are specific examination dates
+    if (specificDatesStr && specificDatesStr.trim()) {
+      // Parse specific dates (format: MM/dd, MM/dd, ...)
+      const specificDates = specificDatesStr.split(',').map(dateStr => {
+        const trimmed = dateStr.trim()
+        if (trimmed.includes('/')) {
+          const [month, day] = trimmed.split('/')
+          const year = date.getFullYear() // Use current year from the date range
+          return new Date(year, parseInt(month) - 1, parseInt(day))
+        }
+        return null
+      }).filter(d => d !== null)
       
-      // Calculate daily count based on average morning + afternoon
-      const dailyCount = Math.round(morningAvg + afternoonAvg)
+      // Check if current date matches any specific date
+      const isSpecificDate = specificDates.some(specificDate => 
+        checkDate.getTime() === specificDate.getTime()
+      )
       
-      return dailyCount
+      if (isSpecificDate) {
+        // Calculate daily count based on average morning + afternoon
+        const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
+        const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+        const dailyCount = Math.round(morningAvg + afternoonAvg)
+        return dailyCount
+      }
+      
+      return 0
+    } else {
+      // Use original logic with start and end dates
+      const startDate = new Date(startDateStr + 'T00:00:00')
+      const endDate = new Date(endDateStr + 'T00:00:00')
+      
+      // Check if the date is within examination period
+      if (checkDate >= startDate && checkDate <= endDate) {
+        // Calculate daily count based on average morning + afternoon
+        const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
+        const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+        const dailyCount = Math.round(morningAvg + afternoonAvg)
+        return dailyCount
+      }
+      return 0
     }
-    return 0
   }
 
   // Check blood test date display for a specific date
@@ -447,16 +475,38 @@ const DataTable = ({ globalFilters = {} }) => {
     const startDateStr = record['ngay bat dau kham']
     const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
     const bloodTestDateStr = record['ngay lay mau']
+    const specificDatesStr = record['cac ngay kham thuc te']
     
     if (!startDateStr) return null
     
     // Create dates using local time to avoid timezone shifts
-    const startDate = new Date(startDateStr + 'T00:00:00')
-    const endDate = new Date(endDateStr + 'T00:00:00')
     const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
     
-    // Check if the date is within examination period
-    const isInExamPeriod = checkDate >= startDate && checkDate <= endDate
+    // Check if the date is within examination period (either specific dates or date range)
+    let isInExamPeriod = false
+    
+    if (specificDatesStr && specificDatesStr.trim()) {
+      // Parse specific dates (format: MM/dd, MM/dd, ...)
+      const specificDates = specificDatesStr.split(',').map(dateStr => {
+        const trimmed = dateStr.trim()
+        if (trimmed.includes('/')) {
+          const [month, day] = trimmed.split('/')
+          const year = date.getFullYear() // Use current year from the date range
+          return new Date(year, parseInt(month) - 1, parseInt(day))
+        }
+        return null
+      }).filter(d => d !== null)
+      
+      // Check if current date matches any specific date
+      isInExamPeriod = specificDates.some(specificDate => 
+        checkDate.getTime() === specificDate.getTime()
+      )
+    } else {
+      // Use original logic with start and end dates
+      const startDate = new Date(startDateStr + 'T00:00:00')
+      const endDate = new Date(endDateStr + 'T00:00:00')
+      isInExamPeriod = checkDate >= startDate && checkDate <= endDate
+    }
     
     if (isInExamPeriod) {
       const examCount = getExamCountForDate(record, date)
