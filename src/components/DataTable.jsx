@@ -562,8 +562,8 @@ const DataTable = ({ globalFilters = {} }) => {
             <thead className="bg-white">
               {/* Day of week row */}
               <tr className="bg-white">
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-0 bg-white z-20" style={{ width: '200px', minWidth: '200px' }}></th>
-                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-[200px] bg-white z-10" style={{ width: '80px' }}></th>
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-0 bg-white z-30" style={{ width: '200px', minWidth: '200px' }}></th>
+                <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-[200px] bg-white z-20" style={{ width: '80px' }}></th>
                 {dateRange.map((date, index) => {
                   const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
                   return (
@@ -579,7 +579,7 @@ const DataTable = ({ globalFilters = {} }) => {
               {/* Date numbers row */}
               <tr className="bg-white">
                 <th 
-                  className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100 sticky left-0 bg-white z-20"
+                  className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100 sticky left-0 bg-white z-30"
                   onClick={() => handleSort('ten cong ty')}
                   style={{ width: '200px', minWidth: '200px' }}
                 >
@@ -591,7 +591,7 @@ const DataTable = ({ globalFilters = {} }) => {
                   </div>
                 </th>
                 <th 
-                  className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100 sticky left-[200px] bg-white z-10"
+                  className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider cursor-pointer hover:bg-gray-100 sticky left-[200px] bg-white z-20"
                   onClick={() => handleSort('so nguoi kham')}
                   style={{ width: '80px' }}
                 >
@@ -616,8 +616,8 @@ const DataTable = ({ globalFilters = {} }) => {
               
               {/* Total row */}
               <tr className="bg-white border-b-2 border-gray-300">
-                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-0 bg-white z-20">TỔNG</td>
-                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-[200px] bg-white z-10">
+                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-0 bg-white z-30">TỔNG</td>
+                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-[200px] bg-white z-20">
                   {data.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0).toLocaleString('vi-VN')}
                 </td>
                 {dailyTotals.map((total, index) => {
@@ -646,7 +646,7 @@ const DataTable = ({ globalFilters = {} }) => {
                   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
                   return (
                     <tr key={record['ID'] || record.id || index}>
-                      <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-20" style={{width: '200px', color: isCompleted ? '#2962ff' : '#000000'}}>
+                      <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-30" style={{width: '200px', color: isCompleted ? '#2962ff' : '#000000'}}>
                          <div 
                            className="truncate" 
                            title={getTooltipCompanyName(record['ten cong ty'])}
@@ -654,7 +654,7 @@ const DataTable = ({ globalFilters = {} }) => {
                            {getDisplayCompanyName(record['ten cong ty']) || '-'}
                          </div>
                        </td>
-                      <td className="px-3 py-1.5 text-sm font-normal sticky left-[200px] bg-white z-10" style={{width: '80px', color: '#000000'}}>
+                      <td className="px-3 py-1.5 text-sm font-normal sticky left-[200px] bg-white z-20" style={{width: '80px', color: isCompleted ? '#2962ff' : '#000000'}}>
                         {parseInt(record['so nguoi kham'] || 0).toLocaleString('vi-VN')}
                       </td>
                       {dateRange.map((date, dateIndex) => {
