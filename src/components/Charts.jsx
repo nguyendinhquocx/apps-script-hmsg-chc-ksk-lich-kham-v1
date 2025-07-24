@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { FileSpreadsheet } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import GlobalFilters from './GlobalFilters'
+import MaxExamChart from './MaxExamChart'
 import LichKhamService from '../services/supabase'
 import { matchesSearch } from '../utils/vietnamese'
 
@@ -411,6 +412,13 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
         onReset={resetGlobalFilters}
       />
       
+      {/* Max Exam Chart */}
+      <MaxExamChart 
+        data={filteredData}
+        examCategories={examCategories}
+        monthFilter={globalFilters.monthFilter}
+        dateFilter={globalFilters.dateFilter}
+      />
 
       
       {/* Bảng cận lâm sàng */}

@@ -1,9 +1,14 @@
 import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, differenceInDays } from 'date-fns'
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
-const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } }) => {
+const MaxExamChart = ({ 
+  data = [], 
+  examCategories = [], 
+  monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, 
+  dateFilter = { startDate: '', endDate: '' } 
+}) => {
   // Process data to create chart data grouped by date
   const chartData = useMemo(() => {
     let chartStart, chartEnd
@@ -31,67 +36,43 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       const dateKey = format(date, 'yyyy-MM-dd')
       dateMap.set(dateKey, {
         date: dateKey,
-        people: 0,
-        companies: 0,
+        maxCount: 0,
         isToday: isSameDay(date, today)
       })
     })
     
-    // Process actual data
+    // Process actual data to calculate max exam count per day
     data.forEach(item => {
       const startDate = item['ngay bat dau kham']
       const endDate = item['ngay ket thuc kham']
-      const peopleCount = parseInt(item['so nguoi kham']) || 0
       
       if (startDate && endDate) {
         try {
           const startDateObj = parseISO(startDate)
           const endDateObj = parseISO(endDate)
           
-          // Calculate the number of working days (excluding Sundays) in the examination period
+          // Calculate the exam days (excluding Sundays) in the examination period
           const examDays = eachDayOfInterval({ start: startDateObj, end: endDateObj })
             .filter(date => getDay(date) !== 0) // Exclude Sundays
           
-          if (examDays.length > 0) {
-            // Distribute people evenly across working days
-            const peoplePerDay = peopleCount / examDays.length
-            
-            examDays.forEach(examDate => {
-              // Only include data from the selected range
-              if (examDate >= chartStart && examDate <= chartEnd) {
-                const dateKey = format(examDate, 'yyyy-MM-dd')
-                const existing = dateMap.get(dateKey)
-                if (existing) {
-                  dateMap.set(dateKey, {
-                    ...existing,
-                    people: existing.people + peoplePerDay,
-                    companies: existing.companies + (1 / examDays.length) // Distribute company count as well
-                  })
-                }
+          examDays.forEach(examDate => {
+            // Only include data from the selected range
+            if (examDate >= chartStart && examDate <= chartEnd) {
+              const dateKey = format(examDate, 'yyyy-MM-dd')
+              const existing = dateMap.get(dateKey)
+              
+              if (existing) {
+                // Find max count for this item across all exam categories (same logic as getMaxForDay)
+                examCategories.forEach(category => {
+                  const morningCount = parseInt(item[category.morning]) || 0
+                  const afternoonCount = parseInt(item[category.afternoon]) || 0
+                  existing.maxCount = Math.max(existing.maxCount, morningCount, afternoonCount)
+                })
               }
-            })
-          }
+            }
+          })
         } catch (error) {
           console.warn('Invalid date format:', startDate, endDate)
-        }
-      } else if (startDate) {
-        // Fallback to old logic if endDate is missing
-        try {
-          const itemDate = parseISO(startDate)
-          // Only include data from the selected range and exclude Sundays
-          if (itemDate >= chartStart && itemDate <= chartEnd && getDay(itemDate) !== 0) {
-            const dateKey = format(itemDate, 'yyyy-MM-dd')
-            const existing = dateMap.get(dateKey)
-            if (existing) {
-              dateMap.set(dateKey, {
-                ...existing,
-                people: existing.people + peopleCount,
-                companies: existing.companies + 1
-              })
-            }
-          }
-        } catch (error) {
-          console.warn('Invalid date format:', startDate)
         }
       }
     })
@@ -101,11 +82,9 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .map(item => ({
         ...item,
-        people: Math.round(item.people * 100) / 100, // Round to 2 decimal places
-        companies: Math.round(item.companies * 100) / 100, // Round to 2 decimal places
         displayDate: format(new Date(item.date), 'dd/MM', { locale: vi })
       }))
-  }, [data, monthFilter, dateFilter])
+  }, [data, examCategories, monthFilter, dateFilter])
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -116,10 +95,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
             {format(new Date(data.date), 'dd/MM/yyyy', { locale: vi })}
           </p>
           <p className="text-blue-600">
-            Số người khám: <span className="font-semibold">{data.people}</span>
-          </p>
-          <p className="text-gray-600">
-            Số công ty: <span className="font-semibold">{data.companies}</span>
+            Max cận lâm sàng: <span className="font-semibold">{data.maxCount}</span>
           </p>
         </div>
       )
@@ -159,7 +135,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
             <Tooltip content={<CustomTooltip />} />
             <Line 
               type="monotone" 
-              dataKey="people" 
+              dataKey="maxCount" 
               stroke="#000000" 
               strokeWidth={2}
               dot={(props) => {
@@ -185,4 +161,4 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
   )
 }
 
-export default CustomLineChart
+export default MaxExamChart
