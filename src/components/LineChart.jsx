@@ -10,8 +10,9 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
     
     // Use date filter if both dates are provided, otherwise use month filter
     if (dateFilter.startDate && dateFilter.endDate) {
-      chartStart = parseISO(dateFilter.startDate)
-      chartEnd = parseISO(dateFilter.endDate)
+      // Parse dates carefully to avoid timezone issues
+      chartStart = new Date(dateFilter.startDate + 'T00:00:00')
+      chartEnd = new Date(dateFilter.endDate + 'T00:00:00')
     } else {
       const { month, year } = monthFilter
       const selectedDate = new Date(year, month - 1, 1)
@@ -45,16 +46,19 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       
       if (startDate && endDate) {
         try {
-          const startDateObj = parseISO(startDate)
-          const endDateObj = parseISO(endDate)
+          // Parse dates carefully to avoid timezone issues
+          const startDateObj = new Date(startDate + 'T00:00:00')
+          const endDateObj = new Date(endDate + 'T00:00:00')
           
           // Calculate the number of working days (excluding Sundays) in the examination period
           const examDays = eachDayOfInterval({ start: startDateObj, end: endDateObj })
             .filter(date => getDay(date) !== 0) // Exclude Sundays
           
           if (examDays.length > 0) {
-            // Distribute people evenly across working days
-            const peoplePerDay = peopleCount / examDays.length
+            // Use daily average from Supabase data instead of even distribution
+            const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+            const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+            const dailyCount = morningAvg + afternoonAvg
             
             examDays.forEach(examDate => {
               // Only include data from the selected range
@@ -64,7 +68,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                 if (existing) {
                   dateMap.set(dateKey, {
                     ...existing,
-                    people: existing.people + peoplePerDay,
+                    people: existing.people + dailyCount,
                     companies: existing.companies + (1 / examDays.length) // Distribute company count as well
                   })
                 }
@@ -77,7 +81,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       } else if (startDate) {
         // Fallback to old logic if endDate is missing
         try {
-          const itemDate = parseISO(startDate)
+          const itemDate = new Date(startDate + 'T00:00:00')
           // Only include data from the selected range and exclude Sundays
           if (itemDate >= chartStart && itemDate <= chartEnd && getDay(itemDate) !== 0) {
             const dateKey = format(itemDate, 'yyyy-MM-dd')

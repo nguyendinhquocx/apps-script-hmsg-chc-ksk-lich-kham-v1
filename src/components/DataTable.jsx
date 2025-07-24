@@ -105,21 +105,21 @@ const DataTable = ({ globalFilters = {} }) => {
             
             if (dateFilter.startDate && dateFilter.endDate) {
               // Both dates specified - check if examination period overlaps with filter range
-              const filterStart = new Date(dateFilter.startDate)
-              const filterEnd = new Date(dateFilter.endDate)
-              const examStart = new Date(startDate)
-              const examEnd = new Date(endDate || startDate)
+              const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
+              const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
+              const examStart = new Date(startDate + 'T00:00:00')
+              const examEnd = new Date((endDate || startDate) + 'T00:00:00')
               
               return (examStart <= filterEnd && examEnd >= filterStart)
             } else if (dateFilter.startDate) {
               // Only start date specified
-              const filterStart = new Date(dateFilter.startDate)
-              const examEnd = new Date(endDate || startDate)
+              const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
+              const examEnd = new Date((endDate || startDate) + 'T00:00:00')
               return examEnd >= filterStart
             } else if (dateFilter.endDate) {
               // Only end date specified
-              const filterEnd = new Date(dateFilter.endDate)
-              const examStart = new Date(startDate)
+              const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
+              const examStart = new Date(startDate + 'T00:00:00')
               return examStart <= filterEnd
             }
             
@@ -264,21 +264,21 @@ const DataTable = ({ globalFilters = {} }) => {
           
           if (dateFilter.startDate && dateFilter.endDate) {
             // Both dates specified - check if examination period overlaps with filter range
-            const filterStart = new Date(dateFilter.startDate)
-            const filterEnd = new Date(dateFilter.endDate)
-            const examStart = new Date(startDate)
-            const examEnd = new Date(endDate || startDate)
+            const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
+            const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
+            const examStart = new Date(startDate + 'T00:00:00')
+            const examEnd = new Date((endDate || startDate) + 'T00:00:00')
             
             return (examStart <= filterEnd && examEnd >= filterStart)
           } else if (dateFilter.startDate) {
             // Only start date specified
-            const filterStart = new Date(dateFilter.startDate)
-            const examEnd = new Date(endDate || startDate)
+            const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
+            const examEnd = new Date((endDate || startDate) + 'T00:00:00')
             return examEnd >= filterStart
           } else if (dateFilter.endDate) {
             // Only end date specified
-            const filterEnd = new Date(dateFilter.endDate)
-            const examStart = new Date(startDate)
+            const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
+            const examStart = new Date(startDate + 'T00:00:00')
             return examStart <= filterEnd
           }
           
@@ -383,8 +383,9 @@ const DataTable = ({ globalFilters = {} }) => {
   // Generate date range for table columns
   const getDateRange = () => {
     if (dateFilter.startDate && dateFilter.endDate) {
-      const start = new Date(dateFilter.startDate)
-      const end = new Date(dateFilter.endDate)
+      // Parse dates carefully to avoid timezone issues
+      const start = new Date(dateFilter.startDate + 'T00:00:00')
+      const end = new Date(dateFilter.endDate + 'T00:00:00')
       const dates = []
       const current = new Date(start)
       
@@ -394,7 +395,7 @@ const DataTable = ({ globalFilters = {} }) => {
       }
       return dates
     } else {
-      // Default to current month
+      // Default to current month - create dates in local timezone
       const year = monthFilter.year
       const month = monthFilter.month
       const daysInMonth = new Date(year, month, 0).getDate()
@@ -415,17 +416,28 @@ const DataTable = ({ globalFilters = {} }) => {
 
   // Check if a company has examination on a specific date
   const getExamCountForDate = (record, date) => {
-    const startDate = new Date(record['ngay bat dau kham'])
-    const endDate = new Date(record['ngay ket thuc kham'] || record['ngay bat dau kham'])
-    const checkDate = new Date(date)
+    // Parse dates carefully to avoid timezone issues
+    const startDateStr = record['ngay bat dau kham']
+    const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
     
-    // Reset time to compare only dates
-    startDate.setHours(0, 0, 0, 0)
-    endDate.setHours(0, 0, 0, 0)
-    checkDate.setHours(0, 0, 0, 0)
+    if (!startDateStr) return 0
     
+    // Create dates using local time to avoid timezone shifts
+    const startDate = new Date(startDateStr + 'T00:00:00')
+    const endDate = new Date(endDateStr + 'T00:00:00')
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    
+    // Check if the date is within examination period
     if (checkDate >= startDate && checkDate <= endDate) {
-      return parseInt(record['so nguoi kham']) || 0
+      // Get total exam days and daily counts from Supabase data
+      const totalExamDays = parseInt(record['tong so ngay kham thuc te']) || 1
+      const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
+      const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+      
+      // Calculate daily count based on average morning + afternoon
+      const dailyCount = Math.round(morningAvg + afternoonAvg)
+      
+      return dailyCount
     }
     return 0
   }
