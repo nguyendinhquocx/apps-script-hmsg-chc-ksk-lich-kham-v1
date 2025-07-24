@@ -43,7 +43,8 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       const startDate = item['ngay bat dau kham']
       const endDate = item['ngay ket thuc kham']
       const specificDatesStr = item['cac ngay kham thuc te']
-      const peopleCount = parseInt(item['so nguoi kham']) || 0
+      const isCompleted = item['trang thai kham'] === 'Đã khám xong'
+      const totalPeople = parseInt(item['so nguoi kham']) || 0
       
       if (startDate) {
         try {
@@ -60,10 +61,16 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
               return null
             }).filter(d => d !== null)
             
-            // Use daily average from Supabase data
-            const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-            const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-            const dailyCount = morningAvg + afternoonAvg
+            let dailyCount
+            if (isCompleted) {
+              // For completed exams with specific dates: total people ÷ number of specific dates
+              dailyCount = totalPeople / specificDates.length
+            } else {
+              // For ongoing exams: use calculated averages
+              const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+              const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+              dailyCount = morningAvg + afternoonAvg
+            }
             
             specificDates.forEach(examDate => {
               // Only include data from the selected range and exclude Sundays
@@ -89,10 +96,18 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
               .filter(date => getDay(date) !== 0) // Exclude Sundays
             
             if (examDays.length > 0) {
-              // Use daily average from Supabase data instead of even distribution
-              const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-              const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-              const dailyCount = morningAvg + afternoonAvg
+              let dailyCount
+              if (isCompleted) {
+                // For completed exams: total people ÷ total exam days (including Sundays)
+                const timeDiff = endDateObj.getTime() - startDateObj.getTime()
+                const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1
+                dailyCount = totalPeople / totalDays
+              } else {
+                // For ongoing exams: use calculated averages
+                const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+                const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+                dailyCount = morningAvg + afternoonAvg
+              }
               
               examDays.forEach(examDate => {
                 // Only include data from the selected range
@@ -117,9 +132,10 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
               const dateKey = format(itemDate, 'yyyy-MM-dd')
               const existing = dateMap.get(dateKey)
               if (existing) {
+                const dailyCount = isCompleted ? totalPeople : totalPeople
                 dateMap.set(dateKey, {
                   ...existing,
-                  people: existing.people + peopleCount,
+                  people: existing.people + dailyCount,
                   companies: existing.companies + 1
                 })
               }

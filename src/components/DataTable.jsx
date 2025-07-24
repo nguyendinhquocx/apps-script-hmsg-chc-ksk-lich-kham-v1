@@ -420,6 +420,8 @@ const DataTable = ({ globalFilters = {} }) => {
     const startDateStr = record['ngay bat dau kham']
     const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
     const specificDatesStr = record['cac ngay kham thuc te']
+    const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+    const totalPeople = parseInt(record['so nguoi kham']) || 0
     
     if (!startDateStr) return 0
     
@@ -445,11 +447,17 @@ const DataTable = ({ globalFilters = {} }) => {
       )
       
       if (isSpecificDate) {
-        // Calculate daily count based on average morning + afternoon
-        const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
-        const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
-        const dailyCount = Math.round(morningAvg + afternoonAvg)
-        return dailyCount
+        if (isCompleted) {
+          // For completed exams with specific dates: total people ÷ number of specific dates
+          const dailyCount = totalPeople / specificDates.length
+          return Math.round(dailyCount)
+        } else {
+          // For ongoing exams: use calculated averages
+          const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
+          const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+          const dailyCount = Math.round(morningAvg + afternoonAvg)
+          return dailyCount
+        }
       }
       
       return 0
@@ -460,11 +468,19 @@ const DataTable = ({ globalFilters = {} }) => {
       
       // Check if the date is within examination period
       if (checkDate >= startDate && checkDate <= endDate) {
-        // Calculate daily count based on average morning + afternoon
-        const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
-        const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
-        const dailyCount = Math.round(morningAvg + afternoonAvg)
-        return dailyCount
+        if (isCompleted) {
+          // For completed exams: total people ÷ number of exam days
+          const timeDiff = endDate.getTime() - startDate.getTime()
+          const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1
+          const dailyCount = totalPeople / totalDays
+          return Math.round(dailyCount)
+        } else {
+          // For ongoing exams: use calculated averages
+          const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
+          const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+          const dailyCount = Math.round(morningAvg + afternoonAvg)
+          return dailyCount
+        }
       }
       return 0
     }
