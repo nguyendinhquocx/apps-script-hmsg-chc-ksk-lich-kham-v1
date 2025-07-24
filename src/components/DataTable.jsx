@@ -14,6 +14,10 @@ const DataTable = ({ globalFilters = {} }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [totalCount, setTotalCount] = useState(0)
+  
+  // Modal state for company details
+  const [selectedCompany, setSelectedCompany] = useState(null)
+  const [showModal, setShowModal] = useState(false)
 
 
   
@@ -594,6 +598,82 @@ const DataTable = ({ globalFilters = {} }) => {
     })
   }
 
+  // Handle company click to show modal
+  const handleCompanyClick = (record) => {
+    setSelectedCompany(record)
+    setShowModal(true)
+  }
+
+  // Close modal
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedCompany(null)
+  }
+
+  // Calculate company examination details
+  const getCompanyDetails = (record) => {
+    if (!record) return null
+
+    const startDateStr = record['ngay bat dau kham']
+    const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
+    const specificDatesStr = record['cac ngay kham thuc te']
+    const bloodTestDateStr = record['ngay lay mau']
+    const totalPeople = parseInt(record['so nguoi kham']) || 0
+    const morningCount = parseFloat(record['trung binh ngay sang']) || 0
+    const afternoonCount = parseFloat(record['trung binh ngay chieu']) || 0
+    const employee = record['ten nhan vien'] || '-'
+
+    // Calculate total examination days
+    let totalDays = 0
+    if (specificDatesStr && specificDatesStr.trim()) {
+      // Count specific dates (excluding Sundays)
+      const specificDates = specificDatesStr.split(',').map(dateStr => {
+        const trimmed = dateStr.trim()
+        if (trimmed.includes('/')) {
+          const [month, day] = trimmed.split('/')
+          const year = new Date().getFullYear()
+          return new Date(year, parseInt(month) - 1, parseInt(day))
+        }
+        return null
+      }).filter(d => d !== null && d.getDay() !== 0) // Exclude Sundays
+      
+      totalDays = specificDates.length
+    } else if (startDateStr && endDateStr) {
+      // Count working days in date range
+      const startDate = new Date(startDateStr + 'T00:00:00')
+      const endDate = new Date(endDateStr + 'T00:00:00')
+      totalDays = countWorkingDays(startDate, endDate)
+    }
+
+    // Format examination period
+    let examPeriod = '-'
+    if (startDateStr) {
+      const startFormatted = format(new Date(startDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
+      if (endDateStr && endDateStr !== startDateStr) {
+        const endFormatted = format(new Date(endDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
+        examPeriod = `${startFormatted} - ${endFormatted}`
+      } else {
+        examPeriod = startFormatted
+      }
+    }
+
+    // Format blood test date
+    let bloodTestDate = null
+    if (bloodTestDateStr) {
+      bloodTestDate = format(new Date(bloodTestDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
+    }
+
+    return {
+      totalPeople,
+      morningCount: Math.round(morningCount),
+      afternoonCount: Math.round(afternoonCount),
+      totalDays,
+      employee,
+      examPeriod,
+      bloodTestDate
+    }
+  }
+
   const dateRange = getDateRange()
   const dailyTotals = calculateDailyTotals(dateRange)
 
@@ -738,8 +818,9 @@ const DataTable = ({ globalFilters = {} }) => {
                     <tr key={record['ID'] || record.id || index}>
                       <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-30" style={{width: '200px', color: isCompleted ? '#2962ff' : '#000000'}}>
                          <div 
-                           className="truncate" 
+                           className="truncate cursor-pointer rounded px-2 py-1 hover:bg-gray-100 transition-colors" 
                            title={getTooltipCompanyName(record['ten cong ty'])}
+                           onClick={() => handleCompanyClick(record)}
                          >
                            {getDisplayCompanyName(record['ten cong ty']) || '-'}
                          </div>
@@ -803,6 +884,78 @@ const DataTable = ({ globalFilters = {} }) => {
         </div>
       )}
       </div>
+
+      {/* Company Details Modal */}
+      {showModal && selectedCompany && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={closeModal}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="mb-4">
+              <h3 className="text-base font-semibold text-gray-900 break-words">
+                {selectedCompany['ten cong ty']}
+              </h3>
+            </div>
+
+            {/* Company Details */}
+            <div className="space-y-2">
+              {(() => {
+                const details = getCompanyDetails(selectedCompany)
+                const isCompleted = selectedCompany['trang thai kham'] === 'Đã khám xong'
+                
+                return (
+                  <>
+                    {/* Blood test date - only show if exists */}
+                    {details.bloodTestDate && (
+                      <div className="flex justify-between py-1.5 border-b border-gray-100">
+                        <span className="text-sm text-gray-600">Ngày lấy máu:</span>
+                        <span className="text-sm text-gray-900">{details.bloodTestDate}</span>
+                      </div>
+                    )}
+                    
+                    {/* Examination period */}
+                    <div className="flex justify-between py-1.5 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">Khoảng thời gian khám:</span>
+                      <span className="text-sm text-gray-900">{details.examPeriod}</span>
+                    </div>
+                    
+                    <div className="flex justify-between py-1.5 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">Tổng số người khám:</span>
+                      <span className="text-sm text-gray-900">{details.totalPeople.toLocaleString('vi-VN')} người</span>
+                    </div>
+                    
+                    <div className="flex justify-between py-1.5 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">Số lượng khám sáng:</span>
+                      <span className="text-sm text-gray-900">{details.morningCount.toLocaleString('vi-VN')} người</span>
+                    </div>
+                    
+                    <div className="flex justify-between py-1.5 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">Số lượng khám chiều:</span>
+                      <span className="text-sm text-gray-900">{details.afternoonCount.toLocaleString('vi-VN')} người</span>
+                    </div>
+                    
+                    <div className="flex justify-between py-1.5 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">Tổng số ngày khám:</span>
+                      <span className="text-sm text-gray-900">{details.totalDays} ngày</span>
+                    </div>
+                    
+                    <div className="flex justify-between py-1.5 border-b border-gray-100">
+                      <span className="text-sm text-gray-600">Nhân viên phụ trách:</span>
+                      <span className="text-sm text-gray-900">{details.employee}</span>
+                    </div>
+                    
+                    <div className="flex justify-between py-1.5">
+                      <span className="text-sm text-gray-600">Trạng thái:</span>
+                      <span className={`text-sm ${isCompleted ? 'text-blue-600' : 'text-gray-900'}`}>
+                        {selectedCompany['trang thai kham']}
+                      </span>
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
