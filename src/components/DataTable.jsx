@@ -538,7 +538,7 @@ const DataTable = ({ globalFilters = {} }) => {
                   const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
                   return (
                     <th key={index} className={`px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider ${isToday ? 'bg-[#f8f9fa]' : ''}`} style={{ width: '50px', minWidth: '50px' }}>
-                      <div className="text-sm font-semibold">
+                      <div className="text-sm font-normal">
                         {date.getDate()}
                       </div>
                     </th>
@@ -557,9 +557,9 @@ const DataTable = ({ globalFilters = {} }) => {
                   return (
                     <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
                       {total > 0 && (
-                        <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
+                        <span className="text-xs font-bold" style={{color: '#000000'}}>
                           {total.toLocaleString('vi-VN')}
-                        </div>
+                        </span>
                       )}
                     </td>
                   )
@@ -578,7 +578,7 @@ const DataTable = ({ globalFilters = {} }) => {
                   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
                   return (
                     <tr key={record['ID'] || record.id || index}>
-                      <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-20" style={{width: '200px', color: isCompleted ? '#1e40af' : '#000000'}}>
+                      <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-20" style={{width: '200px', color: isCompleted ? '#2962ff' : '#000000'}}>
                          <div 
                            className="truncate" 
                            title={getTooltipCompanyName(record['ten cong ty'])}
@@ -586,7 +586,7 @@ const DataTable = ({ globalFilters = {} }) => {
                            {getDisplayCompanyName(record['ten cong ty']) || '-'}
                          </div>
                        </td>
-                      <td className="px-3 py-1.5 text-sm font-normal sticky left-[200px] bg-white z-10" style={{width: '80px', color: isCompleted ? '#1e40af' : '#000000'}}>
+                      <td className="px-3 py-1.5 text-sm font-normal sticky left-[200px] bg-white z-10" style={{width: '80px', color: '#000000'}}>
                         {parseInt(record['so nguoi kham'] || 0).toLocaleString('vi-VN')}
                       </td>
                       {dateRange.map((date, dateIndex) => {
@@ -595,9 +595,9 @@ const DataTable = ({ globalFilters = {} }) => {
                         return (
                           <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
                             {examCount > 0 && (
-                              <div className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full transition-transform duration-200 hover:scale-110 cursor-pointer">
+                              <span className="text-xs font-normal" style={{color: '#000000'}}>
                                 {examCount.toLocaleString('vi-VN')}
-                              </div>
+                              </span>
                             )}
                           </td>
                         )

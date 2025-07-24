@@ -479,13 +479,13 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                   <tr key={dayInfo.date} className={isToday ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]'}>
                     {/* Cột ngày */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm">
-                      <div className="text-black font-medium">{dayInfo.day}</div>
+                      <div className="text-black font-normal">{dayInfo.day}</div>
                       <div className="text-gray-500 text-xs">{dayInfo.dayOfWeek}</div>
                     </td>
                     
                     {/* Cột Max */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:scale-110 transition-transform duration-200 cursor-pointer">
+                      <span className="text-xs font-bold" style={{color: '#000000'}}>
                         {getMaxForDay(dayInfo.date)}
                       </span>
                     </td>
@@ -493,12 +493,22 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     {/* Các cột sáng */}
                     {examCategories.map((category, categoryIndex) => {
                       const count = getExamCount(dayInfo.date, categoryIndex, 'morning')
+                      // Kiểm tra ngày đã qua
+                      const isPastDate = new Date(dayInfo.date) < new Date().setHours(0, 0, 0, 0)
+                      // Xác định màu: đã qua -> xanh nước biển nhạt #2962ff, lớn hơn 100 -> đỏ nhạt #f23645, còn lại -> đen
+                      let textColor = '#000000' // mặc định đen
+                      if (isPastDate) {
+                        textColor = '#2962ff' // xanh nước biển nhạt cho ngày đã qua
+                      } else if (count > 100) {
+                        textColor = '#f23645' // đỏ nhạt cho số > 100
+                      }
+                      
                       return (
                         <td key={`morning-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                           {count > 0 && (
-                            <button className={`inline-flex items-center justify-center w-8 h-8 ${count > 100 ? 'bg-red-100 border-red-600 text-red-800' : 'bg-green-100 border-green-600 text-green-800'} text-xs font-medium rounded-full transition-transform duration-200 cursor-pointer hover:scale-110`}>
+                            <span className="text-xs font-normal" style={{color: textColor}}>
                               {count}
-                            </button>
+                            </span>
                           )}
                         </td>
                       )
@@ -507,12 +517,22 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     {/* Các cột chiều */}
                     {examCategories.map((category, categoryIndex) => {
                       const count = getExamCount(dayInfo.date, categoryIndex, 'afternoon')
+                      // Kiểm tra ngày đã qua
+                      const isPastDate = new Date(dayInfo.date) < new Date().setHours(0, 0, 0, 0)
+                      // Xác định màu: đã qua -> xanh nước biển nhạt #2962ff, lớn hơn 100 -> đỏ nhạt #f23645, còn lại -> đen
+                      let textColor = '#000000' // mặc định đen
+                      if (isPastDate) {
+                        textColor = '#2962ff' // xanh nước biển nhạt cho ngày đã qua
+                      } else if (count > 100) {
+                        textColor = '#f23645' // đỏ nhạt cho số > 100
+                      }
+                      
                       return (
                         <td key={`afternoon-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                           {count > 0 && (
-                            <button className={`inline-flex items-center justify-center w-8 h-8 ${count > 100 ? 'bg-red-100 border-red-600 text-red-800' : 'bg-green-100 border-green-600 text-green-800'} text-xs font-medium rounded-full transition-transform duration-200 cursor-pointer hover:scale-110`}>
+                            <span className="text-xs font-normal" style={{color: textColor}}>
                               {count}
-                            </button>
+                            </span>
                           )}
                         </td>
                       )

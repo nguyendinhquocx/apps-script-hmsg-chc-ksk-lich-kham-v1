@@ -139,7 +139,7 @@ const GlobalFilters = ({
             </label>
             <button
               onClick={onReset}
-              className="px-4 py-2 bg-white text-black text-sm hover:bg-gray-100 transition-colors duration-200"
+              className="px-4 py-2 bg-white text-black text-sm font-bold hover:bg-gray-100 transition-colors duration-200"
               title="Xóa tất cả bộ lọc"
             >
               Reset
