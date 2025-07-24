@@ -61,10 +61,13 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
               return null
             }).filter(d => d !== null)
             
+            // Filter out Sundays from specific dates
+            const workingSpecificDates = specificDates.filter(d => getDay(d) !== 0)
+            
             let dailyCount
             if (isCompleted) {
-              // For completed exams with specific dates: total people ÷ number of specific dates
-              dailyCount = totalPeople / specificDates.length
+              // For completed exams with specific dates: total people ÷ number of working specific dates
+              dailyCount = workingSpecificDates.length > 0 ? totalPeople / workingSpecificDates.length : 0
             } else {
               // For ongoing exams: use calculated averages
               const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
@@ -72,7 +75,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
               dailyCount = morningAvg + afternoonAvg
             }
             
-            specificDates.forEach(examDate => {
+            workingSpecificDates.forEach(examDate => {
               // Only include data from the selected range and exclude Sundays
               if (examDate >= chartStart && examDate <= chartEnd && getDay(examDate) !== 0) {
                 const dateKey = format(examDate, 'yyyy-MM-dd')
@@ -98,10 +101,8 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
             if (examDays.length > 0) {
               let dailyCount
               if (isCompleted) {
-                // For completed exams: total people ÷ total exam days (including Sundays)
-                const timeDiff = endDateObj.getTime() - startDateObj.getTime()
-                const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1
-                dailyCount = totalPeople / totalDays
+                // For completed exams: total people ÷ number of working days (excluding Sundays)
+                dailyCount = totalPeople / examDays.length
               } else {
                 // For ongoing exams: use calculated averages
                 const morningAvg = parseFloat(item['trung binh ngay sang']) || 0

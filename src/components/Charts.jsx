@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { FileSpreadsheet } from 'lucide-react'
+import { isSameDay } from 'date-fns'
 import * as XLSX from 'xlsx'
 import GlobalFilters from './GlobalFilters'
 import ExamStatsCards from './ExamStatsCards'
@@ -478,7 +479,9 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
             {/* Body */}
             <tbody className="bg-white">
               {days.map((dayInfo, dayIndex) => {
-                const isToday = dayInfo.date === new Date().toISOString().split('T')[0]
+                const today = new Date()
+                const dayDate = new Date(dayInfo.date)
+                const isToday = isSameDay(dayDate, today)
                 
                 // Kiểm tra xem ngày này có dữ liệu không
                 const hasData = getMaxForDay(dayInfo.date) > 0 || 

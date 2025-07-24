@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, isSameDay } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import LichKhamService from '../services/supabase'
 import StatsCards from './StatsCards'
@@ -414,6 +414,22 @@ const DataTable = ({ globalFilters = {} }) => {
     return days[date.getDay()]
   }
 
+  // Helper function to count working days (excluding Sundays) between dates
+  const countWorkingDays = (startDate, endDate) => {
+    let count = 0
+    const current = new Date(startDate)
+    
+    while (current <= endDate) {
+      // Skip Sunday (getDay() === 0)
+      if (current.getDay() !== 0) {
+        count++
+      }
+      current.setDate(current.getDate() + 1)
+    }
+    
+    return count
+  }
+
   // Check if a company has examination on a specific date
   const getExamCountForDate = (record, date) => {
     // Parse dates carefully to avoid timezone issues
@@ -428,6 +444,9 @@ const DataTable = ({ globalFilters = {} }) => {
     // Create dates using local time to avoid timezone shifts
     const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
     
+    // Skip if current date is Sunday (hospital doesn't work on Sundays)
+    if (checkDate.getDay() === 0) return 0
+    
     // Check if there are specific examination dates
     if (specificDatesStr && specificDatesStr.trim()) {
       // Parse specific dates (format: MM/dd, MM/dd, ...)
@@ -441,15 +460,18 @@ const DataTable = ({ globalFilters = {} }) => {
         return null
       }).filter(d => d !== null)
       
-      // Check if current date matches any specific date
-      const isSpecificDate = specificDates.some(specificDate => 
+      // Filter out Sundays from specific dates
+      const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
+      
+      // Check if current date matches any specific date (and it's not Sunday)
+      const isSpecificDate = workingSpecificDates.some(specificDate => 
         checkDate.getTime() === specificDate.getTime()
       )
       
       if (isSpecificDate) {
         if (isCompleted) {
-          // For completed exams with specific dates: total people ÷ number of specific dates
-          const dailyCount = totalPeople / specificDates.length
+          // For completed exams with specific dates: total people ÷ number of working specific dates
+          const dailyCount = totalPeople / workingSpecificDates.length
           return Math.round(dailyCount)
         } else {
           // For ongoing exams: use calculated averages
@@ -469,10 +491,9 @@ const DataTable = ({ globalFilters = {} }) => {
       // Check if the date is within examination period
       if (checkDate >= startDate && checkDate <= endDate) {
         if (isCompleted) {
-          // For completed exams: total people ÷ number of exam days
-          const timeDiff = endDate.getTime() - startDate.getTime()
-          const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24)) + 1
-          const dailyCount = totalPeople / totalDays
+          // For completed exams: total people ÷ number of working days (excluding Sundays)
+          const workingDays = countWorkingDays(startDate, endDate)
+          const dailyCount = workingDays > 0 ? totalPeople / workingDays : 0
           return Math.round(dailyCount)
         } else {
           // For ongoing exams: use calculated averages
@@ -631,7 +652,8 @@ const DataTable = ({ globalFilters = {} }) => {
                 <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-0 bg-white z-30" style={{ width: '200px', minWidth: '200px' }}></th>
                 <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-900 uppercase tracking-wider sticky left-[200px] bg-white z-20" style={{ width: '80px' }}></th>
                 {dateRange.map((date, index) => {
-                  const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                  const today = new Date()
+                  const isToday = isSameDay(date, today)
                   return (
                     <th key={index} className={`px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider ${isToday ? 'bg-[#f8f9fa]' : ''}`} style={{ width: '50px', minWidth: '50px' }}>
                       <div className="text-xs font-medium text-gray-600">
@@ -669,7 +691,8 @@ const DataTable = ({ globalFilters = {} }) => {
                   </div>
                 </th>
                 {dateRange.map((date, index) => {
-                  const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                  const today = new Date()
+                  const isToday = isSameDay(date, today)
                   return (
                     <th key={index} className={`px-1 py-1.5 text-center text-xs font-medium text-gray-900 uppercase tracking-wider ${isToday ? 'bg-[#f8f9fa]' : ''}`} style={{ width: '50px', minWidth: '50px' }}>
                       <div className="text-sm font-normal">
@@ -687,7 +710,8 @@ const DataTable = ({ globalFilters = {} }) => {
                   {data.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0).toLocaleString('vi-VN')}
                 </td>
                 {dailyTotals.map((total, index) => {
-                  const isToday = dateRange[index] && dateRange[index].toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                  const today = new Date()
+                  const isToday = dateRange[index] && isSameDay(dateRange[index], today)
                   return (
                     <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
                       {total > 0 && (
@@ -725,7 +749,8 @@ const DataTable = ({ globalFilters = {} }) => {
                       </td>
                       {dateRange.map((date, dateIndex) => {
                         const bloodTestDisplay = getBloodTestDisplay(record, date)
-                        const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                        const today = new Date()
+                        const isToday = isSameDay(date, today)
                         
                         return (
                           <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
