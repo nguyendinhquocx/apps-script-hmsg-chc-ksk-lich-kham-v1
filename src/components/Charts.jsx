@@ -195,8 +195,13 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     getExamCount(dayInfo.date, index, 'afternoon') > 0
                   )
                 
-                // Nếu không có dữ liệu thì không hiển thị hàng
-                if (!hasData) return null
+                // Chỉ hiển thị những ngày có dữ liệu khi đã có filter
+                const hasAnyFilter = globalFilters.searchTerm || 
+                  (globalFilters.statusFilter && globalFilters.statusFilter !== 'all') ||
+                  (globalFilters.employeeFilter && globalFilters.employeeFilter !== 'all') ||
+                  globalFilters.showGold
+                
+                if (hasAnyFilter && !hasData) return null
                 
                 return (
                   <tr key={dayInfo.date} className={isToday ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]'}>
@@ -270,7 +275,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                     })}
                   </tr>
                 )
-              }).filter(Boolean)} {/* Lọc bỏ null values */}
+              }).filter(Boolean)} {/* Lọc bỏ null values khi có filter */}
             </tbody>
           </table>
         </div>

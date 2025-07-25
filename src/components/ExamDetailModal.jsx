@@ -16,7 +16,15 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
     return acc
   }, {})
 
-  const examiners = Object.keys(groupedByExaminer).sort()
+  // Sort examiners and sort companies within each examiner by count (descending)
+  // Filter out 'Không xác định' group
+  const examiners = Object.keys(groupedByExaminer)
+    .filter(examiner => examiner !== 'Không xác định')
+    .sort()
+  
+  examiners.forEach(examiner => {
+    groupedByExaminer[examiner].sort((a, b) => b.count - a.count)
+  })
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -30,10 +38,10 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-base font-medium text-gray-900">
               Chi tiết {examType} - {period === 'morning' ? 'Sáng' : 'Chiều'}
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               {format(new Date(date), 'dd/MM/yyyy', { locale: vi })} - Tổng cộng: {totalCount} người
             </p>
           </div>
@@ -57,21 +65,17 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
                 <div key={examiner}>
                   {/* Examiner header */}
                   <div className="bg-gray-50 px-3 py-2 rounded-lg">
-                    <h3 className="font-medium text-gray-900">{examiner}</h3>
-                    <p className="text-sm text-gray-600">
-                      {groupedByExaminer[examiner].length} công ty - {' '}
-                      {groupedByExaminer[examiner].reduce((sum, company) => sum + company.count, 0)} người
-                    </p>
+                    <h3 className="text-sm font-medium text-gray-900">{examiner}</h3>
                   </div>
 
                   {/* Companies list */}
                   <div className="mt-2 space-y-1">
                     {groupedByExaminer[examiner].map((company, index) => (
                       <div key={index} className="flex justify-between items-center py-1 px-3 hover:bg-gray-50 rounded">
-                        <span className="text-sm text-gray-700 flex-1 truncate" title={company.name}>
+                        <span className="text-xs text-gray-700 flex-1 truncate font-normal" title={company.name}>
                           {company.name}
                         </span>
-                        <span className="text-sm font-medium text-gray-900 ml-2">
+                        <span className="text-xs font-normal text-gray-900 ml-2">
                           {company.count} người
                         </span>
                       </div>
@@ -80,22 +84,12 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
 
                   {/* Separator between examiners */}
                   {examinerIndex < examiners.length - 1 && (
-                    <div className="border-t border-gray-200 my-4"></div>
+                    <div className="border-t border-gray-100 my-3"></div>
                   )}
                 </div>
               ))}
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end p-4 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Đóng
-          </button>
         </div>
       </div>
     </div>

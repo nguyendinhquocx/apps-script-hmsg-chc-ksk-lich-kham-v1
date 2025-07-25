@@ -59,6 +59,14 @@ export const useChartsFiltering = (data, globalFilters) => {
           return false
         }
       }
+
+      // Lọc theo Gold
+      if (globalFilters.showGold) {
+        const packageName = item['goi kham'] || ''
+        if (!packageName.toLowerCase().includes('gold')) {
+          return false
+        }
+      }
       
       return true
     })

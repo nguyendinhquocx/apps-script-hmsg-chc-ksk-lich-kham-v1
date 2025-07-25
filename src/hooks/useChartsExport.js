@@ -9,24 +9,47 @@ export const useChartsExport = (filteredData, globalFilters) => {
     
     // Lọc dữ liệu cho ngày cụ thể
     const dayData = filteredData.filter(item => {
-      const startDate = new Date(item['ngay bat dau kham'])
-      const endDate = new Date(item['ngay ket thuc kham'])
-      const currentDate = new Date(date)
+      const startDateStr = item['ngay bat dau kham']
+      const endDateStr = item['ngay ket thuc kham'] || item['ngay bat dau kham']
+      const specificDatesStr = item['cac ngay kham thuc te']
       
-      // Kiểm tra có dữ liệu 'cac ngay kham thuc te' không
-      const actualExamDates = item['cac ngay kham thuc te']
+      if (!startDateStr) return false
       
-      if (actualExamDates) {
-        // Nếu có dữ liệu ngày khám thực tế, kiểm tra ngày có trong danh sách không
-        const examDatesArray = actualExamDates.split(',').map(d => d.trim())
-        const targetDateStr = currentDate.toISOString().split('T')[0]
-        return examDatesArray.includes(targetDateStr)
+      // Create dates using local time to avoid timezone shifts
+      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      
+      // Skip if current date is Sunday (hospital doesn't work on Sundays)
+      if (checkDate.getDay() === 0) return false
+      
+      // Check if there are specific examination dates
+      if (specificDatesStr && specificDatesStr.trim()) {
+        // Parse specific dates (format: MM/dd, MM/dd, ...)
+        const specificDates = specificDatesStr.split(',').map(dateStr => {
+          const trimmed = dateStr.trim()
+          if (trimmed.includes('/')) {
+            const [month, day] = trimmed.split('/')
+            const year = date.getFullYear() // Use current year from the date range
+            return new Date(year, parseInt(month) - 1, parseInt(day))
+          }
+          return null
+        }).filter(d => d !== null)
+        
+        // Filter out Sundays from specific dates
+        const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
+        
+        // Check if current date matches any specific date (and it's not Sunday)
+        const isSpecificDate = workingSpecificDates.some(specificDate => 
+          checkDate.getTime() === specificDate.getTime()
+        )
+        
+        return isSpecificDate
       } else {
-        // Nếu không có dữ liệu ngày khám thực tế, sử dụng khoảng thời gian
-        // và không phải chủ nhật (0 = chủ nhật)
-        const isInRange = currentDate >= startDate && currentDate <= endDate
-        const isNotSunday = currentDate.getDay() !== 0
-        return isInRange && isNotSunday
+        // Use original logic with start and end dates
+        const startDate = new Date(startDateStr + 'T00:00:00')
+        const endDate = new Date(endDateStr + 'T00:00:00')
+        
+        // Check if the date is within examination period
+        return checkDate >= startDate && checkDate <= endDate
       }
     })
     
@@ -40,31 +63,54 @@ export const useChartsExport = (filteredData, globalFilters) => {
     return totalCount
   }
 
-  // Lấy chi tiết các công ty cho một ngày và hạng mục cụ thể
+    // Lấy chi tiết các công ty cho một ngày và hạng mục cụ thể
   const getExamDetailData = (date, categoryIndex, period) => {
     const category = examCategories[categoryIndex]
     const columnName = period === 'morning' ? category.morning : category.afternoon
     
     // Lọc dữ liệu cho ngày cụ thể
     const dayData = filteredData.filter(item => {
-      const startDate = new Date(item['ngay bat dau kham'])
-      const endDate = new Date(item['ngay ket thuc kham'])
-      const currentDate = new Date(date)
+      const startDateStr = item['ngay bat dau kham']
+      const endDateStr = item['ngay ket thuc kham'] || item['ngay bat dau kham']
+      const specificDatesStr = item['cac ngay kham thuc te']
       
-      // Kiểm tra có dữ liệu 'cac ngay kham thuc te' không
-      const actualExamDates = item['cac ngay kham thuc te']
+      if (!startDateStr) return false
       
-      if (actualExamDates) {
-        // Nếu có dữ liệu ngày khám thực tế, kiểm tra ngày có trong danh sách không
-        const examDatesArray = actualExamDates.split(',').map(d => d.trim())
-        const targetDateStr = currentDate.toISOString().split('T')[0]
-        return examDatesArray.includes(targetDateStr)
+      // Create dates using local time to avoid timezone shifts
+      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      
+      // Skip if current date is Sunday (hospital doesn't work on Sundays)
+      if (checkDate.getDay() === 0) return false
+      
+      // Check if there are specific examination dates
+      if (specificDatesStr && specificDatesStr.trim()) {
+        // Parse specific dates (format: MM/dd, MM/dd, ...)
+        const specificDates = specificDatesStr.split(',').map(dateStr => {
+          const trimmed = dateStr.trim()
+          if (trimmed.includes('/')) {
+            const [month, day] = trimmed.split('/')
+            const year = date.getFullYear() // Use current year from the date range
+            return new Date(year, parseInt(month) - 1, parseInt(day))
+          }
+          return null
+        }).filter(d => d !== null)
+        
+        // Filter out Sundays from specific dates
+        const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
+        
+        // Check if current date matches any specific date (and it's not Sunday)
+        const isSpecificDate = workingSpecificDates.some(specificDate => 
+          checkDate.getTime() === specificDate.getTime()
+        )
+        
+        return isSpecificDate
       } else {
-        // Nếu không có dữ liệu ngày khám thực tế, sử dụng khoảng thời gian
-        // và không phải chủ nhật (0 = chủ nhật)
-        const isInRange = currentDate >= startDate && currentDate <= endDate
-        const isNotSunday = currentDate.getDay() !== 0
-        return isInRange && isNotSunday
+        // Use original logic with start and end dates
+        const startDate = new Date(startDateStr + 'T00:00:00')
+        const endDate = new Date(endDateStr + 'T00:00:00')
+        
+        // Check if the date is within examination period
+        return checkDate >= startDate && checkDate <= endDate
       }
     })
     
@@ -95,23 +141,47 @@ export const useChartsExport = (filteredData, globalFilters) => {
     
     // Lọc dữ liệu cho ngày cụ thể
     const dayData = filteredData.filter(item => {
-      const startDate = new Date(item['ngay bat dau kham'])
-      const endDate = new Date(item['ngay ket thuc kham'])
+      const startDateStr = item['ngay bat dau kham']
+      const endDateStr = item['ngay ket thuc kham'] || item['ngay bat dau kham']
+      const specificDatesStr = item['cac ngay kham thuc te']
       
-      // Kiểm tra có dữ liệu 'cac ngay kham thuc te' không
-      const actualExamDates = item['cac ngay kham thuc te']
+      if (!startDateStr) return false
       
-      if (actualExamDates) {
-        // Nếu có dữ liệu ngày khám thực tế, kiểm tra ngày có trong danh sách không
-        const examDatesArray = actualExamDates.split(',').map(d => d.trim())
-        const targetDateStr = currentDate.toISOString().split('T')[0]
-        return examDatesArray.includes(targetDateStr)
+      // Create dates using local time to avoid timezone shifts
+      const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
+      
+      // Skip if current date is Sunday (hospital doesn't work on Sundays)
+      if (checkDate.getDay() === 0) return false
+      
+      // Check if there are specific examination dates
+      if (specificDatesStr && specificDatesStr.trim()) {
+        // Parse specific dates (format: MM/dd, MM/dd, ...)
+        const specificDates = specificDatesStr.split(',').map(dateStr => {
+          const trimmed = dateStr.trim()
+          if (trimmed.includes('/')) {
+            const [month, day] = trimmed.split('/')
+            const year = currentDate.getFullYear() // Use current year from the date range
+            return new Date(year, parseInt(month) - 1, parseInt(day))
+          }
+          return null
+        }).filter(d => d !== null)
+        
+        // Filter out Sundays from specific dates
+        const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
+        
+        // Check if current date matches any specific date (and it's not Sunday)
+        const isSpecificDate = workingSpecificDates.some(specificDate => 
+          checkDate.getTime() === specificDate.getTime()
+        )
+        
+        return isSpecificDate
       } else {
-        // Nếu không có dữ liệu ngày khám thực tế, sử dụng khoảng thời gian
-        // và không phải chủ nhật (0 = chủ nhật)
-        const isInRange = currentDate >= startDate && currentDate <= endDate
-        const isNotSunday = currentDate.getDay() !== 0
-        return isInRange && isNotSunday
+        // Use original logic with start and end dates
+        const startDate = new Date(startDateStr + 'T00:00:00')
+        const endDate = new Date(endDateStr + 'T00:00:00')
+        
+        // Check if the date is within examination period
+        return checkDate >= startDate && checkDate <= endDate
       }
     })
     
