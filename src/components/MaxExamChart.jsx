@@ -71,7 +71,7 @@ const MaxExamChart = ({
       }
       
       return {
-        date: dayInfo.date.toISOString().split('T')[0],
+        date: format(dayInfo.date, 'yyyy-MM-dd'),
         displayDate: `${dayInfo.day}`,
         maxCount: maxCount,
         isToday: isToday,
@@ -129,7 +129,7 @@ const MaxExamChart = ({
             <XAxis 
               dataKey="displayDate" 
               tick={{ fontSize: 12 }}
-              axisLine={false}
+              axisLine={true}
               tickLine={false}
             />
             <YAxis 
@@ -147,10 +147,10 @@ const MaxExamChart = ({
               strokeWidth={1}
               label={{ 
                 value: average, 
-                position: "insideTopLeft", 
+                position: "insideTopRight", 
                 offset: 10,
                 style: { 
-                  textAnchor: 'start', 
+                  textAnchor: 'end', 
                   fontSize: '12px', 
                   fill: '#ef4444',
                   fontWeight: 'bold'

@@ -243,6 +243,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
             <XAxis 
               dataKey="date" 
               tick={{ fontSize: 12 }}
+              tickLine={false}
               tickFormatter={(value) => {
                 const date = new Date(value);
                 return date.getDate().toString();
@@ -291,7 +292,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                     <g>
                       <text
                         x={cx}
-                        y={cy - 10}
+                        y={cy + 20}
                         textAnchor="middle"
                         fontSize="12"
                         fontWeight="600"
