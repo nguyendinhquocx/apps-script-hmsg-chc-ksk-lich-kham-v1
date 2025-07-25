@@ -65,13 +65,15 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
             <div className="space-y-4">
               {examinersToShow.map((examiner, examinerIndex) => (
                 <div key={examiner}>
-                  {/* Examiner header */}
-                  <div className="bg-gray-50 px-3 py-2 rounded-lg">
-                    <h3 className="text-sm font-medium text-gray-900">{examiner}</h3>
-                  </div>
+                  {/* Examiner header - chỉ hiển thị nếu không phải "Không xác định" */}
+                  {examiner !== 'Không xác định' && (
+                    <div className="bg-gray-50 px-3 py-2 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-900">{examiner}</h3>
+                    </div>
+                  )}
 
                   {/* Companies list */}
-                  <div className="mt-2 space-y-1">
+                  <div className={examiner !== 'Không xác định' ? "mt-2 space-y-1" : "space-y-1"}>
                     {groupedByExaminer[examiner].map((company, index) => (
                       <div key={index} className="flex justify-between items-center py-1 px-3 hover:bg-gray-50 rounded">
                         <span className="text-xs text-gray-700 flex-1 truncate font-normal" title={company.name}>
@@ -84,8 +86,8 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
                     ))}
                   </div>
 
-                  {/* Separator between examiners */}
-                  {examinerIndex < examinersToShow.length - 1 && (
+                  {/* Separator between examiners - chỉ hiển thị nếu không phải examiner cuối */}
+                  {examinerIndex < examinersToShow.length - 1 && examinersToShow.length > 1 && (
                     <div className="border-t border-gray-100 my-3"></div>
                   )}
                 </div>
