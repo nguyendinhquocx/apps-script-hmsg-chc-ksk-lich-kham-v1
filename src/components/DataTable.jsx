@@ -1,28 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react'
-import { format, isSameDay } from 'date-fns'
-import { vi } from 'date-fns/locale'
-import LichKhamService from '../services/supabase'
+import React, { useState, useMemo } from 'react'
+import { FileSpreadsheet } from 'lucide-react'
+import { isSameDay } from 'date-fns'
 import StatsCards from './StatsCards'
 import LineChart from './LineChart'
-import { matchesSearch, isDateInMonth } from '../utils/vietnamese'
+import CompanyModal from './CompanyModal'
 import { getDisplayCompanyName, getTooltipCompanyName } from '../utils/companyName'
+import { useTableData } from '../hooks/useTableData'
+import { useExcelExport } from '../hooks/useExcelExport'
+import { 
+  getDateRange, 
+  getDayOfWeek, 
+  getExamCountForDate, 
+  getBloodTestDisplay, 
+  calculateDailyTotals, 
+  getCompanyDetails 
+} from '../utils/examUtils'
 
 const DataTable = ({ globalFilters = {} }) => {
-  // State management
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [totalCount, setTotalCount] = useState(0)
-  
   // Modal state for company details
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [showModal, setShowModal] = useState(false)
-
-
-  
-  // Extract global filters
-  const { searchTerm = '', statusFilter = '', employeeFilter = '', showGold = false, monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } } = globalFilters
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -32,159 +29,22 @@ const DataTable = ({ globalFilters = {} }) => {
   const [sortBy, setSortBy] = useState('ngay bat dau kham')
   const [sortOrder, setSortOrder] = useState('desc')
   
-  // Available status options
-  const [statusOptions, setStatusOptions] = useState([
-    'Đã khám xong',
-    'Chưa khám xong'
-  ])
+  // Use custom hooks
+  const { data, loading, error, totalCount } = useTableData(
+    globalFilters, 
+    sortBy, 
+    sortOrder, 
+    currentPage, 
+    pageSize
+  )
+  
+  const { handleExportExcel } = useExcelExport()
 
-  // Fetch data function
-  const fetchData = async () => {
-    setLoading(true)
-    setError(null)
-    
-    try {
-      const result = await LichKhamService.getLichKhamData({
-        page: 1,
-        limit: 10000, // Get all data for client-side filtering
-        search: '',
-        status: '',
-        employee: '',
-        showGold: false,
-        sortBy: sortBy,
-        sortOrder: sortOrder
-      })
-      
-      if (result.error) {
-        setError(result.error)
-        setData([])
-        setTotalCount(0)
-      } else {
-        // Apply client-side filtering
-        let filteredData = result.data
-        
-        // Filter by search term
-        if (searchTerm) {
-          filteredData = filteredData.filter(item => 
-            matchesSearch(item['ten cong ty'], searchTerm)
-          )
-        }
-        
-        // Filter by status
-        if (statusFilter) {
-          filteredData = filteredData.filter(item => 
-            item['trang thai kham'] === statusFilter
-          )
-        }
-        
-        // Filter by employee (with diacritics support)
-        if (employeeFilter) {
-          filteredData = filteredData.filter(item => 
-            matchesSearch(item['ten nhan vien'], employeeFilter)
-          )
-        }
-        
-        // Filter by Gold - Show only Gold companies when checkbox is checked, show all when unchecked
-        if (showGold) {
-          filteredData = filteredData.filter(item => 
-            item['gold'] === 'x' || item['gold'] === 'X'
-          )
-        }
-        
-        // Filter by month
-        if (monthFilter) {
-          filteredData = filteredData.filter(item => {
-            const startDate = item['ngay bat dau kham']
-            const endDate = item['ngay ket thuc kham']
-            return isDateInMonth(startDate, monthFilter.month, monthFilter.year) ||
-                   isDateInMonth(endDate, monthFilter.month, monthFilter.year)
-          })
-        }
-        
-        // Filter by date range
-        if (dateFilter.startDate || dateFilter.endDate) {
-          filteredData = filteredData.filter(item => {
-            const startDate = item['ngay bat dau kham']
-            const endDate = item['ngay ket thuc kham']
-            
-            if (dateFilter.startDate && dateFilter.endDate) {
-              // Both dates specified - check if examination period overlaps with filter range
-              const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
-              const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
-              const examStart = new Date(startDate + 'T00:00:00')
-              const examEnd = new Date((endDate || startDate) + 'T00:00:00')
-              
-              return (examStart <= filterEnd && examEnd >= filterStart)
-            } else if (dateFilter.startDate) {
-              // Only start date specified
-              const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
-              const examEnd = new Date((endDate || startDate) + 'T00:00:00')
-              return examEnd >= filterStart
-            } else if (dateFilter.endDate) {
-              // Only end date specified
-              const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
-              const examStart = new Date(startDate + 'T00:00:00')
-              return examStart <= filterEnd
-            }
-            
-            return true
-          })
-        }
-        
-        // Custom sorting: "Chưa khám xong" first (by số người khám desc), then "Đã khám xong" (by số người khám desc)
-        filteredData = filteredData.sort((a, b) => {
-          const statusA = a['trang thai kham']
-          const statusB = b['trang thai kham']
-          const peopleA = parseInt(a['so nguoi kham']) || 0
-          const peopleB = parseInt(b['so nguoi kham']) || 0
-          
-          // Priority: "Chưa khám xong" comes first
-          if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
-            return -1
-          }
-          if (statusA !== 'Chưa khám xong' && statusB === 'Chưa khám xong') {
-            return 1
-          }
-          
-          // Within same status group, sort by số người khám (descending)
-          return peopleB - peopleA
-        })
-        
-        // Apply pagination
-        const startIndex = (currentPage - 1) * pageSize
-        const endIndex = startIndex + pageSize
-        const paginatedData = filteredData.slice(startIndex, endIndex)
-        
-        setData(paginatedData)
-        setTotalCount(filteredData.length)
-      }
-    } catch (err) {
-      setError('Có lỗi xảy ra khi tải dữ liệu')
-      setData([])
-      setTotalCount(0)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-
-
-
-
-  // Effect to fetch data when filters change
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setCurrentPage(1) // Reset to first page when filters change
-      fetchData()
-    }, 300) // Debounce search
-    
-    return () => clearTimeout(timeoutId)
-  }, [globalFilters, sortBy, sortOrder])
-
-  // Effect to fetch data when page changes
-  useEffect(() => {
-    fetchData()
-  }, [currentPage, pageSize])
+  // Extract filters for utility functions
+  const { 
+    monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, 
+    dateFilter = { startDate: '', endDate: '' } 
+  } = globalFilters
 
   // Calculate pagination info
   const totalPages = Math.ceil(totalCount / pageSize)
@@ -201,401 +61,14 @@ const DataTable = ({ globalFilters = {} }) => {
     }
   }
 
-
-  
-  // Handle Excel export
-  const handleExportExcel = async () => {
+  // Handle Excel export with loading state
+  const handleExcelExportClick = async () => {
     try {
-      setLoading(true)
-      // Get all filtered data
-      const result = await LichKhamService.getLichKhamData({
-        page: 1,
-        limit: 10000,
-        search: '',
-        status: '',
-        employee: '',
-        showGold: false,
-        sortBy: sortBy,
-        sortOrder: sortOrder
-      })
-      
-      if (result.error) {
-        setError('Không thể export dữ liệu: ' + result.error)
-        return
-      }
-      
-      // Apply same filters as display
-      let filteredData = result.data
-      
-      if (searchTerm) {
-        filteredData = filteredData.filter(item => 
-          matchesSearch(item['ten cong ty'], searchTerm)
-        )
-      }
-      
-      if (statusFilter) {
-        filteredData = filteredData.filter(item => 
-          item['trang thai kham'] === statusFilter
-        )
-      }
-      
-      if (employeeFilter) {
-        filteredData = filteredData.filter(item => 
-          matchesSearch(item['ten nhan vien'], employeeFilter)
-        )
-      }
-      
-      if (showGold) {
-        filteredData = filteredData.filter(item => 
-          item['gold'] === 'x' || item['gold'] === 'X'
-        )
-      }
-      
-      if (monthFilter) {
-        filteredData = filteredData.filter(item => {
-          const startDate = item['ngay bat dau kham']
-          const endDate = item['ngay ket thuc kham']
-          return isDateInMonth(startDate, monthFilter.month, monthFilter.year) ||
-                 isDateInMonth(endDate, monthFilter.month, monthFilter.year)
-        })
-      }
-      
-      // Filter by date range
-      if (dateFilter.startDate || dateFilter.endDate) {
-        filteredData = filteredData.filter(item => {
-          const startDate = item['ngay bat dau kham']
-          const endDate = item['ngay ket thuc kham']
-          
-          if (dateFilter.startDate && dateFilter.endDate) {
-            // Both dates specified - check if examination period overlaps with filter range
-            const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
-            const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
-            const examStart = new Date(startDate + 'T00:00:00')
-            const examEnd = new Date((endDate || startDate) + 'T00:00:00')
-            
-            return (examStart <= filterEnd && examEnd >= filterStart)
-          } else if (dateFilter.startDate) {
-            // Only start date specified
-            const filterStart = new Date(dateFilter.startDate + 'T00:00:00')
-            const examEnd = new Date((endDate || startDate) + 'T00:00:00')
-            return examEnd >= filterStart
-          } else if (dateFilter.endDate) {
-            // Only end date specified
-            const filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
-            const examStart = new Date(startDate + 'T00:00:00')
-            return examStart <= filterEnd
-          }
-          
-          return true
-        })
-      }
-      
-      // Custom sorting: "Chưa khám xong" first (by số người khám desc), then "Đã khám xong" (by số người khám desc)
-      filteredData = filteredData.sort((a, b) => {
-        const statusA = a['trang thai kham']
-        const statusB = b['trang thai kham']
-        const peopleA = parseInt(a['so nguoi kham']) || 0
-        const peopleB = parseInt(b['so nguoi kham']) || 0
-        
-        // Priority: "Chưa khám xong" comes first
-        if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
-          return -1
-        }
-        if (statusA !== 'Chưa khám xong' && statusB === 'Chưa khám xong') {
-          return 1
-        }
-        
-        // Within same status group, sort by số người khám (descending)
-        return peopleB - peopleA
-      })
-      
-      // Prepare data for new table format
-      const exportDateRange = getDateRange()
-      const exportData = []
-      
-      // Add header rows
-      const dayOfWeekRow = ['', 'Người', ...exportDateRange.map(date => getDayOfWeek(date))]
-      const dateRow = ['Tên Công Ty', 'Người', ...exportDateRange.map(date => date.getDate())]
-      
-      // Add total row
-      const totalRow = ['TỔNG', filteredData.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0)]
-      exportDateRange.forEach(date => {
-        const dailyTotal = filteredData.reduce((total, record) => {
-          return total + getExamCountForDate(record, date)
-        }, 0)
-        totalRow.push(dailyTotal || '')
-      })
-      
-      exportData.push(dayOfWeekRow)
-      exportData.push(dateRow)
-      exportData.push(totalRow)
-      
-      // Add company data rows
-      filteredData.forEach(record => {
-        const row = [
-          getDisplayCompanyName(record['ten cong ty']) || '-',
-          parseInt(record['so nguoi kham'] || 0)
-        ]
-        
-        exportDateRange.forEach(date => {
-          const examCount = getExamCountForDate(record, date)
-          row.push(examCount || '')
-        })
-        
-        exportData.push(row)
-      })
-      
-      const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss')
-      const filename = `lich_kham_${timestamp}.xlsx`
-      
-      // Convert to Excel format with new structure
-      LichKhamService.downloadExcelFromArray(exportData, filename)
+      await handleExportExcel(globalFilters, sortBy, sortOrder)
     } catch (err) {
-      setError('Có lỗi xảy ra khi export Excel')
-    } finally {
-      setLoading(false)
+      // Error handling can be done here if needed
+      console.error('Export failed:', err)
     }
-  }
-
-
-
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return '-'
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy', { locale: vi })
-    } catch {
-      return dateString
-    }
-  }
-
-  // Get status badge class
-  const getStatusBadgeClass = (status) => {
-    const statusLower = (status || '').toLowerCase().trim()
-    if (statusLower.includes('đã khám xong') || statusLower.includes('da kham xong')) {
-      return 'status-badge status-completed'
-    }
-    if (statusLower.includes('đang khám') || statusLower.includes('dang kham')) {
-      return 'status-badge status-in-progress'
-    }
-    if (statusLower.includes('hủy') || statusLower.includes('huy')) {
-      return 'status-badge status-cancelled'
-    }
-    return 'status-badge status-pending'
-  }
-
-  // Generate date range for table columns
-  const getDateRange = () => {
-    if (dateFilter.startDate && dateFilter.endDate) {
-      // Parse dates carefully to avoid timezone issues
-      const start = new Date(dateFilter.startDate + 'T00:00:00')
-      const end = new Date(dateFilter.endDate + 'T00:00:00')
-      const dates = []
-      const current = new Date(start)
-      
-      while (current <= end) {
-        dates.push(new Date(current))
-        current.setDate(current.getDate() + 1)
-      }
-      return dates
-    } else {
-      // Default to current month - create dates in local timezone
-      const year = monthFilter.year
-      const month = monthFilter.month
-      const daysInMonth = new Date(year, month, 0).getDate()
-      const dates = []
-      
-      for (let day = 1; day <= daysInMonth; day++) {
-        dates.push(new Date(year, month - 1, day))
-      }
-      return dates
-    }
-  }
-
-  // Get day of week in Vietnamese
-  const getDayOfWeek = (date) => {
-    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
-    return days[date.getDay()]
-  }
-
-  // Helper function to count working days (excluding Sundays) between dates
-  const countWorkingDays = (startDate, endDate) => {
-    let count = 0
-    const current = new Date(startDate)
-    
-    while (current <= endDate) {
-      // Skip Sunday (getDay() === 0)
-      if (current.getDay() !== 0) {
-        count++
-      }
-      current.setDate(current.getDate() + 1)
-    }
-    
-    return count
-  }
-
-  // Check if a company has examination on a specific date
-  const getExamCountForDate = (record, date) => {
-    // Parse dates carefully to avoid timezone issues
-    const startDateStr = record['ngay bat dau kham']
-    const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
-    const specificDatesStr = record['cac ngay kham thuc te']
-    const isCompleted = record['trang thai kham'] === 'Đã khám xong'
-    const totalPeople = parseInt(record['so nguoi kham']) || 0
-    
-    if (!startDateStr) return 0
-    
-    // Create dates using local time to avoid timezone shifts
-    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    
-    // Skip if current date is Sunday (hospital doesn't work on Sundays)
-    if (checkDate.getDay() === 0) return 0
-    
-    // Check if there are specific examination dates
-    if (specificDatesStr && specificDatesStr.trim()) {
-      // Parse specific dates (format: MM/dd, MM/dd, ...)
-      const specificDates = specificDatesStr.split(',').map(dateStr => {
-        const trimmed = dateStr.trim()
-        if (trimmed.includes('/')) {
-          const [month, day] = trimmed.split('/')
-          const year = date.getFullYear() // Use current year from the date range
-          return new Date(year, parseInt(month) - 1, parseInt(day))
-        }
-        return null
-      }).filter(d => d !== null)
-      
-      // Filter out Sundays from specific dates
-      const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
-      
-      // Check if current date matches any specific date (and it's not Sunday)
-      const isSpecificDate = workingSpecificDates.some(specificDate => 
-        checkDate.getTime() === specificDate.getTime()
-      )
-      
-      if (isSpecificDate) {
-        if (isCompleted) {
-          // For completed exams with specific dates: total people ÷ number of working specific dates
-          const dailyCount = totalPeople / workingSpecificDates.length
-          return Math.round(dailyCount)
-        } else {
-          // For ongoing exams: use calculated averages
-          const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
-          const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
-          const dailyCount = Math.round(morningAvg + afternoonAvg)
-          return dailyCount
-        }
-      }
-      
-      return 0
-    } else {
-      // Use original logic with start and end dates
-      const startDate = new Date(startDateStr + 'T00:00:00')
-      const endDate = new Date(endDateStr + 'T00:00:00')
-      
-      // Check if the date is within examination period
-      if (checkDate >= startDate && checkDate <= endDate) {
-        if (isCompleted) {
-          // For completed exams: total people ÷ number of working days (excluding Sundays)
-          const workingDays = countWorkingDays(startDate, endDate)
-          const dailyCount = workingDays > 0 ? totalPeople / workingDays : 0
-          return Math.round(dailyCount)
-        } else {
-          // For ongoing exams: use calculated averages
-          const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
-          const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
-          const dailyCount = Math.round(morningAvg + afternoonAvg)
-          return dailyCount
-        }
-      }
-      return 0
-    }
-  }
-
-  // Check blood test date display for a specific date
-  const getBloodTestDisplay = (record, date) => {
-    const startDateStr = record['ngay bat dau kham']
-    const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
-    const bloodTestDateStr = record['ngay lay mau']
-    const specificDatesStr = record['cac ngay kham thuc te']
-    
-    if (!startDateStr) return null
-    
-    // Create dates using local time to avoid timezone shifts
-    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    
-    // Check if the date is within examination period (either specific dates or date range)
-    let isInExamPeriod = false
-    
-    if (specificDatesStr && specificDatesStr.trim()) {
-      // Parse specific dates (format: MM/dd, MM/dd, ...)
-      const specificDates = specificDatesStr.split(',').map(dateStr => {
-        const trimmed = dateStr.trim()
-        if (trimmed.includes('/')) {
-          const [month, day] = trimmed.split('/')
-          const year = date.getFullYear() // Use current year from the date range
-          return new Date(year, parseInt(month) - 1, parseInt(day))
-        }
-        return null
-      }).filter(d => d !== null)
-      
-      // Check if current date matches any specific date
-      isInExamPeriod = specificDates.some(specificDate => 
-        checkDate.getTime() === specificDate.getTime()
-      )
-    } else {
-      // Use original logic with start and end dates
-      const startDate = new Date(startDateStr + 'T00:00:00')
-      const endDate = new Date(endDateStr + 'T00:00:00')
-      isInExamPeriod = checkDate >= startDate && checkDate <= endDate
-    }
-    
-    if (isInExamPeriod) {
-      const examCount = getExamCountForDate(record, date)
-      
-      // If there's a blood test date
-      if (bloodTestDateStr) {
-        const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
-        
-        // If blood test date matches the current exam date
-        if (checkDate.getTime() === bloodTestDate.getTime()) {
-          return {
-            type: 'exam_with_blood',
-            value: examCount,
-            isBold: true
-          }
-        }
-      }
-      
-      // Regular exam date
-      return {
-        type: 'exam_only',
-        value: examCount,
-        isBold: false
-      }
-    }
-    
-    // If not in exam period, check if it's a standalone blood test date
-    if (bloodTestDateStr) {
-      const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
-      if (checkDate.getTime() === bloodTestDate.getTime()) {
-        return {
-          type: 'blood_only',
-          value: '-',
-          isBold: true
-        }
-      }
-    }
-    
-    return null
-  }
-
-  // Calculate total for each date
-  const calculateDailyTotals = (dates) => {
-    return dates.map(date => {
-      return data.reduce((total, record) => {
-        return total + getExamCountForDate(record, date)
-      }, 0)
-    })
   }
 
   // Handle company click to show modal
@@ -610,72 +83,9 @@ const DataTable = ({ globalFilters = {} }) => {
     setSelectedCompany(null)
   }
 
-  // Calculate company examination details
-  const getCompanyDetails = (record) => {
-    if (!record) return null
-
-    const startDateStr = record['ngay bat dau kham']
-    const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
-    const specificDatesStr = record['cac ngay kham thuc te']
-    const bloodTestDateStr = record['ngay lay mau']
-    const totalPeople = parseInt(record['so nguoi kham']) || 0
-    const morningCount = parseFloat(record['trung binh ngay sang']) || 0
-    const afternoonCount = parseFloat(record['trung binh ngay chieu']) || 0
-    const employee = record['ten nhan vien'] || '-'
-
-    // Calculate total examination days
-    let totalDays = 0
-    if (specificDatesStr && specificDatesStr.trim()) {
-      // Count specific dates (excluding Sundays)
-      const specificDates = specificDatesStr.split(',').map(dateStr => {
-        const trimmed = dateStr.trim()
-        if (trimmed.includes('/')) {
-          const [month, day] = trimmed.split('/')
-          const year = new Date().getFullYear()
-          return new Date(year, parseInt(month) - 1, parseInt(day))
-        }
-        return null
-      }).filter(d => d !== null && d.getDay() !== 0) // Exclude Sundays
-      
-      totalDays = specificDates.length
-    } else if (startDateStr && endDateStr) {
-      // Count working days in date range
-      const startDate = new Date(startDateStr + 'T00:00:00')
-      const endDate = new Date(endDateStr + 'T00:00:00')
-      totalDays = countWorkingDays(startDate, endDate)
-    }
-
-    // Format examination period
-    let examPeriod = '-'
-    if (startDateStr) {
-      const startFormatted = format(new Date(startDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
-      if (endDateStr && endDateStr !== startDateStr) {
-        const endFormatted = format(new Date(endDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
-        examPeriod = `${startFormatted} - ${endFormatted}`
-      } else {
-        examPeriod = startFormatted
-      }
-    }
-
-    // Format blood test date
-    let bloodTestDate = null
-    if (bloodTestDateStr) {
-      bloodTestDate = format(new Date(bloodTestDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
-    }
-
-    return {
-      totalPeople,
-      morningCount: Math.round(morningCount),
-      afternoonCount: Math.round(afternoonCount),
-      totalDays,
-      employee,
-      examPeriod,
-      bloodTestDate
-    }
-  }
-
-  const dateRange = getDateRange()
-  const dailyTotals = calculateDailyTotals(dateRange)
+  // Memoized calculations
+  const dateRange = useMemo(() => getDateRange(dateFilter, monthFilter), [dateFilter, monthFilter])
+  const dailyTotals = useMemo(() => calculateDailyTotals(data, dateRange), [data, dateRange])
 
   return (
     <div className="space-y-8">
@@ -695,7 +105,7 @@ const DataTable = ({ globalFilters = {} }) => {
           
           <div className="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
             <button
-              onClick={handleExportExcel}
+              onClick={handleExcelExportClick}
               disabled={loading || totalCount === 0}
               className="inline-flex items-center px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
               title="Xuất file Excel"
@@ -886,76 +296,12 @@ const DataTable = ({ globalFilters = {} }) => {
       </div>
 
       {/* Company Details Modal */}
-      {showModal && selectedCompany && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={closeModal}>
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-lg" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="mb-4">
-              <h3 className="text-base font-semibold text-gray-900 break-words">
-                {selectedCompany['ten cong ty']}
-              </h3>
-            </div>
-
-            {/* Company Details */}
-            <div className="space-y-2">
-              {(() => {
-                const details = getCompanyDetails(selectedCompany)
-                const isCompleted = selectedCompany['trang thai kham'] === 'Đã khám xong'
-                
-                return (
-                  <>
-                    {/* Blood test date - only show if exists */}
-                    {details.bloodTestDate && (
-                      <div className="flex justify-between py-1.5 border-b border-gray-100">
-                        <span className="text-sm text-gray-600">Ngày lấy máu:</span>
-                        <span className="text-sm text-gray-900">{details.bloodTestDate}</span>
-                      </div>
-                    )}
-                    
-                    {/* Examination period */}
-                    <div className="flex justify-between py-1.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">Khoảng thời gian khám:</span>
-                      <span className="text-sm text-gray-900">{details.examPeriod}</span>
-                    </div>
-                    
-                    <div className="flex justify-between py-1.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">Tổng số người khám:</span>
-                      <span className="text-sm text-gray-900">{details.totalPeople.toLocaleString('vi-VN')} người</span>
-                    </div>
-                    
-                    <div className="flex justify-between py-1.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">Số lượng khám sáng:</span>
-                      <span className="text-sm text-gray-900">{details.morningCount.toLocaleString('vi-VN')} người</span>
-                    </div>
-                    
-                    <div className="flex justify-between py-1.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">Số lượng khám chiều:</span>
-                      <span className="text-sm text-gray-900">{details.afternoonCount.toLocaleString('vi-VN')} người</span>
-                    </div>
-                    
-                    <div className="flex justify-between py-1.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">Tổng số ngày khám:</span>
-                      <span className="text-sm text-gray-900">{details.totalDays} ngày</span>
-                    </div>
-                    
-                    <div className="flex justify-between py-1.5 border-b border-gray-100">
-                      <span className="text-sm text-gray-600">Nhân viên phụ trách:</span>
-                      <span className="text-sm text-gray-900">{details.employee}</span>
-                    </div>
-                    
-                    <div className="flex justify-between py-1.5">
-                      <span className="text-sm text-gray-600">Trạng thái:</span>
-                      <span className={`text-sm ${isCompleted ? 'text-blue-600' : 'text-gray-900'}`}>
-                        {selectedCompany['trang thai kham']}
-                      </span>
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
+      <CompanyModal
+        isOpen={showModal}
+        onClose={closeModal}
+        company={selectedCompany}
+        getCompanyDetails={getCompanyDetails}
+      />
     </div>
   )
 }
