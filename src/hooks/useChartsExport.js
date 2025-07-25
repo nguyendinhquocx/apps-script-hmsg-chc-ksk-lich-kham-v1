@@ -7,18 +7,27 @@ export const useChartsExport = (filteredData, globalFilters) => {
     const category = examCategories[categoryIndex]
     const columnName = period === 'morning' ? category.morning : category.afternoon
     
-    // Lọc dữ liệu cho ngày cụ thể (tính cho các ngày trong tuần trừ chủ nhật)
+    // Lọc dữ liệu cho ngày cụ thể
     const dayData = filteredData.filter(item => {
       const startDate = new Date(item['ngay bat dau kham'])
       const endDate = new Date(item['ngay ket thuc kham'])
       const currentDate = new Date(date)
       
-      // Kiểm tra xem ngày có nằm trong khoảng thời gian khám không
-      // và không phải chủ nhật (0 = chủ nhật)
-      const isInRange = currentDate >= startDate && currentDate <= endDate
-      const isNotSunday = currentDate.getDay() !== 0
+      // Kiểm tra có dữ liệu 'cac ngay kham thuc te' không
+      const actualExamDates = item['cac ngay kham thuc te']
       
-      return isInRange && isNotSunday
+      if (actualExamDates) {
+        // Nếu có dữ liệu ngày khám thực tế, kiểm tra ngày có trong danh sách không
+        const examDatesArray = actualExamDates.split(',').map(d => d.trim())
+        const targetDateStr = currentDate.toISOString().split('T')[0]
+        return examDatesArray.includes(targetDateStr)
+      } else {
+        // Nếu không có dữ liệu ngày khám thực tế, sử dụng khoảng thời gian
+        // và không phải chủ nhật (0 = chủ nhật)
+        const isInRange = currentDate >= startDate && currentDate <= endDate
+        const isNotSunday = currentDate.getDay() !== 0
+        return isInRange && isNotSunday
+      }
     })
     
     // Tính tổng số lượng từ cột tương ứng cho ngày đó
@@ -31,6 +40,50 @@ export const useChartsExport = (filteredData, globalFilters) => {
     return totalCount
   }
 
+  // Lấy chi tiết các công ty cho một ngày và hạng mục cụ thể
+  const getExamDetailData = (date, categoryIndex, period) => {
+    const category = examCategories[categoryIndex]
+    const columnName = period === 'morning' ? category.morning : category.afternoon
+    
+    // Lọc dữ liệu cho ngày cụ thể
+    const dayData = filteredData.filter(item => {
+      const startDate = new Date(item['ngay bat dau kham'])
+      const endDate = new Date(item['ngay ket thuc kham'])
+      const currentDate = new Date(date)
+      
+      // Kiểm tra có dữ liệu 'cac ngay kham thuc te' không
+      const actualExamDates = item['cac ngay kham thuc te']
+      
+      if (actualExamDates) {
+        // Nếu có dữ liệu ngày khám thực tế, kiểm tra ngày có trong danh sách không
+        const examDatesArray = actualExamDates.split(',').map(d => d.trim())
+        const targetDateStr = currentDate.toISOString().split('T')[0]
+        return examDatesArray.includes(targetDateStr)
+      } else {
+        // Nếu không có dữ liệu ngày khám thực tế, sử dụng khoảng thời gian
+        // và không phải chủ nhật (0 = chủ nhật)
+        const isInRange = currentDate >= startDate && currentDate <= endDate
+        const isNotSunday = currentDate.getDay() !== 0
+        return isInRange && isNotSunday
+      }
+    })
+    
+    // Tạo danh sách các công ty với số lượng và nhân viên phụ trách
+    const companies = []
+    dayData.forEach(item => {
+      const count = parseInt(item[columnName]) || 0
+      if (count > 0) {
+        companies.push({
+          name: item['ten cong ty'] || 'Không xác định',
+          count: count,
+          examiner: item['nhan vien phu trach'] || 'Không xác định'
+        })
+      }
+    })
+    
+    return companies
+  }
+
   // Tính số max cho mỗi ngày từ dữ liệu thực (trừ chủ nhật) - lấy giá trị lớn nhất
   const getMaxForDay = (date) => {
     const currentDate = new Date(date)
@@ -40,23 +93,49 @@ export const useChartsExport = (filteredData, globalFilters) => {
       return 0
     }
     
+    // Lọc dữ liệu cho ngày cụ thể
     const dayData = filteredData.filter(item => {
       const startDate = new Date(item['ngay bat dau kham'])
       const endDate = new Date(item['ngay ket thuc kham'])
       
-      // Kiểm tra xem ngày có nằm trong khoảng thời gian khám không
-      return currentDate >= startDate && currentDate <= endDate
+      // Kiểm tra có dữ liệu 'cac ngay kham thuc te' không
+      const actualExamDates = item['cac ngay kham thuc te']
+      
+      if (actualExamDates) {
+        // Nếu có dữ liệu ngày khám thực tế, kiểm tra ngày có trong danh sách không
+        const examDatesArray = actualExamDates.split(',').map(d => d.trim())
+        const targetDateStr = currentDate.toISOString().split('T')[0]
+        return examDatesArray.includes(targetDateStr)
+      } else {
+        // Nếu không có dữ liệu ngày khám thực tế, sử dụng khoảng thời gian
+        // và không phải chủ nhật (0 = chủ nhật)
+        const isInRange = currentDate >= startDate && currentDate <= endDate
+        const isNotSunday = currentDate.getDay() !== 0
+        return isInRange && isNotSunday
+      }
     })
     
     // Tìm giá trị lớn nhất trong tất cả các hạng mục cận lâm sàng của ngày đó
     let maxCount = 0
     
-    dayData.forEach(item => {
-      examCategories.forEach(category => {
+    // Tính tổng từng hạng mục (sáng và chiều) cho ngày này
+    examCategories.forEach(category => {
+      // Tính tổng sáng cho hạng mục này
+      let morningTotal = 0
+      dayData.forEach(item => {
         const morningCount = parseInt(item[category.morning]) || 0
-        const afternoonCount = parseInt(item[category.afternoon]) || 0
-        maxCount = Math.max(maxCount, morningCount, afternoonCount)
+        morningTotal += morningCount
       })
+      
+      // Tính tổng chiều cho hạng mục này
+      let afternoonTotal = 0
+      dayData.forEach(item => {
+        const afternoonCount = parseInt(item[category.afternoon]) || 0
+        afternoonTotal += afternoonCount
+      })
+      
+      // So sánh để tìm max
+      maxCount = Math.max(maxCount, morningTotal, afternoonTotal)
     })
     
     return maxCount
@@ -198,6 +277,7 @@ export const useChartsExport = (filteredData, globalFilters) => {
     exportToExcel,
     getExamCount,
     getMaxForDay,
-    getDaysToShow
+    getDaysToShow,
+    getExamDetailData
   }
 }

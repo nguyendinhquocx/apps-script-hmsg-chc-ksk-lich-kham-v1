@@ -1,15 +1,20 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { FileSpreadsheet } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import GlobalFilters from './GlobalFilters'
 import ExamStatsCards from './ExamStatsCards'
 import MaxExamChart from './MaxExamChart'
+import ExamDetailModal from './ExamDetailModal'
 import { examCategories } from '../constants/examCategories'
 import { useChartsExport } from '../hooks/useChartsExport'
 import { useChartsData } from '../hooks/useChartsData'
 import { useChartsFiltering } from '../hooks/useChartsFiltering'
 
 const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
+  // Modal state
+  const [selectedExam, setSelectedExam] = useState(null)
+  const [showExamModal, setShowExamModal] = useState(false)
+
   // Sử dụng hook để xử lý data fetching
   const { data, loading, error } = useChartsData()
   
@@ -17,9 +22,33 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
   const { filteredData } = useChartsFiltering(data, globalFilters)
 
   // Sử dụng hook để xử lý Excel export và các calculations
-  const { exportToExcel, getExamCount, getMaxForDay, getDaysToShow } = useChartsExport(filteredData, globalFilters)
+  const { exportToExcel, getExamCount, getMaxForDay, getDaysToShow, getExamDetailData } = useChartsExport(filteredData, globalFilters)
 
   const days = getDaysToShow() // Đã loại bỏ chủ nhật trong function
+
+  // Handle exam cell click
+  const handleExamClick = (date, categoryIndex, period) => {
+    const companies = getExamDetailData(date, categoryIndex, period)
+    const totalCount = getExamCount(date, categoryIndex, period)
+    const category = examCategories[categoryIndex]
+    
+    if (totalCount > 0) {
+      setSelectedExam({
+        date,
+        examType: category.name,
+        companies,
+        totalCount,
+        period
+      })
+      setShowExamModal(true)
+    }
+  }
+
+  // Close exam modal
+  const closeExamModal = () => {
+    setShowExamModal(false)
+    setSelectedExam(null)
+  }
 
   if (loading) {
     return (
@@ -200,7 +229,11 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       return (
                         <td key={`morning-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                           {count > 0 && (
-                            <span className="text-xs font-normal" style={{color: textColor}}>
+                            <span 
+                              className="text-xs font-normal cursor-pointer transition-colors inline-block px-2 py-1 rounded-full hover:bg-gray-100" 
+                              style={{color: textColor}}
+                              onClick={() => handleExamClick(dayInfo.date, categoryIndex, 'morning')}
+                            >
                               {count}
                             </span>
                           )}
@@ -224,7 +257,11 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       return (
                         <td key={`afternoon-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                           {count > 0 && (
-                            <span className="text-xs font-normal" style={{color: textColor}}>
+                            <span 
+                              className="text-xs font-normal cursor-pointer transition-colors inline-block px-2 py-1 rounded-full hover:bg-gray-100" 
+                              style={{color: textColor}}
+                              onClick={() => handleExamClick(dayInfo.date, categoryIndex, 'afternoon')}
+                            >
                               {count}
                             </span>
                           )}
@@ -238,6 +275,17 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
           </table>
         </div>
       </div>
+
+      {/* Exam Detail Modal */}
+      <ExamDetailModal
+        isOpen={showExamModal}
+        onClose={closeExamModal}
+        date={selectedExam?.date}
+        examType={selectedExam?.examType}
+        companies={selectedExam?.companies}
+        totalCount={selectedExam?.totalCount}
+        period={selectedExam?.period}
+      />
     </div>
   )
 }
