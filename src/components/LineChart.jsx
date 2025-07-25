@@ -177,7 +177,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
     })
     
     // Convert to array and sort by date
-    return Array.from(dateMap.values())
+    const chartArray = Array.from(dateMap.values())
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .map(item => ({
         ...item,
@@ -186,6 +186,18 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
         bloodTestCompanies: Math.round(item.bloodTestCompanies * 100) / 100, // Round to 2 decimal places
         displayDate: format(new Date(item.date), 'dd/MM', { locale: vi })
       }))
+    
+    // Calculate average of people count (excluding days with 0 people)
+    const daysWithPeople = chartArray.filter(item => item.people > 0)
+    const averagePeople = daysWithPeople.length > 0 
+      ? Math.round((daysWithPeople.reduce((sum, item) => sum + item.people, 0) / daysWithPeople.length) * 100) / 100
+      : 0
+    
+    // Add average to each data point
+    return chartArray.map(item => ({
+      ...item,
+      averagePeople
+    }))
   }, [data, monthFilter, dateFilter])
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -225,7 +237,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
 
   return (
     <div className="bg-white p-6 mb-8">
-      <div className="h-80">
+      <div className="h-80 relative">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <XAxis 
@@ -263,6 +275,36 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                 )
               }}
               activeDot={{ r: 8, stroke: '#000000', strokeWidth: 2, fill: '#ffffff' }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="averagePeople" 
+              stroke="#f23645" 
+              strokeWidth={1}
+              strokeDasharray="5 5"
+              dot={(props) => {
+                const { cx, cy, payload, index } = props
+                // Show label only on the last point of the chart (rightmost)
+                const isLastPoint = index === chartData.length - 1
+                if (isLastPoint) {
+                  return (
+                    <g>
+                      <text 
+                        x={cx + 15} 
+                        y={cy - 5} 
+                        textAnchor="start" 
+                        fontSize="12" 
+                        fontWeight="600"
+                        fill="#f23645"
+                      >
+                        {Math.round(payload.averagePeople)}
+                      </text>
+                    </g>
+                  )
+                }
+                return null
+              }}
+              activeDot={false}
             />
           </LineChart>
         </ResponsiveContainer>
