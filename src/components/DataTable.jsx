@@ -330,18 +330,18 @@ const DataTable = ({ globalFilters = {} }) => {
                     <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
                       {total > 0 && (
                         <span 
-                          className="text-xs font-bold cursor-pointer hover:text-blue-600 transition-colors" 
-                          style={{color: total > 100 ? '#f23645' : '#000000'}}
-                          onClick={() => {
-                            const summaryData = getDailySummaryData(index)
-                            if (summaryData) {
-                              setSelectedDate(summaryData)
-                              setShowDailySummary(true)
-                            }
-                          }}
-                        >
-                          {total.toLocaleString('vi-VN')}
-                        </span>
+                            className="text-xs font-bold cursor-pointer transition-colors inline-block px-2 py-1 rounded-full hover:bg-gray-100" 
+                            style={{color: total > 100 ? '#f23645' : '#000000'}}
+                            onClick={() => {
+                              const summaryData = getDailySummaryData(index)
+                              if (summaryData) {
+                                setSelectedDate(summaryData)
+                                setShowDailySummary(true)
+                              }
+                            }}
+                          >
+                            {total.toLocaleString('vi-VN')}
+                          </span>
                       )}
                     </td>
                   )
