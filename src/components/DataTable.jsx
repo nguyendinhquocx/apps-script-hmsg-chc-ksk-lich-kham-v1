@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { FileSpreadsheet } from 'lucide-react'
+import { FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import StatsCards from './StatsCards'
 import LineChart from './LineChart'
@@ -20,6 +20,9 @@ const DataTable = ({ globalFilters = {} }) => {
   // Modal state for company details
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  
+  // Dropdown state for daily totals breakdown
+  const [expandedDays, setExpandedDays] = useState(new Set())
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
@@ -75,6 +78,48 @@ const DataTable = ({ globalFilters = {} }) => {
   const handleCompanyClick = (record) => {
     setSelectedCompany(record)
     setShowModal(true)
+  }
+
+  // Toggle dropdown for all daily totals
+  const [showAllBreakdown, setShowAllBreakdown] = useState(false)
+
+  // Toggle dropdown for daily totals
+  const toggleDayExpansion = (dayIndex) => {
+    const newExpanded = new Set(expandedDays)
+    if (newExpanded.has(dayIndex)) {
+      newExpanded.delete(dayIndex)
+    } else {
+      newExpanded.add(dayIndex)
+    }
+    setExpandedDays(newExpanded)
+  }
+
+  // Calculate morning/afternoon totals for a specific day
+  const getDayBreakdown = (dayIndex) => {
+    const targetDate = dateRange[dayIndex]
+    if (!targetDate) return { morning: 0, afternoon: 0 }
+
+    let morningTotal = 0
+    let afternoonTotal = 0
+
+    data.forEach(record => {
+      const examCount = getExamCountForDate(record, targetDate, monthFilter, dateFilter)
+      if (examCount > 0) {
+        const morningCount = parseFloat(record['trung binh ngay sang']) || 0
+        const afternoonCount = parseFloat(record['trung binh ngay chieu']) || 0
+        
+        // Phân bổ theo tỷ lệ sáng/chiều
+        const totalAvg = morningCount + afternoonCount
+        if (totalAvg > 0) {
+          const morningRatio = morningCount / totalAvg
+          const afternoonRatio = afternoonCount / totalAvg
+          morningTotal += Math.round(examCount * morningRatio)
+          afternoonTotal += Math.round(examCount * afternoonRatio)
+        }
+      }
+    })
+
+    return { morning: morningTotal, afternoon: afternoonTotal }
   }
 
   // Close modal
@@ -195,17 +240,35 @@ const DataTable = ({ globalFilters = {} }) => {
               
               {/* Total row */}
               <tr className="bg-white border-b-2 border-gray-300">
-                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-0 bg-white z-30">TỔNG</td>
+                <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-0 bg-white z-30">
+                  <div className="flex items-center space-x-2">
+                    <span>TỔNG</span>
+                    <button
+                      onClick={() => setShowAllBreakdown(!showAllBreakdown)}
+                      className="text-[#2962ff] hover:text-blue-700 transition-colors font-bold"
+                    >
+                      {showAllBreakdown ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </td>
                 <td className="px-3 py-1.5 text-sm text-gray-900 font-medium sticky left-[200px] bg-white z-20">
                   {data.reduce((total, record) => total + (parseInt(record['so nguoi kham']) || 0), 0).toLocaleString('vi-VN')}
                 </td>
                 {dailyTotals.map((total, index) => {
                   const today = new Date()
                   const isToday = dateRange[index] && isSameDay(dateRange[index], today)
+                  
                   return (
                     <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
                       {total > 0 && (
-                        <span className="text-xs font-bold" style={{color: '#000000'}}>
+                        <span 
+                          className="text-xs font-bold" 
+                          style={{color: total > 100 ? '#f23645' : '#000000'}}
+                        >
                           {total.toLocaleString('vi-VN')}
                         </span>
                       )}
@@ -213,6 +276,56 @@ const DataTable = ({ globalFilters = {} }) => {
                   )
                 })}
               </tr>
+              
+              {/* Breakdown row - shown when expanded */}
+              {showAllBreakdown && (
+                <>
+                  <tr className="bg-white">
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-bold sticky left-0 bg-white z-30">Sáng</td>
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-bold sticky left-[200px] bg-white z-20">-</td>
+                    {dailyTotals.map((total, index) => {
+                      const today = new Date()
+                      const isToday = dateRange[index] && isSameDay(dateRange[index], today)
+                      const breakdown = getDayBreakdown(index)
+                      
+                      return (
+                        <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : 'bg-white'}`}>
+                          {breakdown.morning > 0 && (
+                            <span 
+                              className="text-xs" 
+                              style={{color: breakdown.morning > 100 ? '#f23645' : '#000000'}}
+                            >
+                              {breakdown.morning}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                  <tr className="bg-white border-b border-gray-200">
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-0 bg-white z-30">Chiều</td>
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-[200px] bg-white z-20">-</td>
+                    {dailyTotals.map((total, index) => {
+                      const today = new Date()
+                      const isToday = dateRange[index] && isSameDay(dateRange[index], today)
+                      const breakdown = getDayBreakdown(index)
+                      
+                      return (
+                        <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : 'bg-white'}`}>
+                          {breakdown.afternoon > 0 && (
+                            <span 
+                              className="text-xs" 
+                              style={{color: breakdown.afternoon > 100 ? '#f23645' : '#000000'}}
+                            >
+                              {breakdown.afternoon}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                </>
+              )}
             </thead>
             <tbody className="bg-white">
               {data.length === 0 ? (
