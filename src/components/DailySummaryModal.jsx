@@ -14,20 +14,23 @@ const getShortName = (fullName) => {
 const DailySummaryModal = ({ isOpen, onClose, date, companies, summary }) => {
   if (!isOpen || !date || !companies || !summary) return null
 
-  // Sort companies by examiner first, then by people count (descending)
-  const sortedCompanies = [...companies].sort((a, b) => {
-    // First sort by examiner name
-    const examinerA = a.examiner || ''
-    const examinerB = b.examiner || ''
-    const examinerCompare = examinerA.localeCompare(examinerB, 'vi')
-    
-    if (examinerCompare !== 0) {
-      return examinerCompare
+  // Group companies by examiner
+  const groupedByExaminer = companies.reduce((groups, company) => {
+    const examiner = company.examiner || 'Chưa phân công'
+    if (!groups[examiner]) {
+      groups[examiner] = []
     }
-    
-    // If same examiner, sort by people count (descending)
-    return b.peopleCount - a.peopleCount
+    groups[examiner].push(company)
+    return groups
+  }, {})
+
+  // Sort companies within each group by people count (descending)
+  Object.keys(groupedByExaminer).forEach(examiner => {
+    groupedByExaminer[examiner].sort((a, b) => b.peopleCount - a.peopleCount)
   })
+
+  // Sort examiners alphabetically
+  const sortedExaminers = Object.keys(groupedByExaminer).sort((a, b) => a.localeCompare(b, 'vi'))
 
   return (
     <div 
@@ -73,22 +76,34 @@ const DailySummaryModal = ({ isOpen, onClose, date, companies, summary }) => {
         {/* Company List */}
         <div>
           <h3 className="text-sm text-gray-900 mb-2 font-semibold">Danh sách công ty có lịch khám:</h3>
-          <div className="space-y-1">
-            {sortedCompanies.map((company, index) => (
-              <div key={index} className="flex justify-between items-center p-2 bg-white rounded">
-                <div className="flex-1">
-                  <div className="text-sm text-gray-900">
-                    {getDisplayCompanyName(company.name)}
-                  </div>
-                  {company.examiner && (
-                    <div className="text-xs text-gray-600">
-                      NV: {company.examiner}
+          <div className="space-y-3">
+            {sortedExaminers.map((examiner, examinerIndex) => (
+              <div key={examiner}>
+                {/* Examiner header */}
+                <div className="text-xs text-gray-700 font-medium mb-1">
+                  NV: {examiner}
+                </div>
+                
+                {/* Companies under this examiner */}
+                <div className="space-y-1 ml-2">
+                  {groupedByExaminer[examiner].map((company, companyIndex) => (
+                    <div key={companyIndex} className="flex justify-between items-center py-1">
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-900">
+                          {getDisplayCompanyName(company.name)}
+                        </div>
+                      </div>
+                      <div className="text-sm text-black">
+                        {company.peopleCount} người
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-                <div className="text-sm text-black">
-                  {company.peopleCount} người {company.examiner && getShortName(company.examiner)}
-                </div>
+                
+                {/* Separator line between examiners (except for the last one) */}
+                {examinerIndex < sortedExaminers.length - 1 && (
+                  <hr className="border-gray-200 mt-2" />
+                )}
               </div>
             ))}
           </div>

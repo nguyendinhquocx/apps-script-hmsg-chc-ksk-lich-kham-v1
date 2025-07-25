@@ -161,7 +161,7 @@ const DataTable = ({ globalFilters = {} }) => {
         companiesOnDate.push({
           name: record['ten cong ty'] || 'Không xác định',
           peopleCount: examCount,
-          examiner: companyDetails.examiner
+          examiner: companyDetails.employee
         })
       }
     })
