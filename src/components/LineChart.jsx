@@ -34,6 +34,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
         date: dateKey,
         people: 0,
         companies: 0,
+        bloodTestCompanies: 0,
         isToday: isSameDay(date, today)
       })
     })
@@ -43,6 +44,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       const startDate = item['ngay bat dau kham']
       const endDate = item['ngay ket thuc kham']
       const specificDatesStr = item['cac ngay kham thuc te']
+      const bloodTestDateStr = item['ngay lay mau']
       const isCompleted = item['trang thai kham'] === 'Đã khám xong'
       const totalPeople = parseInt(item['so nguoi kham']) || 0
       
@@ -81,10 +83,12 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                 const dateKey = format(examDate, 'yyyy-MM-dd')
                 const existing = dateMap.get(dateKey)
                 if (existing) {
+                  // Only count companies if they have people being examined that day
+                  const companyIncrement = dailyCount > 0 ? 1 : 0
                   dateMap.set(dateKey, {
                     ...existing,
                     people: existing.people + dailyCount,
-                    companies: existing.companies + 1
+                    companies: existing.companies + companyIncrement
                   })
                 }
               }
@@ -116,10 +120,12 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                   const dateKey = format(examDate, 'yyyy-MM-dd')
                   const existing = dateMap.get(dateKey)
                   if (existing) {
+                    // Only count companies if they have people being examined that day
+                    const companyIncrement = dailyCount > 0 ? 1 : 0
                     dateMap.set(dateKey, {
                       ...existing,
                       people: existing.people + dailyCount,
-                      companies: existing.companies + 1 // Each company counts as 1 for each day it operates
+                      companies: existing.companies + companyIncrement
                     })
                   }
                 }
@@ -134,16 +140,38 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
               const existing = dateMap.get(dateKey)
               if (existing) {
                 const dailyCount = isCompleted ? totalPeople : totalPeople
+                // Only count companies if they have people being examined that day
+                const companyIncrement = dailyCount > 0 ? 1 : 0
                 dateMap.set(dateKey, {
                   ...existing,
                   people: existing.people + dailyCount,
-                  companies: existing.companies + 1
+                  companies: existing.companies + companyIncrement
                 })
               }
             }
           }
         } catch (error) {
           console.warn('Invalid date format:', startDate, endDate)
+        }
+      }
+      
+      // Check for blood test date
+      if (bloodTestDateStr) {
+        try {
+          const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
+          // Only include data from the selected range and exclude Sundays
+          if (bloodTestDate >= chartStart && bloodTestDate <= chartEnd && getDay(bloodTestDate) !== 0) {
+            const dateKey = format(bloodTestDate, 'yyyy-MM-dd')
+            const existing = dateMap.get(dateKey)
+            if (existing) {
+              dateMap.set(dateKey, {
+                ...existing,
+                bloodTestCompanies: existing.bloodTestCompanies + 1
+              })
+            }
+          }
+        } catch (error) {
+          console.warn('Invalid blood test date format:', bloodTestDateStr)
         }
       }
     })
@@ -155,6 +183,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
         ...item,
         people: Math.round(item.people * 100) / 100, // Round to 2 decimal places
         companies: Math.round(item.companies * 100) / 100, // Round to 2 decimal places
+        bloodTestCompanies: Math.round(item.bloodTestCompanies * 100) / 100, // Round to 2 decimal places
         displayDate: format(new Date(item.date), 'dd/MM', { locale: vi })
       }))
   }, [data, monthFilter, dateFilter])
@@ -173,6 +202,11 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
           <p className="text-gray-600">
             Số công ty: <span className="font-semibold">{Math.round(data.companies)}</span>
           </p>
+          {data.bloodTestCompanies > 0 && (
+            <p className="text-red-600">
+              Lấy mẫu: <span className="font-semibold">{Math.round(data.bloodTestCompanies)}</span>
+            </p>
+          )}
         </div>
       )
     }
