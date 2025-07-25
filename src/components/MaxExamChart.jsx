@@ -1,90 +1,40 @@
 import React, { useMemo } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay } from 'date-fns'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
+import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
 const MaxExamChart = ({ 
-  data = [], 
-  examCategories = [], 
+  getMaxForDay,
+  getDaysToShow,
   monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, 
   dateFilter = { startDate: '', endDate: '' } 
 }) => {
-  // Process data to create chart data grouped by date
+  // Process data to create chart data using the same logic as the table
   const chartData = useMemo(() => {
-    let chartStart, chartEnd
-    
-    // Use date filter if both dates are provided, otherwise use month filter
-    if (dateFilter.startDate && dateFilter.endDate) {
-      chartStart = parseISO(dateFilter.startDate)
-      chartEnd = parseISO(dateFilter.endDate)
-    } else {
-      const { month, year } = monthFilter
-      const selectedDate = new Date(year, month - 1, 1)
-      chartStart = startOfMonth(selectedDate)
-      chartEnd = endOfMonth(selectedDate)
-    }
-    
+    const days = getDaysToShow()
     const today = new Date()
     
-    // Create all days in the range, excluding Sundays (getDay() === 0)
-    const allDaysInRange = eachDayOfInterval({ start: chartStart, end: chartEnd })
-      .filter(date => getDay(date) !== 0) // Exclude Sundays
-    const dateMap = new Map()
-    
-    // Initialize all days with 0 values
-    allDaysInRange.forEach(date => {
-      const dateKey = format(date, 'yyyy-MM-dd')
-      dateMap.set(dateKey, {
-        date: dateKey,
-        maxCount: 0,
-        isToday: isSameDay(date, today)
-      })
-    })
-    
-    // Process actual data to calculate max exam count per day
-    data.forEach(item => {
-      const startDate = item['ngay bat dau kham']
-      const endDate = item['ngay ket thuc kham']
+    const processedData = days.map(dayInfo => {
+      const maxCount = getMaxForDay(dayInfo.date)
+      const isToday = today.toDateString() === dayInfo.date.toDateString()
       
-      if (startDate && endDate) {
-        try {
-          const startDateObj = parseISO(startDate)
-          const endDateObj = parseISO(endDate)
-          
-          // Calculate the exam days (excluding Sundays) in the examination period
-          const examDays = eachDayOfInterval({ start: startDateObj, end: endDateObj })
-            .filter(date => getDay(date) !== 0) // Exclude Sundays
-          
-          examDays.forEach(examDate => {
-            // Only include data from the selected range
-            if (examDate >= chartStart && examDate <= chartEnd) {
-              const dateKey = format(examDate, 'yyyy-MM-dd')
-              const existing = dateMap.get(dateKey)
-              
-              if (existing) {
-                // Find max count for this item across all exam categories (same logic as getMaxForDay)
-                examCategories.forEach(category => {
-                  const morningCount = parseInt(item[category.morning]) || 0
-                  const afternoonCount = parseInt(item[category.afternoon]) || 0
-                  existing.maxCount = Math.max(existing.maxCount, morningCount, afternoonCount)
-                })
-              }
-            }
-          })
-        } catch (error) {
-          console.warn('Invalid date format:', startDate, endDate)
-        }
+      return {
+        date: dayInfo.date.toISOString().split('T')[0],
+        displayDate: `${dayInfo.day}`,
+        maxCount: maxCount,
+        isToday: isToday
       }
     })
     
-    // Convert to array and sort by date
-    return Array.from(dateMap.values())
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
-      .map(item => ({
-        ...item,
-        displayDate: format(new Date(item.date), 'dd/MM', { locale: vi })
-      }))
-  }, [data, examCategories, monthFilter, dateFilter])
+    return processedData.filter(item => item.maxCount > 0) // Only show days with data
+  }, [getMaxForDay, getDaysToShow])
+
+  // Calculate average
+  const average = useMemo(() => {
+    if (chartData.length === 0) return 0
+    const total = chartData.reduce((sum, item) => sum + item.maxCount, 0)
+    return Math.round(total / chartData.length)
+  }, [chartData])
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -96,6 +46,9 @@ const MaxExamChart = ({
           </p>
           <p className="text-blue-600">
             Max cận lâm sàng: <span className="font-semibold">{data.maxCount}</span>
+          </p>
+          <p className="text-red-500 text-sm">
+            Trung bình: <span className="font-semibold">{average}</span>
           </p>
         </div>
       )
@@ -115,16 +68,18 @@ const MaxExamChart = ({
 
   return (
     <div className="bg-white p-6 mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Biểu đồ Max Cận Lâm Sàng</h2>
+        <div className="text-sm text-red-600 font-medium">
+          Trung bình: {average}
+        </div>
+      </div>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <XAxis 
-              dataKey="date" 
+              dataKey="displayDate" 
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => {
-                const date = new Date(value);
-                return date.getDate().toString();
-              }}
             />
             <YAxis 
               stroke="#6b7280"
@@ -132,7 +87,15 @@ const MaxExamChart = ({
               tickLine={false}
               axisLine={false}
             />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <Tooltip content={<CustomTooltip />} />
+            {/* Đường trung bình màu đỏ, nét đứt */}
+            <ReferenceLine 
+              y={average} 
+              stroke="#ef4444" 
+              strokeDasharray="5 5" 
+              strokeWidth={1}
+            />
             <Line 
               type="monotone" 
               dataKey="maxCount" 

@@ -127,8 +127,8 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
       
       {/* Max Exam Chart */}
       <MaxExamChart 
-        data={filteredData}
-        examCategories={examCategories}
+        getMaxForDay={getMaxForDay}
+        getDaysToShow={getDaysToShow}
         monthFilter={globalFilters.monthFilter}
         dateFilter={globalFilters.dateFilter}
       />

@@ -62,8 +62,9 @@ export const useChartsFiltering = (data, globalFilters) => {
 
       // Lọc theo Gold
       if (globalFilters.showGold) {
-        const packageName = item['goi kham'] || ''
-        if (!packageName.toLowerCase().includes('gold')) {
+        const goldValue = item['gold'] || ''
+        // Check if gold value is 'x' or 'X' (same logic as useTableData.js)
+        if (goldValue !== 'x' && goldValue !== 'X') {
           return false
         }
       }

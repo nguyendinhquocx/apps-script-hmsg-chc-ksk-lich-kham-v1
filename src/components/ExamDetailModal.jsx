@@ -17,12 +17,14 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
   }, {})
 
   // Sort examiners and sort companies within each examiner by count (descending)
-  // Filter out 'Không xác định' group
-  const examiners = Object.keys(groupedByExaminer)
-    .filter(examiner => examiner !== 'Không xác định')
-    .sort()
+  // Nếu tất cả công ty đều có examiner "Không xác định", vẫn hiển thị
+  const examiners = Object.keys(groupedByExaminer).sort()
+  const validExaminers = examiners.filter(examiner => examiner !== 'Không xác định')
   
-  examiners.forEach(examiner => {
+  // Nếu không có examiner hợp lệ nào, hiển thị tất cả
+  const examinersToShow = validExaminers.length > 0 ? validExaminers : examiners
+  
+  examinersToShow.forEach(examiner => {
     groupedByExaminer[examiner].sort((a, b) => b.count - a.count)
   })
 
@@ -61,7 +63,7 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
             </div>
           ) : (
             <div className="space-y-4">
-              {examiners.map((examiner, examinerIndex) => (
+              {examinersToShow.map((examiner, examinerIndex) => (
                 <div key={examiner}>
                   {/* Examiner header */}
                   <div className="bg-gray-50 px-3 py-2 rounded-lg">
@@ -83,7 +85,7 @@ const ExamDetailModal = ({ isOpen, onClose, date, examType, companies, totalCoun
                   </div>
 
                   {/* Separator between examiners */}
-                  {examinerIndex < examiners.length - 1 && (
+                  {examinerIndex < examinersToShow.length - 1 && (
                     <div className="border-t border-gray-100 my-3"></div>
                   )}
                 </div>
