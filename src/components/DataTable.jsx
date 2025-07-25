@@ -4,6 +4,7 @@ import { isSameDay } from 'date-fns'
 import StatsCards from './StatsCards'
 import LineChart from './LineChart'
 import CompanyModal from './CompanyModal'
+import DailySummaryModal from './DailySummaryModal'
 import { getDisplayCompanyName, getTooltipCompanyName } from '../utils/companyName'
 import { useTableData } from '../hooks/useTableData'
 import { useExcelExport } from '../hooks/useExcelExport'
@@ -20,6 +21,10 @@ const DataTable = ({ globalFilters = {} }) => {
   // Modal state for company details
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  
+  // Modal state for daily summary
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [showDailySummary, setShowDailySummary] = useState(false)
   
   // Dropdown state for daily totals breakdown
   const [expandedDays, setExpandedDays] = useState(new Set())
@@ -137,10 +142,54 @@ const DataTable = ({ globalFilters = {} }) => {
     return { morning: morningTotal, afternoon: afternoonTotal }
   }
 
+  // Get daily summary data for modal
+  const getDailySummaryData = (dateIndex) => {
+    const targetDate = dateRange[dateIndex]
+    if (!targetDate) return null
+
+    const companiesOnDate = []
+    let totalPeople = 0
+    let companyCount = 0
+
+    data.forEach(record => {
+      const examCount = getExamCountForDate(record, targetDate)
+      if (examCount > 0) {
+        companyCount++
+        totalPeople += examCount
+        
+        const companyDetails = getCompanyDetails(record)
+        companiesOnDate.push({
+          name: record['ten cong ty'] || 'Không xác định',
+          peopleCount: examCount,
+          examiner: companyDetails.examiner
+        })
+      }
+    })
+
+    const breakdown = getDayBreakdown(dateIndex)
+    
+    return {
+      date: targetDate,
+      companies: companiesOnDate,
+      summary: {
+        totalPeople,
+        morningCount: breakdown.morning,
+        afternoonCount: breakdown.afternoon,
+        companyCount
+      }
+    }
+  }
+
   // Close modal
   const closeModal = () => {
     setShowModal(false)
     setSelectedCompany(null)
+  }
+
+  // Close daily summary modal
+  const closeDailySummary = () => {
+    setShowDailySummary(false)
+    setSelectedDate(null)
   }
 
   // Memoized calculations
@@ -281,8 +330,15 @@ const DataTable = ({ globalFilters = {} }) => {
                     <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
                       {total > 0 && (
                         <span 
-                          className="text-xs font-bold" 
+                          className="text-xs font-bold cursor-pointer hover:text-blue-600 transition-colors" 
                           style={{color: total > 100 ? '#f23645' : '#000000'}}
+                          onClick={() => {
+                            const summaryData = getDailySummaryData(index)
+                            if (summaryData) {
+                              setSelectedDate(summaryData)
+                              setShowDailySummary(true)
+                            }
+                          }}
                         >
                           {total.toLocaleString('vi-VN')}
                         </span>
@@ -429,6 +485,15 @@ const DataTable = ({ globalFilters = {} }) => {
         onClose={closeModal}
         company={selectedCompany}
         getCompanyDetails={getCompanyDetails}
+      />
+
+      {/* Daily Summary Modal */}
+      <DailySummaryModal
+        isOpen={showDailySummary}
+        onClose={closeDailySummary}
+        date={selectedDate?.date}
+        companies={selectedDate?.companies}
+        summary={selectedDate?.summary}
       />
     </div>
   )
