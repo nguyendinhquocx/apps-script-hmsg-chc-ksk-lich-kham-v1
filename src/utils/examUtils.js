@@ -268,6 +268,26 @@ export const getCompanyDetails = (record) => {
     bloodTestDate = format(new Date(bloodTestDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
   }
 
+  // Format specific examination dates
+  let specificExamDates = null
+  if (specificDatesStr && specificDatesStr.trim()) {
+    const dates = specificDatesStr.split(',').map(dateStr => {
+      const trimmed = dateStr.trim()
+      if (trimmed.includes('/')) {
+        const [month, day] = trimmed.split('/')
+        // Định dạng lại thành dd/MM
+        const formattedMonth = month.padStart(2, '0')
+        const formattedDay = day.padStart(2, '0')
+        return `${formattedDay}/${formattedMonth}`
+      }
+      return null
+    }).filter(d => d !== null)
+    
+    if (dates.length > 0) {
+      specificExamDates = dates.join(' & ')
+    }
+  }
+
   return {
     totalPeople,
     morningCount: Math.round(morningCount),
@@ -275,7 +295,8 @@ export const getCompanyDetails = (record) => {
     totalDays,
     employee,
     examPeriod,
-    bloodTestDate
+    bloodTestDate,
+    specificExamDates
   }
 }
 

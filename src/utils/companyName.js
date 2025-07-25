@@ -55,12 +55,15 @@ export const abbreviateCompanyName = (companyName) => {
 export const getDisplayCompanyName = (companyName, maxLength = 50) => {
   const abbreviated = abbreviateCompanyName(companyName)
   
-  if (abbreviated.length <= maxLength) {
-    return abbreviated
+  // Viết hoa toàn bộ tên công ty để đồng nhất
+  const upperCased = abbreviated.toUpperCase()
+  
+  if (upperCased.length <= maxLength) {
+    return upperCased
   }
   
   // Nếu vẫn quá dài, cắt ngắn và thêm "..."
-  return abbreviated.substring(0, maxLength - 3) + '...'
+  return upperCased.substring(0, maxLength - 3) + '...'
 }
 
 // Function to get tooltip text (full original name)

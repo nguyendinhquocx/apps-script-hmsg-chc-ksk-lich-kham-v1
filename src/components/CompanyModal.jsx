@@ -30,7 +30,7 @@ const CompanyModal = ({
       >
         {/* Header */}
         <div className="mb-4">
-          <h3 className="text-base font-semibold text-gray-900 break-words">
+          <h3 className="text-base font-semibold text-gray-900 break-words uppercase">
             {company['ten cong ty']}
           </h3>
         </div>
@@ -51,19 +51,17 @@ const CompanyModal = ({
             <span className="text-sm text-gray-900">{details.examPeriod}</span>
           </div>
           
+          {/* Specific examination dates - only show if exists */}
+          {details.specificExamDates && (
+            <div className="flex justify-between py-1.5 border-b border-gray-100">
+              <span className="text-sm text-gray-600">Các ngày khám thực tế:</span>
+              <span className="text-sm text-gray-900">{details.specificExamDates}</span>
+            </div>
+          )}
+          
           <div className="flex justify-between py-1.5 border-b border-gray-100">
             <span className="text-sm text-gray-600">Tổng số người khám:</span>
             <span className="text-sm text-gray-900">{details.totalPeople.toLocaleString('vi-VN')} người</span>
-          </div>
-          
-          <div className="flex justify-between py-1.5 border-b border-gray-100">
-            <span className="text-sm text-gray-600">Số lượng khám sáng:</span>
-            <span className="text-sm text-gray-900">{details.morningCount.toLocaleString('vi-VN')} người</span>
-          </div>
-          
-          <div className="flex justify-between py-1.5 border-b border-gray-100">
-            <span className="text-sm text-gray-600">Số lượng khám chiều:</span>
-            <span className="text-sm text-gray-900">{details.afternoonCount.toLocaleString('vi-VN')} người</span>
           </div>
           
           <div className="flex justify-between py-1.5 border-b border-gray-100">
