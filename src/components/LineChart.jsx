@@ -119,7 +119,7 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                     dateMap.set(dateKey, {
                       ...existing,
                       people: existing.people + dailyCount,
-                      companies: existing.companies + (1 / examDays.length) // Distribute company count as well
+                      companies: existing.companies + 1 // Each company counts as 1 for each day it operates
                     })
                   }
                 }
@@ -168,10 +168,10 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
             {format(new Date(data.date), 'dd/MM/yyyy', { locale: vi })}
           </p>
           <p className="text-blue-600">
-            Số người khám: <span className="font-semibold">{data.people}</span>
+            Số người khám: <span className="font-semibold">{Math.round(data.people)}</span>
           </p>
           <p className="text-gray-600">
-            Số công ty: <span className="font-semibold">{data.companies}</span>
+            Số công ty: <span className="font-semibold">{Math.round(data.companies)}</span>
           </p>
         </div>
       )
