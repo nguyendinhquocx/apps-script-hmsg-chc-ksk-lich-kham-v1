@@ -289,11 +289,11 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
                 if (isLastPoint) {
                   return (
                     <g>
-                      <text 
-                        x={cx + 15} 
-                        y={cy - 5} 
-                        textAnchor="start" 
-                        fontSize="12" 
+                      <text
+                        x={cx}
+                        y={cy - 10}
+                        textAnchor="middle"
+                        fontSize="12"
                         fontWeight="600"
                         fill="#f23645"
                       >
