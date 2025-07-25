@@ -1,7 +1,23 @@
 import React from 'react'
 import { Building2, CheckCircle, Clock, Users } from 'lucide-react'
+import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isBefore, isAfter } from 'date-fns'
 
-const StatsCards = ({ data = [] }) => {
+const StatsCards = ({ data = [], monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } }) => {
+  // Determine the date range to calculate examined people
+  let filterStart, filterEnd
+  if (dateFilter.startDate && dateFilter.endDate) {
+    filterStart = new Date(dateFilter.startDate + 'T00:00:00')
+    filterEnd = new Date(dateFilter.endDate + 'T00:00:00')
+  } else {
+    const { month, year } = monthFilter
+    const selectedDate = new Date(year, month - 1, 1)
+    filterStart = startOfMonth(selectedDate)
+    filterEnd = endOfMonth(selectedDate)
+  }
+
+  // Use today if filter end is in the future
+  const today = new Date()
+  const calculationEnd = isBefore(filterEnd, today) ? filterEnd : today
   // Calculate statistics from data
   const totalCompanies = data.length
   const completedCompanies = data.filter(item => {
@@ -16,12 +32,82 @@ const StatsCards = ({ data = [] }) => {
   }).length
   
   // Calculate people examined vs in progress
-  const completedPeople = data
-    .filter(item => {
-      const status = (item['trang thai kham'] || '').toLowerCase().trim()
-      return status.includes('đã khám xong') || status.includes('da kham xong')
-    })
-    .reduce((sum, item) => sum + (parseInt(item['so nguoi kham']) || 0), 0)
+  // New logic: Calculate actual people examined based on date range and current date
+  const completedPeople = data.reduce((sum, item) => {
+    const startDate = item['ngay bat dau kham']
+    const endDate = item['ngay ket thuc kham'] || item['ngay bat dau kham']
+    const specificDatesStr = item['cac ngay kham thuc te']
+    const totalPeople = parseInt(item['so nguoi kham']) || 0
+    const isCompleted = item['trang thai kham'] === 'Đã khám xong'
+
+    if (!startDate || totalPeople === 0) return sum
+
+    try {
+      let examinedPeople = 0
+
+      if (specificDatesStr && specificDatesStr.trim()) {
+        // Handle specific examination dates
+        const specificDates = specificDatesStr.split(',').map(dateStr => {
+          const trimmed = dateStr.trim()
+          if (trimmed.includes('/')) {
+            const [month, day] = trimmed.split('/')
+            const year = filterStart.getFullYear()
+            return new Date(year, parseInt(month) - 1, parseInt(day))
+          }
+          return null
+        }).filter(d => d !== null && getDay(d) !== 0) // Exclude Sundays and null dates
+
+        // Count days that are within filter range and before/on calculation end
+        const examinedDays = specificDates.filter(date => 
+          date >= filterStart && 
+          date <= calculationEnd
+        ).length
+
+        if (isCompleted) {
+          // For completed exams: distribute total people across examined days
+          const totalExamDays = specificDates.length
+          examinedPeople = totalExamDays > 0 ? (totalPeople * examinedDays / totalExamDays) : 0
+        } else {
+          // For ongoing exams: use average per day
+          const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+          const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+          const dailyAvg = morningAvg + afternoonAvg
+          examinedPeople = dailyAvg * examinedDays
+        }
+      } else {
+        // Handle date range examination
+        const examStartDate = new Date(startDate + 'T00:00:00')
+        const examEndDate = new Date(endDate + 'T00:00:00')
+        
+        // Calculate working days in examination period
+        const examDays = eachDayOfInterval({ start: examStartDate, end: examEndDate })
+          .filter(date => getDay(date) !== 0) // Exclude Sundays
+
+        // Calculate examined days (within filter range and before/on calculation end)
+        const examinedDays = examDays.filter(date => 
+          date >= filterStart && 
+          date <= calculationEnd
+        ).length
+
+        if (isCompleted) {
+          // For completed exams: distribute total people across examined days
+          const totalExamDays = examDays.length
+          examinedPeople = totalExamDays > 0 ? (totalPeople * examinedDays / totalExamDays) : 0
+        } else {
+          // For ongoing exams: use average per day
+          const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+          const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+          const dailyAvg = morningAvg + afternoonAvg
+          examinedPeople = dailyAvg * examinedDays
+        }
+      }
+
+      return sum + Math.round(examinedPeople)
+    } catch (error) {
+      console.warn('Error calculating examined people for item:', item, error)
+      return sum
+    }
+  }, 0)
 
   const stats = [
     {

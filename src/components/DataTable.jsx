@@ -199,7 +199,7 @@ const DataTable = ({ globalFilters = {} }) => {
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
-      <StatsCards data={data} />
+      <StatsCards data={data} monthFilter={monthFilter} dateFilter={dateFilter} />
       
       {/* Line Chart */}
       <LineChart data={data} monthFilter={monthFilter} dateFilter={dateFilter} />
