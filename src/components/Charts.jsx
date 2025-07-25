@@ -1,146 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React from 'react'
 import { FileSpreadsheet } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import GlobalFilters from './GlobalFilters'
 import ExamStatsCards from './ExamStatsCards'
 import MaxExamChart from './MaxExamChart'
-import LichKhamService from '../services/supabase'
-import { matchesSearch } from '../utils/vietnamese'
 import { examCategories } from '../constants/examCategories'
 import { useChartsExport } from '../hooks/useChartsExport'
+import { useChartsData } from '../hooks/useChartsData'
+import { useChartsFiltering } from '../hooks/useChartsFiltering'
 
 const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  // Lấy dữ liệu
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      setError(null)
-      
-      try {
-        // Test connection first
-        console.log('Charts - Testing connection...')
-        const testResult = await LichKhamService.testConnection()
-        console.log('Charts - Connection test result:', testResult)
-        
-        if (!testResult.success) {
-          setError(`Connection failed: ${testResult.error}`)
-          setData([])
-          setLoading(false)
-          return
-        }
-        
-        const result = await LichKhamService.getLichKhamData({
-          page: 1,
-          limit: 10000
-        })
-        
-        if (result.error) {
-          console.error('Charts - Error fetching data:', result.error)
-          setError(result.error)
-          setData([])
-        } else {
-          const fetchedData = result.data || []
-          console.log('Charts - Fetched data:', {
-            totalRecords: fetchedData.length,
-            sampleRecord: fetchedData[0],
-            allKeys: fetchedData[0] ? Object.keys(fetchedData[0]).sort() : []
-          })
-          
-          // Kiểm tra các cột cận lâm sàng có tồn tại không
-          if (fetchedData[0]) {
-            const keys = Object.keys(fetchedData[0])
-            const examColumns = examCategories.flatMap(cat => [cat.morning, cat.afternoon])
-            const missingColumns = examColumns.filter(col => !keys.includes(col))
-            const availableExamColumns = examColumns.filter(col => keys.includes(col))
-            
-            console.log('Charts - Column analysis:', {
-              expectedExamColumns: examColumns,
-              availableExamColumns,
-              missingColumns,
-              allAvailableKeys: keys.sort()
-            })
-            
-          }
-          
-          setData(fetchedData)
-        }
-      } catch (error) {
-        console.error('Charts - Fetch error:', error)
-        setError(error.message)
-        setData([])
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
-
-  // Lọc dữ liệu theo các bộ lọc toàn cục
-  const filteredData = useMemo(() => {
-    if (!data || data.length === 0) {
-      console.log('Charts - No data to filter')
-      return []
-    }
-    
-    console.log('Charts - Filtering data:', {
-      totalData: data.length,
-      globalFilters,
-      sampleItem: data[0]
-    })
-    
-    return data.filter(item => {
-      // Lọc theo tìm kiếm
-      if (globalFilters.searchTerm) {
-        const matchesCompany = matchesSearch(item['ten cong ty'], globalFilters.searchTerm)
-        const matchesEmployee = matchesSearch(item['ten nhan vien'], globalFilters.searchTerm)
-        if (!matchesCompany && !matchesEmployee) return false
-      }
-      
-      // Lọc theo trạng thái
-      if (globalFilters.statusFilter && globalFilters.statusFilter !== 'all') {
-        if (item['trang thai kham'] !== globalFilters.statusFilter) return false
-      }
-      
-      // Lọc theo nhân viên
-      if (globalFilters.employeeFilter && globalFilters.employeeFilter !== 'all') {
-        if (!matchesSearch(item['ten nhan vien'], globalFilters.employeeFilter)) return false
-      }
-      
-      // Lọc theo khoảng ngày
-      if (globalFilters.dateFilter && globalFilters.dateFilter.startDate && globalFilters.dateFilter.endDate) {
-        const itemStartDate = new Date(item['ngay bat dau kham'])
-        const itemEndDate = new Date(item['ngay ket thuc kham'])
-        const filterStartDate = new Date(globalFilters.dateFilter.startDate)
-        const filterEndDate = new Date(globalFilters.dateFilter.endDate)
-        
-        // Kiểm tra xem khoảng thời gian khám có giao với khoảng lọc không
-        if (itemEndDate < filterStartDate || itemStartDate > filterEndDate) {
-          return false
-        }
-      }
-      
-      // Lọc theo tháng (chỉ khi không có dateFilter)
-      if (globalFilters.monthFilter && !globalFilters.dateFilter?.startDate && !globalFilters.dateFilter?.endDate) {
-        const startDate = new Date(item['ngay bat dau kham'])
-        const endDate = new Date(item['ngay ket thuc kham'])
-        const { month, year } = globalFilters.monthFilter
-        const filterDate = new Date(year, month - 1, 1)
-        const filterEndDate = new Date(year, month, 0)
-        
-        // Kiểm tra xem khoảng thời gian khám có giao với tháng được lọc không
-        if (endDate < filterDate || startDate > filterEndDate) {
-          return false
-        }
-      }
-      
-      return true
-    })
-  }, [data, globalFilters])
+  // Sử dụng hook để xử lý data fetching
+  const { data, loading, error } = useChartsData()
+  
+  // Sử dụng hook để xử lý data filtering
+  const { filteredData } = useChartsFiltering(data, globalFilters)
 
   // Sử dụng hook để xử lý Excel export và các calculations
   const { exportToExcel, getExamCount, getMaxForDay, getDaysToShow } = useChartsExport(filteredData, globalFilters)
