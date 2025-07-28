@@ -235,6 +235,10 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       const maxMorning = Math.max(...morningCounts.filter(count => count > 0))
                       const maxAfternoon = Math.max(...afternoonCounts.filter(count => count > 0))
                       
+                      // Tìm index của số lớn nhất đầu tiên cho mỗi buổi (để chỉ khoanh 1 số khi có nhiều số bằng nhau)
+                      const maxMorningIndex = morningCounts.findIndex(count => count > 0 && count === maxMorning)
+                      const maxAfternoonIndex = afternoonCounts.findIndex(count => count > 0 && count === maxAfternoon)
+                      
                       const isPastDate = new Date(dayInfo.date) < new Date().setHours(0, 0, 0, 0)
                       
                       return (
@@ -242,16 +246,14 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                           {/* Các cột sáng */}
                           {examCategories.map((category, categoryIndex) => {
                             const count = getExamCount(dayInfo.date, categoryIndex, 'morning')
-                            const isMaxInPeriod = count > 0 && count === maxMorning
+                            // Chỉ khoanh tròn 1 số duy nhất (số đầu tiên có giá trị max)
+                            const isMaxInPeriod = count > 0 && count === maxMorning && categoryIndex === maxMorningIndex
                             
                             // Xác định màu và style
                             let textColor = '#000000' // mặc định đen
-                            let borderStyle = ''
                             
                             if (isMaxInPeriod) {
                               // Khoanh tròn cho số lớn nhất
-                              const borderColor = isPastDate ? '#2962ff' : '#000000'
-                              borderStyle = `border: 1px solid ${borderColor}; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;`
                               textColor = isPastDate ? '#2962ff' : '#000000'
                             } else {
                               if (isPastDate) {
@@ -265,17 +267,35 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                               <td key={`morning-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                                 {count > 0 && (
                                   <span 
-                                    className="text-xs font-normal cursor-pointer transition-colors inline-block hover:bg-gray-100"
-                                    style={{color: textColor, ...(isMaxInPeriod ? {} : {padding: '4px 8px', borderRadius: '9999px'})}}
+                                    className="text-xs font-normal cursor-pointer transition-all duration-200 inline-block"
+                                    style={{
+                                      color: textColor,
+                                      ...(isMaxInPeriod ? {
+                                        border: `1px solid ${isPastDate ? '#2962ff' : '#000000'}`,
+                                        borderRadius: '50%',
+                                        width: '24px',
+                                        height: '24px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      } : {
+                                        padding: '4px 8px',
+                                        borderRadius: '9999px'
+                                      })
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (isMaxInPeriod) {
+                                        e.target.style.backgroundColor = '#f3f4f6'
+                                      } else {
+                                        e.target.style.backgroundColor = '#f3f4f6'
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.target.style.backgroundColor = 'transparent'
+                                    }}
                                     onClick={() => handleExamClick(dayInfo.date, categoryIndex, 'morning')}
                                   >
-                                    {isMaxInPeriod ? (
-                                      <span style={{...{color: textColor}, ...Object.fromEntries(borderStyle.split(';').map(s => s.split(':').map(p => p.trim())).filter(([k,v]) => k && v))}}>
-                                        {count}
-                                      </span>
-                                    ) : (
-                                      count
-                                    )}
+                                    {count}
                                   </span>
                                 )}
                               </td>
@@ -285,16 +305,14 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                           {/* Các cột chiều */}
                           {examCategories.map((category, categoryIndex) => {
                             const count = getExamCount(dayInfo.date, categoryIndex, 'afternoon')
-                            const isMaxInPeriod = count > 0 && count === maxAfternoon
+                            // Chỉ khoanh tròn 1 số duy nhất (số đầu tiên có giá trị max)
+                            const isMaxInPeriod = count > 0 && count === maxAfternoon && categoryIndex === maxAfternoonIndex
                             
                             // Xác định màu và style
                             let textColor = '#000000' // mặc định đen
-                            let borderStyle = ''
                             
                             if (isMaxInPeriod) {
                               // Khoanh tròn cho số lớn nhất
-                              const borderColor = isPastDate ? '#2962ff' : '#000000'
-                              borderStyle = `border: 1px solid ${borderColor}; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center;`
                               textColor = isPastDate ? '#2962ff' : '#000000'
                             } else {
                               if (isPastDate) {
@@ -308,17 +326,35 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                               <td key={`afternoon-${categoryIndex}`} className="px-2 py-2 whitespace-nowrap text-center">
                                 {count > 0 && (
                                   <span 
-                                    className="text-xs font-normal cursor-pointer transition-colors inline-block hover:bg-gray-100"
-                                    style={{color: textColor, ...(isMaxInPeriod ? {} : {padding: '4px 8px', borderRadius: '9999px'})}}
+                                    className="text-xs font-normal cursor-pointer transition-all duration-200 inline-block"
+                                    style={{
+                                      color: textColor,
+                                      ...(isMaxInPeriod ? {
+                                        border: `1px solid ${isPastDate ? '#2962ff' : '#000000'}`,
+                                        borderRadius: '50%',
+                                        width: '24px',
+                                        height: '24px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      } : {
+                                        padding: '4px 8px',
+                                        borderRadius: '9999px'
+                                      })
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (isMaxInPeriod) {
+                                        e.target.style.backgroundColor = '#f3f4f6'
+                                      } else {
+                                        e.target.style.backgroundColor = '#f3f4f6'
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.target.style.backgroundColor = 'transparent'
+                                    }}
                                     onClick={() => handleExamClick(dayInfo.date, categoryIndex, 'afternoon')}
                                   >
-                                    {isMaxInPeriod ? (
-                                      <span style={{...{color: textColor}, ...Object.fromEntries(borderStyle.split(';').map(s => s.split(':').map(p => p.trim())).filter(([k,v]) => k && v))}}>
-                                        {count}
-                                      </span>
-                                    ) : (
-                                      count
-                                    )}
+                                    {count}
                                   </span>
                                 )}
                               </td>
