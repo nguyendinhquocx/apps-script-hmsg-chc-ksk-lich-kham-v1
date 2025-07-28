@@ -59,7 +59,7 @@ const Dashboard = () => {
     },
     {
       id: 'benchmark',
-      name: 'Benchmark KSK',
+      name: 'Phân tích & Dự báo',
       component: Benchmark
     }
   ]
