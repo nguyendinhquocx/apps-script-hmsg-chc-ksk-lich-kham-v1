@@ -123,6 +123,10 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
       <ExamStatsCards 
         data={filteredData}
         examCategories={examCategories}
+        getExamCount={getExamCount}
+        getDaysToShow={getDaysToShow}
+        monthFilter={globalFilters.monthFilter}
+        dateFilter={globalFilters.dateFilter}
       />
       
       {/* Max Exam Chart */}
