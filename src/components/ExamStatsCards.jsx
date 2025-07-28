@@ -113,16 +113,17 @@ const ExamStatsCards = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => {
         const hasData = stat.value > 0
+        // Format number with thousand separators using Vietnamese locale
+        const formattedValue = stat.value.toLocaleString('vi-VN')
         
         return (
           <div key={index} className="bg-white p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-3xl font-bold mb-1 ${hasData ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {stat.value}
+                  {formattedValue}
                 </p>
                 <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className="text-xs text-gray-500 mt-1">Tổng số ca</p>
               </div>
             </div>
           </div>
