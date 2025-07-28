@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { BarChart3, Table, RefreshCw } from 'lucide-react'
+import { BarChart3, Table, RefreshCw, Target } from 'lucide-react'
 import DataTable from './DataTable'
 import Charts from './Charts'
+import Benchmark from './Benchmark'
 import GlobalFilters from './GlobalFilters'
 import { getCurrentMonth } from '../utils/vietnamese'
 
@@ -55,6 +56,11 @@ const Dashboard = () => {
       id: 'charts',
       name: 'Cận lâm sàng',
       component: Charts
+    },
+    {
+      id: 'benchmark',
+      name: 'Benchmark KSK',
+      component: Benchmark
     }
   ]
 
@@ -143,6 +149,9 @@ const Dashboard = () => {
               updateGlobalFilter={updateGlobalFilter}
               resetGlobalFilters={resetGlobalFilters}
             />
+          )}
+          {activeTab === 'benchmark' && (
+            <Benchmark key={refreshKey} />
           )}
         </div>
       </main>
