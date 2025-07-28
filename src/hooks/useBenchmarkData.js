@@ -48,10 +48,11 @@ export const useBenchmarkData = () => {
     try {
       console.log('🧪 Testing Supabase connection for ksk_benchmark table...')
       
+      // Test với select đơn giản chỉ lấy 1 record
       const { data: testData, error: testError } = await supabase
         .from('ksk_benchmark')
-        .select('count(*)')
-        .limit(1)
+        .select('*')
+        .limit(5)
 
       if (testError) {
         console.error('❌ Connection test failed:', testError)
@@ -59,9 +60,131 @@ export const useBenchmarkData = () => {
       }
 
       console.log('✅ Connection test successful!')
-      return { success: true, message: 'Kết nối thành công với bảng ksk_benchmark' }
+      console.log('📊 Test data received:', testData)
+      
+      if (!testData || testData.length === 0) {
+        return { 
+          success: true, 
+          message: `Kết nối thành công nhưng bảng ksk_benchmark trống. Cần thêm dữ liệu mẫu.` 
+        }
+      }
+      
+      return { 
+        success: true, 
+        message: `Kết nối thành công với bảng ksk_benchmark. Tìm thấy ${testData?.length || 0} record(s).` 
+      }
     } catch (err) {
       console.error('💥 Connection test error:', err)
+      return { success: false, error: err.message }
+    }
+  }
+
+  // Function to insert sample data
+  const insertSampleData = async () => {
+    try {
+      console.log('📝 Inserting sample benchmark data...')
+      
+      const sampleData = [
+        {
+          chuyen_khoa: "Nội tổng quát",
+          phut_tb_1_ca_min: 5,
+          phut_tb_1_ca_max: 8,
+          so_ca_gio_bs_min: 8,
+          so_ca_gio_bs_max: 12,
+          so_ca_ngay_bs_min: 64,
+          so_ca_ngay_bs_max: 90,
+          nhan_su: "BS",
+          ghi_chu: "Khám + tư vấn CLS. Định mức 15 phút/ca, 4 KH/giờ, 15 KH/ngày cho khách hàng công ty và thẩm định bảo hiểm"
+        },
+        {
+          chuyen_khoa: "Ngoại khoa",
+          phut_tb_1_ca_min: 5,
+          phut_tb_1_ca_max: 5,
+          so_ca_gio_bs_min: 12,
+          so_ca_gio_bs_max: 12,
+          so_ca_ngay_bs_min: 90,
+          so_ca_ngay_bs_max: 90,
+          nhan_su: "BS",
+          ghi_chu: "Khám + tư vấn CLS"
+        },
+        {
+          chuyen_khoa: "RHM",
+          phut_tb_1_ca_min: 5,
+          phut_tb_1_ca_max: 5,
+          so_ca_gio_bs_min: 12,
+          so_ca_gio_bs_max: 12,
+          so_ca_ngay_bs_min: 90,
+          so_ca_ngay_bs_max: 90,
+          nhan_su: "BS",
+          ghi_chu: "Khám + tư vấn CLS"
+        },
+        {
+          chuyen_khoa: "TMH",
+          phut_tb_1_ca_min: 5,
+          phut_tb_1_ca_max: 5,
+          so_ca_gio_bs_min: 12,
+          so_ca_gio_bs_max: 12,
+          so_ca_ngay_bs_min: 90,
+          so_ca_ngay_bs_max: 90,
+          nhan_su: "BS",
+          ghi_chu: "Khám + tư vấn CLS"
+        },
+        {
+          chuyen_khoa: "Mắt",
+          phut_tb_1_ca_min: 5,
+          phut_tb_1_ca_max: 5,
+          so_ca_gio_bs_min: 12,
+          so_ca_gio_bs_max: 12,
+          so_ca_ngay_bs_min: 90,
+          so_ca_ngay_bs_max: 90,
+          nhan_su: "BS",
+          ghi_chu: "Khám + tư vấn CLS"
+        },
+        {
+          chuyen_khoa: "Da liễu",
+          phut_tb_1_ca_min: 5,
+          phut_tb_1_ca_max: 5,
+          so_ca_gio_bs_min: 12,
+          so_ca_gio_bs_max: 12,
+          so_ca_ngay_bs_min: 90,
+          so_ca_ngay_bs_max: 90,
+          nhan_su: "BS",
+          ghi_chu: "Khám + tư vấn CLS"
+        },
+        {
+          chuyen_khoa: "Sản phụ khoa",
+          phut_tb_1_ca_min: 7,
+          phut_tb_1_ca_max: 15,
+          so_ca_gio_bs_min: 4,
+          so_ca_gio_bs_max: 8,
+          so_ca_ngay_bs_min: 32,
+          so_ca_ngay_bs_max: 64,
+          nhan_su: "BS + ĐD/TKYK",
+          ghi_chu: "Vấn + PAP + soi tươi (tối thiểu 15 phút/ca)"
+        }
+      ]
+
+      const { data: insertedData, error: insertError } = await supabase
+        .from('ksk_benchmark')
+        .insert(sampleData)
+        .select()
+
+      if (insertError) {
+        console.error('❌ Insert sample data failed:', insertError)
+        return { success: false, error: insertError.message }
+      }
+
+      console.log('✅ Sample data inserted successfully:', insertedData)
+      
+      // Refresh data after insert
+      await fetchBenchmarkData()
+      
+      return { 
+        success: true, 
+        message: `Đã thêm ${sampleData.length} record mẫu thành công!` 
+      }
+    } catch (err) {
+      console.error('💥 Error inserting sample data:', err)
       return { success: false, error: err.message }
     }
   }
@@ -94,6 +217,7 @@ export const useBenchmarkData = () => {
     error,
     refreshData,
     testConnection,
+    insertSampleData,
     getStatistics,
     getBenchmarkBySpecialty
   }
