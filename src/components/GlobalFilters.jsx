@@ -46,7 +46,7 @@ const GlobalFilters = ({
             <div className="flex items-center space-x-2">
               <button
                 onClick={handlePreviousMonth}
-                className="p-2 bg-white text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                className="p-2 bg-white text-gray-600 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
                 title="Tháng trước"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -61,7 +61,7 @@ const GlobalFilters = ({
               </div>
               <button
                 onClick={handleNextMonth}
-                className="p-2 bg-white text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                className="p-2 bg-white text-gray-600 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
                 title="Tháng sau"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -75,14 +75,14 @@ const GlobalFilters = ({
               type="date"
               value={dateFilter.startDate}
               onChange={(e) => onDateFilterChange({ ...dateFilter, startDate: e.target.value })}
-              className="px-3 py-2 bg-white text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-white text-xs rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
               title="Từ ngày"
             />
             <input
               type="date"
               value={dateFilter.endDate}
               onChange={(e) => onDateFilterChange({ ...dateFilter, endDate: e.target.value })}
-              className="px-3 py-2 bg-white text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-white text-xs rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
               title="Đến ngày"
             />
           </div>
@@ -97,7 +97,7 @@ const GlobalFilters = ({
               placeholder="Tìm kiếm công ty..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-white rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
             />
           </div>
 
@@ -108,7 +108,7 @@ const GlobalFilters = ({
               placeholder="Lọc theo nhân viên..."
               value={employeeFilter}
               onChange={(e) => onEmployeeChange(e.target.value)}
-              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-white rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
             />
           </div>
 
@@ -117,7 +117,7 @@ const GlobalFilters = ({
             <select
               value={statusFilter}
               onChange={(e) => onStatusChange(e.target.value)}
-              className="px-3 py-2 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 bg-white rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out cursor-pointer"
             >
               <option value="">Tất cả trạng thái</option>
               {statusOptions.map(status => (
@@ -128,18 +128,18 @@ const GlobalFilters = ({
 
           {/* Reset Button and Gold Filter */}
           <div className="flex gap-2 items-center">
-            <label className="flex items-center cursor-pointer">
+            <label className="flex items-center cursor-pointer px-3 py-2 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out">
               <input
                 type="checkbox"
                 checked={showGold}
                 onChange={(e) => onGoldChange(e.target.checked)}
-                className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="mr-2 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 transition-all duration-200"
               />
               <span className="text-sm font-medium text-gray-700">Gold</span>
             </label>
             <button
               onClick={onReset}
-              className="px-4 py-2 bg-white text-black text-sm font-bold rounded-lg hover:bg-gray-100 transition-colors duration-200"
+              className="px-4 py-2 bg-white text-black text-sm font-bold rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
               title="Xóa tất cả bộ lọc"
             >
               Reset
