@@ -65,39 +65,63 @@ const BenchmarkUltrasoundChart = ({
       dateMap.set(dateKey, dayData)
     })
 
-    // Process actual data from database records
+    // Process actual data (use same logic as ECG chart)
     data.forEach(item => {
-      // Use the date field directly from the data
-      const itemDate = item.date || item.start_date
-      if (!itemDate) return
-
-      // Parse date
-      let examDate
-      try {
-        examDate = new Date(itemDate)
-        if (isNaN(examDate.getTime())) return
-      } catch {
-        return
-      }
-
-      // Check if date is in range and not Sunday
-      if (examDate < chartStart || examDate > chartEnd || getDay(examDate) === 0) {
-        return
-      }
-
-      const dateKey = format(examDate, 'yyyy-MM-dd')
-      const existingData = dateMap.get(dateKey)
+      const startDateStr = item['ngay bat dau kham']
+      const endDateStr = item['ngay ket thuc kham'] || startDateStr
+      const specificDatesStr = item['cac ngay kham thuc te']
       
-      if (existingData) {
-        // Add values for each ultrasound category using correct field names
-        ultrasoundCategories.forEach(category => {
-          const morningValue = parseInt(item[category.fields[0]] || 0)
-          const afternoonValue = parseInt(item[category.fields[1]] || 0)
-          const totalValue = morningValue + afternoonValue
-          
-          existingData[category.key] += totalValue
-        })
+      if (!startDateStr) return
+
+      // Get examination dates
+      let examDates = []
+      
+      if (specificDatesStr && specificDatesStr.trim()) {
+        // Parse specific dates (format: MM/dd, MM/dd, ...)
+        const specificDates = specificDatesStr.split(',').map(dateStr => {
+          const trimmed = dateStr.trim()
+          if (trimmed.includes('/')) {
+            const [month, day] = trimmed.split('/')
+            const year = chartStart.getFullYear()
+            return new Date(year, parseInt(month) - 1, parseInt(day))
+          }
+          return null
+        }).filter(d => d !== null)
+        
+        // Filter out Sundays and dates outside range
+        examDates = specificDates.filter(d => 
+          getDay(d) !== 0 && 
+          d >= chartStart && 
+          d <= chartEnd
+        )
+      } else {
+        // Use start and end dates
+        const startDate = new Date(startDateStr + 'T00:00:00')
+        const endDate = new Date(endDateStr + 'T00:00:00')
+        
+        examDates = eachDayOfInterval({ start: startDate, end: endDate })
+          .filter(d => 
+            getDay(d) !== 0 && 
+            d >= chartStart && 
+            d <= chartEnd
+          )
       }
+
+      // Add ultrasound counts to each examination date
+      examDates.forEach(examDate => {
+        const dateKey = format(examDate, 'yyyy-MM-dd')
+        const dayData = dateMap.get(dateKey)
+        
+        if (dayData) {
+          ultrasoundCategories.forEach(category => {
+            const morningValue = parseInt(item[category.fields[0]] || 0)
+            const afternoonValue = parseInt(item[category.fields[1]] || 0)
+            const totalValue = morningValue + afternoonValue
+            
+            dayData[category.key] += totalValue
+          })
+        }
+      })
     })
 
     return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date))
@@ -193,7 +217,7 @@ const BenchmarkUltrasoundChart = ({
                       cx={cx}
                       cy={cy}
                       r={isToday ? 6 : 3}
-                      fill={category.color}
+                      fill={isToday ? "#FFFFFF" : category.color}
                       stroke={category.color}
                       strokeWidth={2}
                     />

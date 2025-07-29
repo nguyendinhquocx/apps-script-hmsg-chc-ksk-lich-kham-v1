@@ -120,11 +120,11 @@ const BenchmarkGynecologyChart = ({
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900">{`Ngày: ${displayDate}`}</p>
-          <p className="text-sm text-pink-600">
+          <p className="text-sm text-black">
             {`Khám phụ khoa: ${value} ca`}
           </p>
           {benchmarkLimit > 0 && (
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-red-600">
               {`Định mức: ${benchmarkLimit} ca`}
             </p>
           )}
@@ -184,7 +184,7 @@ const BenchmarkGynecologyChart = ({
                     cx={cx}
                     cy={cy}
                     r={isToday ? 6 : 3}
-                    fill="#000000"
+                    fill={isToday ? "#FFFFFF" : "#000000"}
                     stroke="#000000"
                     strokeWidth={2}
                   />
