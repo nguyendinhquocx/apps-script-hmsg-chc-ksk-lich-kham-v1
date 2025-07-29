@@ -42,7 +42,7 @@ const BenchmarkExceedTable = ({
     return Math.round((benchmark.so_ca_ngay_bs_min + benchmark.so_ca_ngay_bs_max) / 2)
   }
 
-  // Calculate exceed data with simplified structure
+  // Calculate exceed data using single data source
   const exceedTableData = useMemo(() => {
     if (!getDaysToShow) return []
 
@@ -50,8 +50,11 @@ const BenchmarkExceedTable = ({
     const exceedData = []
 
     days.forEach(dayInfo => {
+      // Filter records for this day
       const dayRecords = data.filter(record => {
-        const recordDate = new Date(record.start_date).toDateString()
+        const recordDate = record.start_date 
+          ? new Date(record.start_date).toDateString()
+          : new Date(record.date).toDateString()
         const dayDate = new Date(dayInfo.date).toDateString()
         return recordDate === dayDate
       })
