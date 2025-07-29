@@ -167,6 +167,17 @@ const BenchmarkECGChart = ({
                 y={benchmarkLimit} 
                 stroke="#DC2626" 
                 strokeDasharray="5 5"
+                label={{
+                  value: benchmarkLimit,
+                  position: "right",
+                  offset: 10,
+                  style: { 
+                    fill: "black", 
+                    fontSize: "12px", 
+                    fontWeight: "500",
+                    textAnchor: "start"
+                  }
+                }}
               />
             )}
 
@@ -190,7 +201,19 @@ const BenchmarkECGChart = ({
                   />
                 )
               }}
-              activeDot={{ r: 5, fill: '#000000' }}
+              activeDot={(props) => {
+                const { cx, cy } = props
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={6}
+                    fill="transparent"
+                    stroke="#000000"
+                    strokeWidth={2}
+                  />
+                )
+              }}
               name="Điện tâm đồ"
             />
           </LineChart>

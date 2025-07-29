@@ -42,21 +42,19 @@ const Benchmark = ({ filters }) => {
           dateFilter={filters?.dateFilter}
         />
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BenchmarkECGChart
-            data={allData || []}
-            benchmarkData={benchmarkData || []}
-            monthFilter={filters?.monthFilter}
-            dateFilter={filters?.dateFilter}
-          />
-          
-          <BenchmarkGynecologyChart
-            data={allData || []}
-            benchmarkData={benchmarkData || []}
-            monthFilter={filters?.monthFilter}
-            dateFilter={filters?.dateFilter}
-          />
-        </div>
+        <BenchmarkECGChart
+          data={allData || []}
+          benchmarkData={benchmarkData || []}
+          monthFilter={filters?.monthFilter}
+          dateFilter={filters?.dateFilter}
+        />
+        
+        <BenchmarkGynecologyChart
+          data={allData || []}
+          benchmarkData={benchmarkData || []}
+          monthFilter={filters?.monthFilter}
+          dateFilter={filters?.dateFilter}
+        />
       </div>
 
       {/* Benchmark Exceed Table */}

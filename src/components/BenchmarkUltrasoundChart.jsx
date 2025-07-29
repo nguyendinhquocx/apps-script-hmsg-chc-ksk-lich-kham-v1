@@ -195,6 +195,17 @@ const BenchmarkUltrasoundChart = ({
                     y={benchmarkLimit} 
                     stroke="#DC2626" 
                     strokeDasharray="5 5"
+                    label={{
+                      value: benchmarkLimit,
+                      position: "right",
+                      offset: 10,
+                      style: { 
+                        fill: "black", 
+                        fontSize: "12px", 
+                        fontWeight: "500",
+                        textAnchor: "start"
+                      }
+                    }}
                   />
                 )
               }
@@ -223,7 +234,19 @@ const BenchmarkUltrasoundChart = ({
                     />
                   )
                 }}
-                activeDot={{ r: 5, fill: category.color }}
+                activeDot={(props) => {
+                  const { cx, cy } = props
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={6}
+                      fill="transparent"
+                      stroke={category.color}
+                      strokeWidth={2}
+                    />
+                  )
+                }}
                 name={category.name}
               />
             ))}
