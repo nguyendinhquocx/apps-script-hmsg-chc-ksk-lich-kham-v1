@@ -6,7 +6,7 @@
  * @returns {string} - Text without diacritics
  */
 export const removeDiacritics = (text) => {
-  if (!text) return ''
+  if (!text || typeof text !== 'string') return ''
   
   return text
     .normalize('NFD')
@@ -23,7 +23,8 @@ export const removeDiacritics = (text) => {
  * @returns {boolean} - Whether the search term matches
  */
 export const matchesSearch = (text, searchTerm) => {
-  if (!text || !searchTerm) return true
+  if (!searchTerm) return true
+  if (!text || typeof text !== 'string') return false
   
   const normalizedText = removeDiacritics(text)
   const normalizedSearch = removeDiacritics(searchTerm)

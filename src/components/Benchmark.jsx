@@ -28,23 +28,23 @@ const Benchmark = ({ filters }) => {
     } = filters
 
     return allData.filter(item => {
-      // Search filter
-      if (searchTerm && !matchesSearch(item, searchTerm)) {
+      // Search filter - search in company name
+      if (searchTerm && !matchesSearch(item['ten cong ty'], searchTerm)) {
         return false
       }
 
       // Status filter  
-      if (statusFilter && item.trang_thai !== statusFilter) {
+      if (statusFilter && item['trang thai kham'] !== statusFilter) {
         return false
       }
 
-      // Employee filter
-      if (employeeFilter && item.nhan_vien_kham !== employeeFilter) {
+      // Employee filter - search in employee name
+      if (employeeFilter && !matchesSearch(item['ten nhan vien'], employeeFilter)) {
         return false
       }
 
       // Gold filter
-      if (showGold && !item.gold) {
+      if (showGold && !(item['gold'] === 'x' || item['gold'] === 'X')) {
         return false
       }
 
