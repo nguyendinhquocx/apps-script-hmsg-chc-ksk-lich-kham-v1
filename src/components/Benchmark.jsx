@@ -43,12 +43,24 @@ const Benchmark = ({ filters }) => {
     'Sản phụ khoa': 'Khám phụ khoa'
   }
 
-  // Sort benchmark data: Nội tổng quát -> Điện tâm đồ -> Khám phụ khoa -> others
+  // Sort benchmark data according to specified order
   const sortedBenchmarkData = benchmarkData?.slice().sort((a, b) => {
     const specialtyOrder = [
-      'Nội tổng quát',
-      'Điện tim (ECG)', // Will be displayed as 'Điện tâm đồ' 
-      'Sản phụ khoa'   // Will be displayed as 'Khám phụ khoa'
+      'Ngoại khoa',        // Ngoại tổng quát
+      'Mắt',               // Mắt
+      'Da liễu',           // Da liễu
+      'TMH',               // Tai mũi họng
+      'RHM',               // Răng hàm mặt
+      'Nội tổng quát',     // Nội tổng quát
+      'Sản phụ khoa',      // Khám phụ khoa
+      'Điện tim (ECG)',    // Điện tâm đồ
+      'Siêu âm - Bụng',    // Siêu âm bụng
+      'Siêu âm - Vú',      // Siêu âm vú
+      'Siêu âm - Giáp',    // Siêu âm giáp
+      'Siêu âm - Combo (Vú, Giáp...)', // Siêu âm vú + giáp
+      'Siêu âm - Tim',     // Siêu âm tim
+      'Siêu âm - Động mạch cảnh',      // SA động mạch cảnh
+      'Siêu âm - Mạch máu chi'          // SA mạch máu chi
     ]
     
     const aIndex = specialtyOrder.indexOf(a.chuyen_khoa)
@@ -67,6 +79,39 @@ const Benchmark = ({ filters }) => {
 
   return (
     <div className="space-y-6">
+      {/* Benchmark Line Charts */}
+      <div className="space-y-4">
+        <BenchmarkLineChart
+          data={allData || []}
+          getDaysToShow={getDaysToShow}
+          benchmarkData={benchmarkData || []}
+          chartType="ultrasound"
+        />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <BenchmarkLineChart
+            data={allData || []}
+            getDaysToShow={getDaysToShow}
+            benchmarkData={benchmarkData || []}
+            chartType="ecg"
+          />
+          
+          <BenchmarkLineChart
+            data={allData || []}
+            getDaysToShow={getDaysToShow}
+            benchmarkData={benchmarkData || []}
+            chartType="gynecology"
+          />
+        </div>
+      </div>
+
+      {/* Benchmark Exceed Table */}
+      <BenchmarkExceedTable 
+        data={allData || []}
+        getDaysToShow={getDaysToShow}
+        benchmarkData={benchmarkData || []}
+      />
+
       {/* Benchmark Reference Table */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Bảng định mức chuẩn</h2>
@@ -135,39 +180,6 @@ const Benchmark = ({ filters }) => {
           </table>
         </div>
       </div>
-
-      {/* Benchmark Line Charts */}
-      <div className="space-y-4">
-        <BenchmarkLineChart
-          data={allData || []}
-          getDaysToShow={getDaysToShow}
-          benchmarkData={benchmarkData || []}
-          chartType="ultrasound"
-        />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BenchmarkLineChart
-            data={allData || []}
-            getDaysToShow={getDaysToShow}
-            benchmarkData={benchmarkData || []}
-            chartType="ecg"
-          />
-          
-          <BenchmarkLineChart
-            data={allData || []}
-            getDaysToShow={getDaysToShow}
-            benchmarkData={benchmarkData || []}
-            chartType="gynecology"
-          />
-        </div>
-      </div>
-
-      {/* Benchmark Exceed Table */}
-      <BenchmarkExceedTable 
-        data={allData || []}
-        getDaysToShow={getDaysToShow}
-        benchmarkData={benchmarkData || []}
-      />
     </div>
   )
 }
