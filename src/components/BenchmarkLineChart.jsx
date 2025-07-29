@@ -130,21 +130,27 @@ const BenchmarkLineChart = ({
   }, [benchmarkLimits])
 
   return (
-    <div className="bg-white p-4 rounded-lg">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{config.title}</h3>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-900">{config.title}</h3>
       
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis 
               dataKey="date" 
               tick={{ fontSize: 12 }}
               angle={-45}
               textAnchor="end"
               height={60}
+              axisLine={false}
+              tickLine={false}
             />
-            <YAxis tick={{ fontSize: 12 }} />
+            <YAxis 
+              tick={{ fontSize: 12 }} 
+              axisLine={false}
+              tickLine={false}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             
