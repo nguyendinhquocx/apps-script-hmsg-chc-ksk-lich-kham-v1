@@ -235,7 +235,7 @@ const BenchmarkExceedTable = ({
             </thead>
             <tbody>
               {exceedTableData.map((item, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={index} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm text-gray-900">
                     {item.date}
                   </td>

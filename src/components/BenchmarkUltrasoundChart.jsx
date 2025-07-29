@@ -130,8 +130,26 @@ const BenchmarkUltrasoundChart = ({
   // Custom tooltip
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      const dataPoint = chartData.find(d => d.date === label)
+      const dataPoint = chartData.find(d => d.day === parseInt(label))
       const displayDate = dataPoint ? new Date(dataPoint.date).toLocaleDateString('vi-VN') : ''
+      
+      // Calculate total ultrasound cases for room optimization
+      const totalUltrasoundCases = payload.reduce((sum, entry) => sum + (entry.value || 0), 0)
+      
+      // Room optimization with flexible capacity (90-110 cases per room)
+      const getOptimalRooms = (totalCases) => {
+        if (totalCases === 0) return 1
+        if (totalCases <= 90) return 1
+        if (totalCases <= 200) return 2  // Flexible capacity for 2 rooms
+        return 3  // Always max 3 rooms regardless of cases
+      }
+      
+      const optimalRooms = getOptimalRooms(totalUltrasoundCases)
+      const roomOptions = [
+        { rooms: 1, range: "≤ 90 ca" },
+        { rooms: 2, range: "91-200 ca" },
+        { rooms: 3, range: "> 200 ca" }
+      ]
       
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
@@ -159,6 +177,31 @@ const BenchmarkUltrasoundChart = ({
               </div>
             )
           })}
+          
+          {/* Room optimization section */}
+          {totalUltrasoundCases > 0 && (
+            <>
+              <hr className="my-2 border-gray-200" />
+              <div className="text-xs text-gray-700">
+                <p className="font-medium">Tối ưu hóa phòng siêu âm:</p>
+                <p>{`Tổng ca: ${totalUltrasoundCases} ca`}</p>
+                <p className="text-blue-600 font-medium">
+                  {`Cần tối ưu: ${optimalRooms} phòng`}
+                </p>
+                <div className="mt-1 space-y-0.5">
+                  {roomOptions.map(room => (
+                    <p key={room.rooms} className={
+                      room.rooms === optimalRooms 
+                        ? "text-green-600 font-medium" 
+                        : "text-gray-500"
+                    }>
+                      {`${room.rooms} phòng (${room.range})`}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )
     }
