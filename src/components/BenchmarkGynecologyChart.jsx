@@ -151,7 +151,7 @@ const BenchmarkGynecologyChart = ({
             <XAxis 
               dataKey="day" 
               tick={{ fontSize: 12 }}
-              axisLine={false}
+              axisLine={{ stroke: '#000000', strokeWidth: 1 }}
               tickLine={false}
             />
             <YAxis 
@@ -174,10 +174,23 @@ const BenchmarkGynecologyChart = ({
             <Line
               type="monotone"
               dataKey="gynecology"
-              stroke="#DB2777"
+              stroke="#000000"
               strokeWidth={2}
-              dot={{ fill: '#DB2777', strokeWidth: 2, r: 3 }}
-              activeDot={{ r: 5 }}
+              dot={(props) => {
+                const { cx, cy, payload } = props
+                const isToday = payload?.isToday
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={isToday ? 6 : 3}
+                    fill="#000000"
+                    stroke="#000000"
+                    strokeWidth={2}
+                  />
+                )
+              }}
+              activeDot={{ r: 5, fill: '#000000' }}
               name="Khám phụ khoa"
             />
           </LineChart>

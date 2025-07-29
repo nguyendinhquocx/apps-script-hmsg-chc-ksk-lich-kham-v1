@@ -9,14 +9,13 @@ const BenchmarkUltrasoundChart = ({
   dateFilter = { startDate: '', endDate: '' } 
 }) => {
 
-  // Define ultrasound categories with correct field names
+  // Define ultrasound categories with correct field names (remove combo)
   const ultrasoundCategories = [
     { key: 'sieuAm_bung', name: 'Siêu âm bụng', color: '#3B82F6', fields: ['sieu am bung sang', 'sieu am bung chieu'], benchmark: 'Siêu âm - Bụng' },
     { key: 'sieuAm_vu', name: 'Siêu âm vú', color: '#EF4444', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Vú' },
     { key: 'sieuAm_giap', name: 'Siêu âm giáp', color: '#10B981', fields: ['sieu am giap sang', 'sieu am giap chieu'], benchmark: 'Siêu âm - Giáp' },
     { key: 'sieuAm_tim', name: 'Siêu âm tim', color: '#F59E0B', fields: ['sieu am tim sang', 'sieu am tim chieu'], benchmark: 'Siêu âm - Tim' },
     { key: 'sieuAm_canh', name: 'SA động mạch cảnh', color: '#8B5CF6', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'], benchmark: 'Siêu âm - Động mạch cảnh' },
-    { key: 'sieuAm_combo', name: 'Siêu âm vú + giáp', color: '#06B6D4', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Combo (Vú, Giáp...)' },
   ]
 
   // Get benchmark limits
@@ -28,12 +27,6 @@ const BenchmarkUltrasoundChart = ({
 
   // Calculate chart data
   const chartData = useMemo(() => {
-    console.log('BenchmarkUltrasoundChart - Processing data:', {
-      dataLength: data.length,
-      sampleData: data[0],
-      monthFilter,
-      dateFilter
-    })
     let chartStart, chartEnd
     
     // Use date filter if both dates are provided, otherwise use month filter
@@ -158,7 +151,7 @@ const BenchmarkUltrasoundChart = ({
             <XAxis 
               dataKey="day" 
               tick={{ fontSize: 12 }}
-              axisLine={false}
+              axisLine={{ stroke: '#000000', strokeWidth: 1 }}
               tickLine={false}
             />
             <YAxis 
@@ -192,8 +185,21 @@ const BenchmarkUltrasoundChart = ({
                 dataKey={category.key}
                 stroke={category.color}
                 strokeWidth={2}
-                dot={{ fill: category.color, strokeWidth: 2, r: 3 }}
-                activeDot={{ r: 5 }}
+                dot={(props) => {
+                  const { cx, cy, payload } = props
+                  const isToday = payload?.isToday
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={isToday ? 6 : 3}
+                      fill={category.color}
+                      stroke={category.color}
+                      strokeWidth={2}
+                    />
+                  )
+                }}
+                activeDot={{ r: 5, fill: category.color }}
                 name={category.name}
               />
             ))}
