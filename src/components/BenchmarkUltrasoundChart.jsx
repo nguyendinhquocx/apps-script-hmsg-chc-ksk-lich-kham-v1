@@ -200,7 +200,7 @@ const BenchmarkUltrasoundChart = ({
                       position: "right",
                       offset: 10,
                       style: { 
-                        fill: "black", 
+                        fill: "#ef4444", 
                         fontSize: "12px", 
                         fontWeight: "500",
                         textAnchor: "start"

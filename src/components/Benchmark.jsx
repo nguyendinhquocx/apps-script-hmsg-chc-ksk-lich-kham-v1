@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { useBenchmarkData } from '../hooks/useBenchmarkData'
 import { useChartsData } from '../hooks/useChartsData'
 import { useChartsExport } from '../hooks/useChartsExport'
+import { matchesSearch, isDateInMonth } from '../utils/vietnamese'
 import BenchmarkExceedTable from './BenchmarkExceedTable'
 import BenchmarkTable from './BenchmarkTable'
 import BenchmarkUltrasoundChart from './BenchmarkUltrasoundChart'
@@ -14,6 +15,42 @@ const Benchmark = ({ filters }) => {
   
   // Get charts export functionality
   const { getDaysToShow, getExamCount } = useChartsExport(allData || [], filters)
+
+  // Apply all filters to chart data
+  const filteredData = useMemo(() => {
+    if (!allData || !filters) return allData || []
+    
+    const { 
+      searchTerm = '', 
+      statusFilter = '', 
+      employeeFilter = '', 
+      showGold = false 
+    } = filters
+
+    return allData.filter(item => {
+      // Search filter
+      if (searchTerm && !matchesSearch(item, searchTerm)) {
+        return false
+      }
+
+      // Status filter  
+      if (statusFilter && item.trang_thai !== statusFilter) {
+        return false
+      }
+
+      // Employee filter
+      if (employeeFilter && item.nhan_vien_kham !== employeeFilter) {
+        return false
+      }
+
+      // Gold filter
+      if (showGold && !item.gold) {
+        return false
+      }
+
+      return true
+    })
+  }, [allData, filters])
 
   if (benchmarkLoading || chartsLoading) {
     return (
@@ -36,21 +73,21 @@ const Benchmark = ({ filters }) => {
       {/* Benchmark Line Charts */}
       <div className="space-y-4">
         <BenchmarkUltrasoundChart
-          data={allData || []}
+          data={filteredData || []}
           benchmarkData={benchmarkData || []}
           monthFilter={filters?.monthFilter}
           dateFilter={filters?.dateFilter}
         />
         
         <BenchmarkECGChart
-          data={allData || []}
+          data={filteredData || []}
           benchmarkData={benchmarkData || []}
           monthFilter={filters?.monthFilter}
           dateFilter={filters?.dateFilter}
         />
         
         <BenchmarkGynecologyChart
-          data={allData || []}
+          data={filteredData || []}
           benchmarkData={benchmarkData || []}
           monthFilter={filters?.monthFilter}
           dateFilter={filters?.dateFilter}
@@ -59,7 +96,7 @@ const Benchmark = ({ filters }) => {
 
       {/* Benchmark Exceed Table */}
       <BenchmarkExceedTable 
-        data={allData || []}
+        data={filteredData || []}
         getDaysToShow={getDaysToShow}
         benchmarkData={benchmarkData || []}
       />

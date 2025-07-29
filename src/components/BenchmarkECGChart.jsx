@@ -120,11 +120,11 @@ const BenchmarkECGChart = ({
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900">{`Ngày: ${displayDate}`}</p>
-          <p className="text-sm text-black">
+          <p className="text-sm" style={{ color: isExceeding ? '#ef4444' : '#0891b2' }}>
             {`Điện tâm đồ: ${value} ca`}
           </p>
           {benchmarkLimit > 0 && (
-            <p className="text-xs text-red-600">
+            <p className="text-xs text-black">
               {`Định mức: ${benchmarkLimit} ca`}
             </p>
           )}
@@ -172,7 +172,7 @@ const BenchmarkECGChart = ({
                   position: "right",
                   offset: 10,
                   style: { 
-                    fill: "black", 
+                    fill: "#ef4444", 
                     fontSize: "12px", 
                     fontWeight: "500",
                     textAnchor: "start"
@@ -202,14 +202,16 @@ const BenchmarkECGChart = ({
                 )
               }}
               activeDot={(props) => {
-                const { cx, cy } = props
+                const { cx, cy, payload } = props
+                const benchmarkLimit = getBenchmarkLimit()
+                const isExceeding = payload?.ecg > benchmarkLimit && benchmarkLimit > 0
                 return (
                   <circle
                     cx={cx}
                     cy={cy}
                     r={6}
                     fill="transparent"
-                    stroke="#000000"
+                    stroke={isExceeding ? "#ef4444" : "#000000"}
                     strokeWidth={2}
                   />
                 )

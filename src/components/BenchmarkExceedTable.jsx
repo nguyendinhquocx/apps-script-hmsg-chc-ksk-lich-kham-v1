@@ -79,6 +79,7 @@ const BenchmarkExceedTable = ({
         if (exceed > 0) {
           exceedData.push({
             date: new Date(dayInfo.date).toLocaleDateString('vi-VN'),
+            dateSort: new Date(dayInfo.date),
             category: categoryName,
             morning: morningTotal,
             afternoon: afternoonTotal,
@@ -90,7 +91,7 @@ const BenchmarkExceedTable = ({
       })
     })
 
-    return exceedData.sort((a, b) => new Date(b.date) - new Date(a.date))
+    return exceedData.sort((a, b) => a.dateSort - b.dateSort)
   }, [data, getDaysToShow, benchmarkData])
 
   // Export to Excel function
