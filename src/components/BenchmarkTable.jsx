@@ -51,7 +51,7 @@ const BenchmarkTable = ({ benchmarkData = [] }) => {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Bảng định mức chuẩn</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Định mức chuẩn</h2>
       
       <div className="overflow-x-auto">
         <table className="min-w-full">

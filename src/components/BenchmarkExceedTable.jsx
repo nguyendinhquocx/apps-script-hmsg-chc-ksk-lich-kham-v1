@@ -43,35 +43,26 @@ const BenchmarkExceedTable = ({
     return Math.round((benchmark.so_ca_ngay_bs_min + benchmark.so_ca_ngay_bs_max) / 2)
   }
 
-  // Calculate exceed data and flatten for table format
-  const exceedTableData = useMemo(() => {
-    if (!getDaysToShow) return []
+  // Calculate room requirements matrix data for table format
+  const roomMatrixData = useMemo(() => {
+    if (!getDaysToShow) return { days: [], categories: [] }
 
     const days = getDaysToShow()
     const dateMap = new Map()
 
-    // Categories matching the 3 charts
-    const chartCategories = [
-      'Điện tâm đồ',
-      'Khám phụ khoa',
-      'Siêu âm bụng',
-      'Siêu âm vú',
-      'Siêu âm giáp',
-      'Siêu âm tim',
-      'SA động mạch cảnh'
-    ]
-
     // Create date map for aggregation (same logic as charts)
     days.forEach(dayInfo => {
       const dateKey = format(new Date(dayInfo.date), 'yyyy-MM-dd')
+      const dayOfWeek = getDay(new Date(dayInfo.date))
+      const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+      
       dateMap.set(dateKey, {
         date: dateKey,
-        categories: {}
-      })
-      
-      // Initialize all categories to 0
-      chartCategories.forEach(categoryName => {
-        dateMap.get(dateKey).categories[categoryName] = 0
+        dayOfMonth: new Date(dayInfo.date).getDate(),
+        dayLabel: dayLabels[dayOfWeek],
+        ultrasound: 0,  // Total ultrasound cases
+        ecg: 0,         // ECG cases
+        gynecology: 0   // Gynecology cases
       })
     })
 
@@ -123,80 +114,106 @@ const BenchmarkExceedTable = ({
           // ECG
           const ecgMorning = parseInt(item['dien tam do sang'] || 0)
           const ecgAfternoon = parseInt(item['dien tam do chieu'] || 0)
-          dayData.categories['Điện tâm đồ'] += ecgMorning + ecgAfternoon
+          dayData.ecg += ecgMorning + ecgAfternoon
           
           // Gynecology
           const gynecoMorning = parseInt(item['kham phu khoa sang'] || 0)
           const gynecoAfternoon = parseInt(item['kham phu khoa chieu'] || 0)
-          dayData.categories['Khám phụ khoa'] += gynecoMorning + gynecoAfternoon
+          dayData.gynecology += gynecoMorning + gynecoAfternoon
           
-          // Ultrasound categories
+          // Ultrasound total (all categories)
           const ultrasoundMappings = [
-            { category: 'Siêu âm bụng', fields: ['sieu am bung sang', 'sieu am bung chieu'] },
-            { category: 'Siêu âm vú', fields: ['sieu am vu sang', 'sieu am vu chieu'] },
-            { category: 'Siêu âm giáp', fields: ['sieu am giap sang', 'sieu am giap chieu'] },
-            { category: 'Siêu âm tim', fields: ['sieu am tim sang', 'sieu am tim chieu'] },
-            { category: 'SA động mạch cảnh', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'] }
+            ['sieu am bung sang', 'sieu am bung chieu'],
+            ['sieu am vu sang', 'sieu am vu chieu'],
+            ['sieu am giap sang', 'sieu am giap chieu'],
+            ['sieu am tim sang', 'sieu am tim chieu'],
+            ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu']
           ]
           
-          ultrasoundMappings.forEach(mapping => {
-            const morning = parseInt(item[mapping.fields[0]] || 0)
-            const afternoon = parseInt(item[mapping.fields[1]] || 0)
-            dayData.categories[mapping.category] += morning + afternoon
+          ultrasoundMappings.forEach(fields => {
+            const morning = parseInt(item[fields[0]] || 0)
+            const afternoon = parseInt(item[fields[1]] || 0)
+            dayData.ultrasound += morning + afternoon
           })
         }
       })
     })
 
-    // Flatten data for table format (one row per exceed)
-    const flattenedData = []
-    
-    Array.from(dateMap.values()).forEach(dayData => {
-      chartCategories.forEach(categoryName => {
-        const benchmarkLimit = getBenchmarkLimit(categoryName)
-        if (benchmarkLimit === 0) return
-        
-        const total = dayData.categories[categoryName]
-        const exceed = total - benchmarkLimit
-        
-        if (exceed > 0) {
-          flattenedData.push({
-            date: new Date(dayData.date).toLocaleDateString('vi-VN'),
-            dateSort: new Date(dayData.date),
-            category: categoryName,
-            total,
-            benchmark: benchmarkLimit,
-            exceed
-          })
-        }
-      })
-    })
+    // Calculate required rooms for each category and day
+    const getRequiredRooms = (totalCases, category) => {
+      if (totalCases === 0) return 0
+      if (category === 'ultrasound') {
+        if (totalCases <= 90) return 1
+        if (totalCases <= 200) return 2
+        return 3
+      } else {
+        // ECG and Gynecology: assume 90 cases per room
+        return Math.ceil(totalCases / 90)
+      }
+    }
 
-    return flattenedData.sort((a, b) => a.dateSort - b.dateSort)
+    // Prepare sorted days data
+    const sortedDays = Array.from(dateMap.values()).sort((a, b) => 
+      new Date(a.date) - new Date(b.date)
+    )
+
+    // Prepare categories with room requirements for each day
+    const categories = [
+      {
+        name: 'Siêu âm',
+        key: 'ultrasound',
+        rooms: sortedDays.map(day => getRequiredRooms(day.ultrasound, 'ultrasound'))
+      },
+      {
+        name: 'Điện tim',
+        key: 'ecg',
+        rooms: sortedDays.map(day => getRequiredRooms(day.ecg, 'ecg'))
+      },
+      {
+        name: 'Phụ khoa',
+        key: 'gynecology',
+        rooms: sortedDays.map(day => getRequiredRooms(day.gynecology, 'gynecology'))
+      }
+    ]
+
+    return { days: sortedDays, categories }
   }, [data, getDaysToShow, benchmarkData])
 
   // Export to Excel function
   const exportToExcel = () => {
-    const exportData = exceedTableData.map(item => ({
-      'Ngày': item.date,
-      'Hạng mục': item.category,
-      'Tổng ca': item.total,
-      'Định mức': item.benchmark,
-      'Vượt': item.exceed
-    }))
+    const { days, categories } = roomMatrixData
+    
+    // Create header row with days
+    const header = ['Hạng mục', ...days.map(day => day.dayOfMonth)]
+    
+    // Create data rows for each category
+    const exportData = [header]
+    categories.forEach(category => {
+      const row = [category.name, ...category.rooms.map(rooms => rooms || '')]
+      exportData.push(row)
+    })
 
-    const ws = XLSX.utils.json_to_sheet(exportData)
+    const ws = XLSX.utils.aoa_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Vượt định mức')
-    XLSX.writeFile(wb, `vuot-dinh-muc-${new Date().toISOString().split('T')[0]}.xlsx`)
+    XLSX.utils.book_append_sheet(wb, ws, 'Số phòng cần thiết')
+    XLSX.writeFile(wb, `so-phong-can-thiet-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  // Helper function to get cell styling based on room count
+  const getRoomCellStyle = (roomCount) => {
+    if (roomCount === 0 || !roomCount) return 'text-gray-300'
+    if (roomCount === 1) return 'text-gray-800 font-normal'
+    if (roomCount === 2) return 'text-blue-600 font-semibold'
+    if (roomCount >= 3) return 'text-red-600 font-bold'
+    return 'text-gray-800'
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900">Bảng vượt định mức</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Phòng cần thiết</h2>
         
-        {exceedTableData.length > 0 && (
+        {roomMatrixData.days.length > 0 && (
           <button
             onClick={exportToExcel}
             className="flex items-center space-x-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors duration-200"
@@ -207,50 +224,41 @@ const BenchmarkExceedTable = ({
         )}
       </div>
 
-      {exceedTableData.length === 0 ? (
+      {roomMatrixData.days.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          <p>Không có ngày nào vượt định mức trong khoảng thời gian này</p>
+          <p>Không có dữ liệu trong khoảng thời gian này</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  NGÀY
+              <tr className="bg-white">
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200 w-32">
+                  Hạng mục
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  HẠNG MỤC
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  TỔNG CA
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  ĐỊNH MỨC
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  VƯỢT
-                </th>
+                {roomMatrixData.days.map((day, index) => (
+                  <th key={index} className="px-2 py-3 text-center text-sm font-medium text-gray-700 border-b border-gray-200 min-w-[40px]">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-gray-500">{day.dayLabel}</span>
+                      <span className="font-semibold">{day.dayOfMonth}</span>
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {exceedTableData.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    {item.date}
+              {roomMatrixData.categories.map((category, categoryIndex) => (
+                <tr key={category.key} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-white">
+                    {category.name}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
-                    {item.category}
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-900">
-                    {item.total}
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-600">
-                    {item.benchmark}
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm font-medium text-red-600">
-                    +{item.exceed}
-                  </td>
+                  {category.rooms.map((roomCount, dayIndex) => (
+                    <td key={dayIndex} className="px-2 py-3 text-center text-sm">
+                      <span className={getRoomCellStyle(roomCount)}>
+                        {roomCount || ''}
+                      </span>
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
