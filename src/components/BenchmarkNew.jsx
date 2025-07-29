@@ -15,7 +15,7 @@ const Benchmark = ({ filters = {} }) => {
   if (benchmarkLoading || actualLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">. _ .</div>
+        <div className="text-gray-500">Đang tải dữ liệu benchmark và thực tế...</div>
       </div>
     )
   }

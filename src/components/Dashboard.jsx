@@ -151,7 +151,24 @@ const Dashboard = () => {
             />
           )}
           {activeTab === 'benchmark' && (
-            <Benchmark key={refreshKey} />
+            <>
+              <GlobalFilters
+                searchTerm={globalFilters.searchTerm}
+                statusFilter={globalFilters.statusFilter}
+                employeeFilter={globalFilters.employeeFilter}
+                showGold={globalFilters.showGold}
+                monthFilter={globalFilters.monthFilter}
+                dateFilter={globalFilters.dateFilter}
+                setMonthFilter={(monthFilter) => updateGlobalFilter('monthFilter', monthFilter)}
+                onDateFilterChange={(dateFilter) => updateGlobalFilter('dateFilter', dateFilter)}
+                onSearchChange={(value) => updateGlobalFilter('searchTerm', value)}
+                onStatusChange={(value) => updateGlobalFilter('statusFilter', value)}
+                onEmployeeChange={(value) => updateGlobalFilter('employeeFilter', value)}
+                onGoldChange={(value) => updateGlobalFilter('showGold', value)}
+                onReset={resetGlobalFilters}
+              />
+              <Benchmark key={refreshKey} filters={globalFilters} />
+            </>
           )}
         </div>
       </main>

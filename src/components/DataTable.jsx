@@ -237,7 +237,7 @@ const DataTable = ({ globalFilters = {} }) => {
       {loading && (
         <div className="flex items-center justify-center py-12">
           <div className="loading-spinner w-8 h-8 mr-3"></div>
-          <span className="text-gray-600">Đang tải dữ liệu...</span>
+          <span className="text-gray-600">. _ .</span>
         </div>
       )}
 

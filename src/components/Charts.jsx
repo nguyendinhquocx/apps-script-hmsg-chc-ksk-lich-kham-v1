@@ -69,7 +69,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
           onReset={resetGlobalFilters}
         />
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">Đang tải dữ liệu...</div>
+          <div className="text-gray-500">. _ .</div>
         </div>
       </div>
     )

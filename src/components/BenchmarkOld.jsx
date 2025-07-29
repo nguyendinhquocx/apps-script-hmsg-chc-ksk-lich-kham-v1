@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { AlertTriangle, Zap } from 'lucide-react'
 import { useBenchmarkData } from '../hooks/useBenchmarkData'
 import { useChartsData } from '../hooks/useChartsData'
 import { useChartsExport } from '../hooks/useChartsExport'
@@ -183,6 +184,83 @@ const Benchmark = ({ filters = {} }) => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Actionable Insights & Recommendations */}
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Insights & Khuyến nghị</h3>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Critical Alerts */}
+          <div className="p-4">
+            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+              <AlertTriangle className="w-4 h-4 text-red-500 mr-2" />
+              Cảnh báo quan trọng
+            </h4>
+            <div className="space-y-2">
+              {performanceData.filter(item => item.status === 'overload').length > 0 ? (
+                performanceData
+                  .filter(item => item.status === 'overload')
+                  .map(item => (
+                    <div key={item.id} className="text-sm p-2 bg-red-50 rounded text-red-800">
+                      <strong>{item.chuyen_khoa}</strong>: Quá tải {item.loadPercentage}% 
+                      → Cần tăng {Math.ceil((item.avgActualCasesPerDay - item.benchmarkCasesPerDay) / item.benchmarkCasesPerDay)} nhân sự
+                    </div>
+                  ))
+              ) : (
+                <div className="text-sm text-gray-500 italic">Không có chuyên khoa quá tải</div>
+              )}
+            </div>
+          </div>
+
+          {/* Optimization Opportunities */}
+          <div className="p-4">
+            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+              <Zap className="w-4 h-4 text-green-500 mr-2" />
+              Cơ hội tối ưu
+            </h4>
+            <div className="space-y-2">
+              {performanceData.filter(item => item.status === 'underload').length > 0 ? (
+                performanceData
+                  .filter(item => item.status === 'underload')
+                  .map(item => (
+                    <div key={item.id} className="text-sm p-2 bg-green-50 rounded text-green-800">
+                      <strong>{item.chuyen_khoa}</strong>: Dư {(100 - item.loadPercentage).toFixed(0)}% năng lực
+                      → Có thể nhận thêm {Math.floor((item.benchmarkCasesPerDay - item.avgActualCasesPerDay))} ca/ngày
+                    </div>
+                  ))
+              ) : (
+                <div className="text-sm text-gray-500 italic">Tất cả chuyên khoa đang hoạt động hiệu quả</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Strategic Recommendations */}
+        <div className="mt-6 p-4">
+          <h4 className="font-medium text-gray-900 mb-3">� Khuyến nghị chiến lược</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="p-3 bg-blue-50 rounded">
+              <div className="font-medium text-blue-900 mb-1">Tăng hiệu quả</div>
+              <div className="text-blue-700">
+                Tập trung vào {performanceData.filter(item => item.status === 'optimal').length} chuyên khoa 
+                đang hoạt động tối ưu làm mô hình chuẩn
+              </div>
+            </div>
+            <div className="p-3 bg-yellow-50 rounded">
+              <div className="font-medium text-yellow-900 mb-1">Cân bằng tải</div>
+              <div className="text-yellow-700">
+                Chuyển bớt ca khám từ khoa quá tải sang khoa có dư năng lực
+              </div>
+            </div>
+            <div className="p-3 bg-green-50 rounded">
+              <div className="font-medium text-green-900 mb-1">Mở rộng dịch vụ</div>
+              <div className="text-green-700">
+                Khoa có dư năng lực có thể phát triển thêm dịch vụ chuyên sâu
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
