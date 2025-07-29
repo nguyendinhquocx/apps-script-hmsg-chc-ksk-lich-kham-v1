@@ -43,12 +43,12 @@ const BenchmarkExceedTable = ({
     return Math.round((benchmark.so_ca_ngay_bs_min + benchmark.so_ca_ngay_bs_max) / 2)
   }
 
-  // Calculate exceed data based on the 3 chart categories
+  // Calculate exceed data and flatten for table format
   const exceedTableData = useMemo(() => {
     if (!getDaysToShow) return []
 
     const days = getDaysToShow()
-    const exceedByDate = new Map()
+    const dateMap = new Map()
 
     // Categories matching the 3 charts
     const chartCategories = [
@@ -62,7 +62,6 @@ const BenchmarkExceedTable = ({
     ]
 
     // Create date map for aggregation (same logic as charts)
-    const dateMap = new Map()
     days.forEach(dayInfo => {
       const dateKey = format(new Date(dayInfo.date), 'yyyy-MM-dd')
       dateMap.set(dateKey, {
@@ -149,10 +148,10 @@ const BenchmarkExceedTable = ({
       })
     })
 
-    // Check for exceeds and build result
+    // Flatten data for table format (one row per exceed)
+    const flattenedData = []
+    
     Array.from(dateMap.values()).forEach(dayData => {
-      const dayExceeds = []
-      
       chartCategories.forEach(categoryName => {
         const benchmarkLimit = getBenchmarkLimit(categoryName)
         if (benchmarkLimit === 0) return
@@ -161,7 +160,9 @@ const BenchmarkExceedTable = ({
         const exceed = total - benchmarkLimit
         
         if (exceed > 0) {
-          dayExceeds.push({
+          flattenedData.push({
+            date: new Date(dayData.date).toLocaleDateString('vi-VN'),
+            dateSort: new Date(dayData.date),
             category: categoryName,
             total,
             benchmark: benchmarkLimit,
@@ -169,34 +170,20 @@ const BenchmarkExceedTable = ({
           })
         }
       })
-
-      if (dayExceeds.length > 0) {
-        exceedByDate.set(dayData.date, {
-          date: new Date(dayData.date).toLocaleDateString('vi-VN'),
-          dateSort: new Date(dayData.date),
-          exceeds: dayExceeds,
-          totalExceedCategories: dayExceeds.length
-        })
-      }
     })
 
-    return Array.from(exceedByDate.values()).sort((a, b) => a.dateSort - b.dateSort)
+    return flattenedData.sort((a, b) => a.dateSort - b.dateSort)
   }, [data, getDaysToShow, benchmarkData])
 
   // Export to Excel function
   const exportToExcel = () => {
-    const exportData = []
-    exceedTableData.forEach(dayData => {
-      dayData.exceeds.forEach(item => {
-        exportData.push({
-          'Ngày': dayData.date,
-          'Hạng mục': item.category,
-          'Tổng ca': item.total,
-          'Định mức': item.benchmark,
-          'Vượt': item.exceed
-        })
-      })
-    })
+    const exportData = exceedTableData.map(item => ({
+      'Ngày': item.date,
+      'Hạng mục': item.category,
+      'Tổng ca': item.total,
+      'Định mức': item.benchmark,
+      'Vượt': item.exceed
+    }))
 
     const ws = XLSX.utils.json_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
@@ -225,37 +212,49 @@ const BenchmarkExceedTable = ({
           <p>Không có ngày nào vượt định mức trong khoảng thời gian này</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {exceedTableData.map((dayData, index) => (
-            <div key={index} className="bg-white p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <span className="text-gray-900">{dayData.date}</span>
-                  <span className="font-medium text-red-600">
-                    {dayData.totalExceedCategories}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {dayData.exceeds.map((exceedItem, exceedIndex) => (
-                  <div key={exceedIndex} className="flex items-center justify-between p-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{exceedItem.category}</p>
-                      <p className="text-xs text-gray-600">
-                        {exceedItem.total}/{exceedItem.benchmark} ca
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-medium text-blue-600">
-                        +{exceedItem.exceed}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  NGÀY
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  HẠNG MỤC
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  TỔNG CA
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  ĐỊNH MỨC
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  VƯỢT
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {exceedTableData.map((item, index) => (
+                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm text-gray-900">
+                    {item.date}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-900">
+                    {item.category}
+                  </td>
+                  <td className="px-4 py-3 text-center text-sm text-gray-900">
+                    {item.total}
+                  </td>
+                  <td className="px-4 py-3 text-center text-sm text-gray-600">
+                    {item.benchmark}
+                  </td>
+                  <td className="px-4 py-3 text-center text-sm font-medium text-red-600">
+                    +{item.exceed}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
