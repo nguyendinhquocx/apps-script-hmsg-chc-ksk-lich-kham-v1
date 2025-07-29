@@ -1,122 +1,49 @@
-import React, { useState, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import { useBenchmarkData } from '../hooks/useBenchmarkData'
-import { useChartsData } from '../hooks/useChartsData'
-import { useChartsExport } from '../hooks/useChartsExport'
+import BenchmarkExceedTable from './BenchmarkExceedTable'
+import BenchmarkLineChart from './BenchmarkLineChart'
 
-const Benchmark = ({ filters = {} }) => {
-  const { data: benchmarkData, loading: benchmarkLoading, error: benchmarkError } = useBenchmarkData()
-  const { data: actualData, loading: actualLoading, error: actualError } = useChartsData()
-  
-  // Get actual exam data for comparison with filters applied
-  const { getExamCount, getDaysToShow } = useChartsExport(actualData || [], filters)
-
-  const [selectedSpecialty, setSelectedSpecialty] = useState('')
-
-  if (benchmarkLoading || actualLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">. _ .</div>
-      </div>
-    )
+const Benchmark = ({ filteredData, getDaysToShow, benchmarkData, allData }) => {
+  // Mapping for specialty name display
+  const specialtyDisplayNames = {
+    'Ngoại khoa': 'Ngoại tổng quát',
+    'RHM': 'Răng hàm mặt', 
+    'TMH': 'Tai mũi họng',
+    'Siêu âm - Bụng': 'Siêu âm bụng',
+    'Siêu âm - Vú': 'Siêu âm vú',
+    'Siêu âm - Giáp': 'Siêu âm giáp',
+    'Siêu âm - Tim': 'Siêu âm tim',
+    'Siêu âm - Động mạch cảnh': 'SA động mạch cảnh',
+    'Siêu âm - Combo (Vú, Giáp...)': 'Siêu âm vú + giáp',
+    'Siêu âm - Mạch máu chi': 'SA mạch máu chi',
+    'Điện tim (ECG)': 'Điện tâm đồ',
+    'Sản phụ khoa': 'Khám phụ khoa'
   }
 
-  if (benchmarkError || actualError) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800 text-center">{benchmarkError || actualError}</p>
-      </div>
-    )
-  }
-
-  // Calculate performance metrics
-  const calculatePerformanceMetrics = () => {
-    if (!benchmarkData || !actualData) return []
-
-    const days = getDaysToShow()
-    const recentDays = days.slice(-7) // Last 7 days
+  // Sort benchmark data: Nội tổng quát -> Điện tâm đồ -> Khám phụ khoa -> others
+  const sortedBenchmarkData = benchmarkData?.slice().sort((a, b) => {
+    const specialtyOrder = [
+      'Nội tổng quát',
+      'Điện tim (ECG)', // Will be displayed as 'Điện tâm đồ' 
+      'Sản phụ khoa'   // Will be displayed as 'Khám phụ khoa'
+    ]
     
-    return benchmarkData.map(benchmark => {
-      // Map specialty names to exam categories
-      const specialtyMapping = {
-        'Sản phụ khoa': 'Phụ khoa', // benchmark uses "Sản phụ khoa", actual data uses "Phụ khoa"
-        'RHM': 'Răng hàm mặt',
-        'TMH': 'Tai mũi họng',
-        'Da liễu': 'Da liễu',
-        'Mắt': 'Mắt',
-        'Nội tổng quát': 'Nội khoa',
-        'Ngoại khoa': 'Ngoại khoa'
-      }
-
-      const actualSpecialtyName = specialtyMapping[benchmark.chuyen_khoa] || benchmark.chuyen_khoa
-      
-      // Calculate actual cases from recent data
-      let totalActualCases = 0
-      let daysWithData = 0
-
-      recentDays.forEach(day => {
-        // This is a simplified calculation - in real implementation, 
-        // we'd need to map specialty names to exam categories more precisely
-        const morningCases = 0 // Would need proper mapping
-        const afternoonCases = 0 // Would need proper mapping
-        const dailyCases = morningCases + afternoonCases
-        
-        if (dailyCases > 0) {
-          totalActualCases += dailyCases
-          daysWithData++
-        }
-      })
-
-      const avgActualCasesPerDay = daysWithData > 0 ? totalActualCases / daysWithData : 0
-      const benchmarkCasesPerDay = (benchmark.so_ca_ngay_bs_min + benchmark.so_ca_ngay_bs_max) / 2
-      const loadPercentage = benchmarkCasesPerDay > 0 ? (avgActualCasesPerDay / benchmarkCasesPerDay) * 100 : 0
-
-      return {
-        ...benchmark,
-        avgActualCasesPerDay: Math.round(avgActualCasesPerDay),
-        benchmarkCasesPerDay: Math.round(benchmarkCasesPerDay),
-        loadPercentage: Math.round(loadPercentage),
-        status: loadPercentage > 100 ? 'overload' : loadPercentage < 70 ? 'underload' : 'optimal'
-      }
-    })
-  }
-
-  const performanceData = calculatePerformanceMetrics()
-
-  // Calculate summary stats
-  const totalSpecialties = benchmarkData?.length || 0
-  const overloadedSpecialties = performanceData.filter(item => item.status === 'overload').length
-  const underloadedSpecialties = performanceData.filter(item => item.status === 'underload').length
-  const avgLoadPercentage = performanceData.length > 0 
-    ? performanceData.reduce((sum, item) => sum + item.loadPercentage, 0) / performanceData.length 
-    : 0
+    const aIndex = specialtyOrder.indexOf(a.chuyen_khoa)
+    const bIndex = specialtyOrder.indexOf(b.chuyen_khoa)
+    
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex
+    } else if (aIndex !== -1) {
+      return -1
+    } else if (bIndex !== -1) {
+      return 1
+    } else {
+      return a.chuyen_khoa.localeCompare(b.chuyen_khoa)
+    }
+  })
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards - Performance Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4">
-          <p className="text-sm font-medium text-gray-600">Tổng chuyên khoa</p>
-          <p className="text-2xl font-bold text-gray-900">{totalSpecialties}</p>
-        </div>
-
-        <div className="bg-white p-4">
-          <p className="text-sm font-medium text-gray-600">TB tải trọng</p>
-          <p className="text-2xl font-bold text-gray-900">{avgLoadPercentage.toFixed(0)}%</p>
-        </div>
-
-        <div className="bg-white p-4">
-          <p className="text-sm font-medium text-gray-600">Quá tải</p>
-          <p className="text-2xl font-bold text-gray-900">{overloadedSpecialties}</p>
-          <p className="text-xs text-gray-500">khoa</p>
-        </div>
-
-        <div className="bg-white p-4">
-          <p className="text-sm font-medium text-gray-600">Dư nhân sự</p>
-          <p className="text-2xl font-bold text-gray-900">{underloadedSpecialties}</p>
-          <p className="text-xs text-gray-500">khoa</p>
-        </div>
-      </div>
-
       {/* Benchmark Reference Table */}
       <div className="overflow-hidden">
         <div className="px-6 py-4 flex justify-between items-center">
@@ -145,10 +72,12 @@ const Benchmark = ({ filters = {} }) => {
               </tr>
             </thead>
             <tbody className="bg-white">
-              {benchmarkData?.map((item) => (
+              {sortedBenchmarkData?.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{item.chuyen_khoa}</div>
+                    <div className="text-sm text-gray-900">
+                      {specialtyDisplayNames[item.chuyen_khoa] || item.chuyen_khoa}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <div className="text-sm text-gray-900">
@@ -185,6 +114,39 @@ const Benchmark = ({ filters = {} }) => {
           </table>
         </div>
       </div>
+
+      {/* Benchmark Line Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BenchmarkLineChart
+          data={allData || []}
+          getDaysToShow={getDaysToShow}
+          benchmarkData={benchmarkData || []}
+          chartType="ultrasound"
+        />
+        
+        <BenchmarkLineChart
+          data={allData || []}
+          getDaysToShow={getDaysToShow}
+          benchmarkData={benchmarkData || []}
+          chartType="ecg"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+        <BenchmarkLineChart
+          data={allData || []}
+          getDaysToShow={getDaysToShow}
+          benchmarkData={benchmarkData || []}
+          chartType="gynecology"
+        />
+      </div>
+
+      {/* Benchmark Exceed Table */}
+      <BenchmarkExceedTable 
+        data={allData || []}
+        getDaysToShow={getDaysToShow}
+        benchmarkData={benchmarkData || []}
+      />
     </div>
   )
 }
