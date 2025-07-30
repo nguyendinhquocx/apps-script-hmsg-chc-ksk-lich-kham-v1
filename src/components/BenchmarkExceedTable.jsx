@@ -18,7 +18,8 @@ const BenchmarkExceedTable = ({
     'SA động mạch cảnh': ['sieuam_dong_mach_canh_sang', 'sieuam_dong_mach_canh_chieu'],
     'Siêu âm vú + giáp': ['sieuam_combo_sang', 'sieuam_combo_chieu'],
     'Điện tâm đồ': ['dien_tam_do_sang', 'dien_tam_do_chieu'],
-    'Khám phụ khoa': ['kham_phu_khoa_sang', 'kham_phu_khoa_chieu']
+    'Khám phụ khoa': ['kham_phu_khoa_sang', 'kham_phu_khoa_chieu'],
+    'Nội tổng quát': ['so_nguoi_kham'] // Special case: uses total people examined
   }
 
   // Get benchmark limits for each category
@@ -31,7 +32,8 @@ const BenchmarkExceedTable = ({
       'SA động mạch cảnh': 'Siêu âm - Động mạch cảnh',
       'Siêu âm vú + giáp': 'Siêu âm - Combo (Vú, Giáp...)',
       'Điện tâm đồ': 'Điện tim (ECG)',
-      'Khám phụ khoa': 'Sản phụ khoa'
+      'Khám phụ khoa': 'Sản phụ khoa',
+      'Nội tổng quát': 'Nội tổng quát'
     }
 
     const benchmarkName = benchmarkMapping[categoryName]
@@ -62,7 +64,8 @@ const BenchmarkExceedTable = ({
         dayLabel: dayLabels[dayOfWeek],
         ultrasound: 0,  // Total ultrasound cases
         ecg: 0,         // ECG cases
-        gynecology: 0   // Gynecology cases
+        gynecology: 0,  // Gynecology cases
+        internalMedicine: 0  // Internal Medicine cases
       })
     })
 
@@ -121,6 +124,25 @@ const BenchmarkExceedTable = ({
           const gynecoAfternoon = parseInt(item['kham phu khoa chieu'] || 0)
           dayData.gynecology += gynecoMorning + gynecoAfternoon
           
+                     // Internal Medicine - SPECIAL LOGIC: use the same logic as DataTable
+           const isCompleted = item['trang thai kham'] === 'Đã khám xong'
+           const totalPeople = parseInt(item['so nguoi kham']) || 0
+           
+           let dailyCount = 0
+           if (examDates.length > 0) {
+             if (isCompleted) {
+               // For completed exams: distribute total people across examination days
+               dailyCount = Math.round(totalPeople / examDates.length)
+             } else {
+               // For ongoing exams: use calculated averages
+               const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+               const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+               dailyCount = Math.round(morningAvg + afternoonAvg)
+             }
+           }
+           
+           dayData.internalMedicine += dailyCount
+          
           // Ultrasound total (all categories)
           const ultrasoundMappings = [
             ['sieu am bung sang', 'sieu am bung chieu'],
@@ -146,6 +168,9 @@ const BenchmarkExceedTable = ({
         if (totalCases <= 90) return 1
         if (totalCases <= 200) return 2
         return 3
+             } else if (category === 'internalMedicine') {
+         // Internal Medicine: assume 90 cases per room (fixed benchmark)
+         return Math.ceil(totalCases / 90)
       } else {
         // ECG and Gynecology: assume 90 cases per room
         return Math.ceil(totalCases / 90)
@@ -163,6 +188,11 @@ const BenchmarkExceedTable = ({
         name: 'Siêu âm',
         key: 'ultrasound',
         rooms: sortedDays.map(day => getRequiredRooms(day.ultrasound, 'ultrasound'))
+      },
+      {
+        name: 'Nội tổng quát',
+        key: 'internalMedicine',
+        rooms: sortedDays.map(day => getRequiredRooms(day.internalMedicine, 'internalMedicine'))
       },
       {
         name: 'Điện tim',

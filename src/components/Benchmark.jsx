@@ -8,6 +8,7 @@ import BenchmarkTable from './BenchmarkTable'
 import BenchmarkUltrasoundChart from './BenchmarkUltrasoundChart'
 import BenchmarkECGChart from './BenchmarkECGChart'
 import BenchmarkGynecologyChart from './BenchmarkGynecologyChart'
+import BenchmarkInternalMedicineChart from './BenchmarkInternalMedicineChart'
 
 const Benchmark = ({ filters }) => {
   const { data: benchmarkData, loading: benchmarkLoading, error: benchmarkError } = useBenchmarkData()
@@ -79,19 +80,29 @@ const Benchmark = ({ filters }) => {
           dateFilter={filters?.dateFilter}
         />
         
-        <BenchmarkECGChart
+        <BenchmarkInternalMedicineChart
           data={filteredData || []}
           benchmarkData={benchmarkData || []}
           monthFilter={filters?.monthFilter}
           dateFilter={filters?.dateFilter}
         />
         
-        <BenchmarkGynecologyChart
-          data={filteredData || []}
-          benchmarkData={benchmarkData || []}
-          monthFilter={filters?.monthFilter}
-          dateFilter={filters?.dateFilter}
-        />
+        {/* ECG and Gynecology charts in the same row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <BenchmarkECGChart
+            data={filteredData || []}
+            benchmarkData={benchmarkData || []}
+            monthFilter={filters?.monthFilter}
+            dateFilter={filters?.dateFilter}
+          />
+          
+          <BenchmarkGynecologyChart
+            data={filteredData || []}
+            benchmarkData={benchmarkData || []}
+            monthFilter={filters?.monthFilter}
+            dateFilter={filters?.dateFilter}
+          />
+        </div>
       </div>
 
       {/* Benchmark Exceed Table */}

@@ -9,13 +9,13 @@ const BenchmarkUltrasoundChart = ({
   dateFilter = { startDate: '', endDate: '' } 
 }) => {
 
-  // Define ultrasound categories with correct field names (remove combo)
+  // Define ultrasound categories with correct field names and new colors
   const ultrasoundCategories = [
-    { key: 'sieuAm_bung', name: 'Siêu âm bụng', color: '#3B82F6', fields: ['sieu am bung sang', 'sieu am bung chieu'], benchmark: 'Siêu âm - Bụng' },
-    { key: 'sieuAm_vu', name: 'Siêu âm vú', color: '#EF4444', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Vú' },
-    { key: 'sieuAm_giap', name: 'Siêu âm giáp', color: '#10B981', fields: ['sieu am giap sang', 'sieu am giap chieu'], benchmark: 'Siêu âm - Giáp' },
-    { key: 'sieuAm_tim', name: 'Siêu âm tim', color: '#F59E0B', fields: ['sieu am tim sang', 'sieu am tim chieu'], benchmark: 'Siêu âm - Tim' },
-    { key: 'sieuAm_canh', name: 'SA động mạch cảnh', color: '#8B5CF6', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'], benchmark: 'Siêu âm - Động mạch cảnh' },
+    { key: 'sieuAm_bung', name: 'Siêu âm bụng', color: '#073b4c', fields: ['sieu am bung sang', 'sieu am bung chieu'], benchmark: 'Siêu âm - Bụng' },
+    { key: 'sieuAm_giap', name: 'Siêu âm giáp', color: '#118ab2', fields: ['sieu am giap sang', 'sieu am giap chieu'], benchmark: 'Siêu âm - Giáp' },
+    { key: 'sieuAm_vu', name: 'Siêu âm vú', color: '#06d6a0', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Vú' },
+    { key: 'sieuAm_tim', name: 'Siêu âm tim', color: '#ffd166', fields: ['sieu am tim sang', 'sieu am tim chieu'], benchmark: 'Siêu âm - Tim' },
+    { key: 'sieuAm_canh', name: 'SA động mạch cảnh', color: '#ef476f', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'], benchmark: 'Siêu âm - Động mạch cảnh' },
   ]
 
   // Get benchmark limits
@@ -159,11 +159,11 @@ const BenchmarkUltrasoundChart = ({
             const benchmarkLimit = getBenchmarkLimit(category?.benchmark)
             const isExceeding = entry.value > benchmarkLimit && benchmarkLimit > 0
             
-            return (
-              <div key={index} className="mt-1">
-                <p style={{ color: entry.color }} className="text-sm">
-                  {`${category?.name}: ${entry.value} ca`}
-                </p>
+                         return (
+               <div key={index} className="mt-1">
+                 <p style={{ color: category.color }} className="text-sm font-normal">
+                   {`${category?.name}: ${entry.value} ca`}
+                 </p>
                 {benchmarkLimit > 0 && (
                   <p className="text-xs text-gray-600">
                     {`Định mức: ${benchmarkLimit} ca`}
@@ -183,10 +183,10 @@ const BenchmarkUltrasoundChart = ({
             <>
               <hr className="my-2 border-gray-200" />
               <div className="text-xs text-gray-700">
-                <p className="font-medium">Tối ưu hóa phòng siêu âm:</p>
+                <p className="font-medium">Kế hoạch phòng siêu âm:</p>
                 <p>{`Tổng ca: ${totalUltrasoundCases} ca`}</p>
                 <p className="text-blue-600 font-medium">
-                  {`Cần tối ưu: ${optimalRooms} phòng`}
+                  {`Cần: ${optimalRooms} phòng siêu âm`}
                 </p>
                 <div className="mt-1 space-y-0.5">
                   {roomOptions.map(room => (
