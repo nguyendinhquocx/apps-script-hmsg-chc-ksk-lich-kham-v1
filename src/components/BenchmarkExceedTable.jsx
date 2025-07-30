@@ -236,14 +236,19 @@ const BenchmarkExceedTable = ({
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b border-gray-200 w-32">
                   Hạng mục
                 </th>
-                {roomMatrixData.days.map((day, index) => (
-                  <th key={index} className="px-2 py-3 text-center text-sm font-medium text-gray-700 border-b border-gray-200 min-w-[40px]">
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs text-gray-500">{day.dayLabel}</span>
-                      <span className="font-semibold">{day.dayOfMonth}</span>
-                    </div>
-                  </th>
-                ))}
+                {roomMatrixData.days.map((day, index) => {
+                  const today = new Date()
+                  const isToday = new Date(day.date).toDateString() === today.toDateString()
+                  
+                  return (
+                    <th key={index} className={`px-2 py-3 text-center text-sm font-medium text-gray-700 border-b border-gray-200 min-w-[40px] ${isToday ? 'bg-gray-100' : ''}`}>
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs text-gray-500">{day.dayLabel}</span>
+                        <span className="font-normal">{day.dayOfMonth}</span>
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
@@ -252,13 +257,19 @@ const BenchmarkExceedTable = ({
                   <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-white">
                     {category.name}
                   </td>
-                  {category.rooms.map((roomCount, dayIndex) => (
-                    <td key={dayIndex} className="px-2 py-3 text-center text-sm">
-                      <span className={getRoomCellStyle(roomCount)}>
-                        {roomCount || ''}
-                      </span>
-                    </td>
-                  ))}
+                  {category.rooms.map((roomCount, dayIndex) => {
+                    const day = roomMatrixData.days[dayIndex]
+                    const today = new Date()
+                    const isToday = new Date(day.date).toDateString() === today.toDateString()
+                    
+                    return (
+                      <td key={dayIndex} className={`px-2 py-3 text-center text-sm ${isToday ? 'bg-gray-100' : ''}`}>
+                        <span className={getRoomCellStyle(roomCount)}>
+                          {roomCount || ''}
+                        </span>
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>

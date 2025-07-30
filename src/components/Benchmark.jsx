@@ -55,7 +55,7 @@ const Benchmark = ({ filters }) => {
   if (benchmarkLoading || chartsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Đang tải dữ liệu...</div>
+        <div className="text-gray-500">. _ .</div>
       </div>
     )
   }
