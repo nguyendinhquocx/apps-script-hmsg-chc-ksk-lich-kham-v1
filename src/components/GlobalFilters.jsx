@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { getCurrentMonth, getMonthName } from '../utils/vietnamese'
+import { getMonthName } from '../utils/vietnamese'
 
 const GlobalFilters = ({
   searchTerm,
@@ -38,15 +38,15 @@ const GlobalFilters = ({
     <div className="w-full p-3 sm:p-4 lg:p-6 mb-6 lg:mb-8">
       <div className="flex flex-wrap justify-center gap-2 sm:gap-3 lg:gap-4 items-end">
         {/* Month Filter */}
-        <div className="flex items-center space-x-1 sm:space-x-2 order-1">
+        <div className="flex items-center space-x-0.5 sm:space-x-1 order-1">
           <button
             onClick={handlePreviousMonth}
-            className="p-1 sm:p-2 bg-white text-gray-600 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
+            className="p-1 bg-white text-gray-600 rounded-md hover:bg-gray-100 hover:shadow-sm transition-all duration-300 ease-out"
             title="Tháng trước"
           >
-            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+            <ChevronLeft className="w-3 h-3" />
           </button>
-          <div className="text-center min-w-[70px] sm:min-w-[80px] lg:min-w-[100px]">
+          <div className="text-center min-w-[60px] sm:min-w-[70px] lg:min-w-[80px] px-1">
             <div className="text-xs sm:text-sm font-medium text-gray-900">
               {getMonthName(monthFilter.month)}
             </div>
@@ -56,27 +56,27 @@ const GlobalFilters = ({
           </div>
           <button
             onClick={handleNextMonth}
-            className="p-1 sm:p-2 bg-white text-gray-600 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
+            className="p-1 bg-white text-gray-600 rounded-md hover:bg-gray-100 hover:shadow-sm transition-all duration-300 ease-out"
             title="Tháng sau"
           >
-            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+            <ChevronRight className="w-3 h-3" />
           </button>
         </div>
 
         {/* Date Range Filter */}
-        <div className="flex gap-1 sm:gap-2 order-2">
+        <div className="flex gap-1 order-2">
           <input
             type="date"
             value={dateFilter.startDate}
             onChange={(e) => onDateFilterChange({ ...dateFilter, startDate: e.target.value })}
-            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-[10px] sm:text-xs rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-[90px] sm:w-[110px] lg:w-[120px]"
+            className="px-2 py-1 bg-white text-[10px] sm:text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-[85px] sm:w-[100px] lg:w-[110px]"
             title="Từ ngày"
           />
           <input
             type="date"
             value={dateFilter.endDate}
             onChange={(e) => onDateFilterChange({ ...dateFilter, endDate: e.target.value })}
-            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-[10px] sm:text-xs rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-[90px] sm:w-[110px] lg:w-[120px]"
+            className="px-2 py-1 bg-white text-[10px] sm:text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-[85px] sm:w-[100px] lg:w-[110px]"
             title="Đến ngày"
           />
         </div>
@@ -88,7 +88,7 @@ const GlobalFilters = ({
             placeholder="Tìm công ty..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-xs sm:text-sm rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[120px] md:w-[140px] lg:w-[150px]"
+            className="px-2 py-1 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[110px] md:w-[125px] lg:w-[135px]"
           />
         </div>
 
@@ -99,7 +99,7 @@ const GlobalFilters = ({
             placeholder="Lọc nhân viên..."
             value={employeeFilter}
             onChange={(e) => onEmployeeChange(e.target.value)}
-            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-xs sm:text-sm rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[120px] md:w-[140px] lg:w-[150px]"
+            className="px-2 py-1 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[110px] md:w-[125px] lg:w-[135px]"
           />
         </div>
 
@@ -108,7 +108,7 @@ const GlobalFilters = ({
           <select
             value={statusFilter}
             onChange={(e) => onStatusChange(e.target.value)}
-            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-xs sm:text-sm rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out cursor-pointer w-[100px] sm:w-[120px] lg:w-[140px]"
+            className="px-2 py-1 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out cursor-pointer w-[90px] sm:w-[105px] lg:w-[120px]"
           >
             <option value="">Tất cả</option>
             {statusOptions.map(status => (
@@ -119,14 +119,14 @@ const GlobalFilters = ({
 
         {/* Gold Filter */}
         <div className="order-6">
-          <label className="flex items-center cursor-pointer px-2 py-1 sm:px-3 sm:py-2 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out">
+          <label className="flex items-center cursor-pointer px-2 py-1 rounded-lg hover:bg-gray-100 hover:shadow-sm transition-all duration-300 ease-out">
             <input
               type="checkbox"
               checked={showGold}
               onChange={(e) => onGoldChange(e.target.checked)}
-              className="mr-1 sm:mr-2 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 transition-all duration-200 scale-75 sm:scale-100"
+              className="mr-1 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 transition-all duration-200 scale-90"
             />
-            <span className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Gold</span>
+            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">Gold</span>
           </label>
         </div>
 
@@ -134,7 +134,7 @@ const GlobalFilters = ({
         <div className="order-7">
           <button
             onClick={onReset}
-            className="px-3 py-1 sm:px-4 sm:py-2 bg-white text-black text-xs sm:text-sm font-bold rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out whitespace-nowrap"
+            className="px-3 py-1 bg-white text-black text-xs font-bold rounded-lg hover:bg-gray-100 hover:shadow-sm transition-all duration-300 ease-out whitespace-nowrap"
             title="Xóa tất cả bộ lọc"
           >
             Reset
