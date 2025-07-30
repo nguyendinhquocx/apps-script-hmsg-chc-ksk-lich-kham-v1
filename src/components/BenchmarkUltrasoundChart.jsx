@@ -9,13 +9,13 @@ const BenchmarkUltrasoundChart = ({
   dateFilter = { startDate: '', endDate: '' } 
 }) => {
 
-  // Define ultrasound categories with correct field names (remove combo)
+  // Define ultrasound categories with correct field names and new colors
   const ultrasoundCategories = [
-    { key: 'sieuAm_bung', name: 'Siêu âm bụng', color: '#3B82F6', fields: ['sieu am bung sang', 'sieu am bung chieu'], benchmark: 'Siêu âm - Bụng' },
-    { key: 'sieuAm_vu', name: 'Siêu âm vú', color: '#EF4444', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Vú' },
-    { key: 'sieuAm_giap', name: 'Siêu âm giáp', color: '#10B981', fields: ['sieu am giap sang', 'sieu am giap chieu'], benchmark: 'Siêu âm - Giáp' },
-    { key: 'sieuAm_tim', name: 'Siêu âm tim', color: '#F59E0B', fields: ['sieu am tim sang', 'sieu am tim chieu'], benchmark: 'Siêu âm - Tim' },
-    { key: 'sieuAm_canh', name: 'SA động mạch cảnh', color: '#8B5CF6', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'], benchmark: 'Siêu âm - Động mạch cảnh' },
+    { key: 'sieuAm_bung', name: 'Siêu âm bụng', color: '#073b4c', fields: ['sieu am bung sang', 'sieu am bung chieu'], benchmark: 'Siêu âm - Bụng' },
+    { key: 'sieuAm_giap', name: 'Siêu âm giáp', color: '#118ab2', fields: ['sieu am giap sang', 'sieu am giap chieu'], benchmark: 'Siêu âm - Giáp' },
+    { key: 'sieuAm_vu', name: 'Siêu âm vú', color: '#06d6a0', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Vú' },
+    { key: 'sieuAm_tim', name: 'Siêu âm tim', color: '#ffd166', fields: ['sieu am tim sang', 'sieu am tim chieu'], benchmark: 'Siêu âm - Tim' },
+    { key: 'sieuAm_canh', name: 'SA động mạch cảnh', color: '#ef476f', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'], benchmark: 'Siêu âm - Động mạch cảnh' },
   ]
 
   // Get benchmark limits
@@ -161,7 +161,7 @@ const BenchmarkUltrasoundChart = ({
             
             return (
               <div key={index} className="mt-1">
-                <p style={{ color: entry.color }} className="text-sm">
+                <p style={{ color: isExceeding ? '#ef4444' : '#000000' }} className="text-sm">
                   {`${category?.name}: ${entry.value} ca`}
                 </p>
                 {benchmarkLimit > 0 && (

@@ -120,7 +120,7 @@ const BenchmarkECGChart = ({
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900">{`Ngày: ${displayDate}`}</p>
-          <p className="text-sm" style={{ color: isExceeding ? '#ef4444' : '#0891b2' }}>
+          <p className="text-sm" style={{ color: isExceeding ? '#ef4444' : '#000000' }}>
             {`Điện tâm đồ: ${value} ca`}
           </p>
           {benchmarkLimit > 0 && (
