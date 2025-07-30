@@ -159,11 +159,11 @@ const BenchmarkUltrasoundChart = ({
             const benchmarkLimit = getBenchmarkLimit(category?.benchmark)
             const isExceeding = entry.value > benchmarkLimit && benchmarkLimit > 0
             
-            return (
-              <div key={index} className="mt-1">
-                <p style={{ color: isExceeding ? '#ef4444' : '#000000' }} className="text-sm">
-                  {`${category?.name}: ${entry.value} ca`}
-                </p>
+                         return (
+               <div key={index} className="mt-1">
+                 <p style={{ color: category.color }} className="text-sm font-normal">
+                   {`${category?.name}: ${entry.value} ca`}
+                 </p>
                 {benchmarkLimit > 0 && (
                   <p className="text-xs text-gray-600">
                     {`Định mức: ${benchmarkLimit} ca`}
