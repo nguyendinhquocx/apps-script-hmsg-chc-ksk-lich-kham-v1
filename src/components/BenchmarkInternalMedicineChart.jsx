@@ -11,19 +11,8 @@ const BenchmarkInternalMedicineChart = ({
 
   // Get benchmark limit for Internal Medicine
   const getBenchmarkLimit = () => {
-    const benchmark = benchmarkData.find(b => b.chuyen_khoa === 'Nội tổng quát')
-    if (!benchmark) return 0
-    
-    // Debug: log benchmark data
-    console.log('Benchmark data for Nội tổng quát:', benchmark)
-    
-    const min = benchmark.so_ca_ngay_bs_min
-    const max = benchmark.so_ca_ngay_bs_max
-    const average = Math.round((min + max) / 2)
-    
-    console.log(`Benchmark calculation: (${min} + ${max}) / 2 = ${average}`)
-    
-    return average
+    // Fixed benchmark limit for Nội tổng quát: 90
+    return 90
   }
 
   // Calculate chart data

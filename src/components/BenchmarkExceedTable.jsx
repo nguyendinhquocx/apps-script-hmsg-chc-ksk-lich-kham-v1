@@ -168,9 +168,9 @@ const BenchmarkExceedTable = ({
         if (totalCases <= 90) return 1
         if (totalCases <= 200) return 2
         return 3
-      } else if (category === 'internalMedicine') {
-        // Internal Medicine: assume 77 cases per room (based on benchmark)
-        return Math.ceil(totalCases / 77)
+             } else if (category === 'internalMedicine') {
+         // Internal Medicine: assume 90 cases per room (fixed benchmark)
+         return Math.ceil(totalCases / 90)
       } else {
         // ECG and Gynecology: assume 90 cases per room
         return Math.ceil(totalCases / 90)
