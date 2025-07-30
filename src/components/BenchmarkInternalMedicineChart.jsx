@@ -10,10 +10,8 @@ const BenchmarkInternalMedicineChart = ({
 }) => {
 
   // Get benchmark limit for Internal Medicine
-  const getBenchmarkLimit = () => {
-    // Fixed benchmark limit for Nội tổng quát: 90
-    return 90
-  }
+  const getBenchmarkLimit = () => 90
+  const getSecondBenchmarkLimit = () => 180
 
   // Calculate chart data
   const chartData = useMemo(() => {
@@ -126,26 +124,25 @@ const BenchmarkInternalMedicineChart = ({
     if (active && payload && payload.length) {
       const dataPoint = chartData.find(d => d.day === parseInt(label))
       const displayDate = dataPoint ? new Date(dataPoint.date).toLocaleDateString('vi-VN') : ''
-      const benchmarkLimit = getBenchmarkLimit()
       const value = payload[0]?.value || 0
-      const isExceeding = value > benchmarkLimit && benchmarkLimit > 0
-      
+      // Determine doctor count and color
+      let doctorText = ''
+      let doctorColor = '#000000'
+      if (value < 90) {
+        doctorText = 'Cần 1 bác sĩ nội'
+        doctorColor = '#000000'
+      } else if (value < 180) {
+        doctorText = 'Cần 2 bác sĩ nội'
+        doctorColor = '#2962ff'
+      } else {
+        doctorText = 'Cần 3 bác sĩ nội'
+        doctorColor = '#f23645'
+      }
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900">{`Ngày: ${displayDate}`}</p>
-          <p className="text-sm" style={{ color: isExceeding ? '#ef4444' : '#000000' }}>
-            {`Nội tổng quát: ${value} người`}
-          </p>
-          {benchmarkLimit > 0 && (
-            <p className="text-xs text-black">
-              {`Định mức: ${benchmarkLimit} ca`}
-            </p>
-          )}
-          {isExceeding && (
-            <p className="text-xs text-red-600 font-medium">
-              {`Vượt +${value - benchmarkLimit} người`}
-            </p>
-          )}
+          <p className="text-sm font-normal" style={{ color: '#000000' }}>{`Nội tổng quát: ${value} người`}</p>
+          <p className="text-xs font-normal" style={{ color: doctorColor }}>{doctorText}</p>
         </div>
       )
     }
@@ -174,25 +171,41 @@ const BenchmarkInternalMedicineChart = ({
             />
             <Tooltip content={<CustomTooltip />} />
             
-            {/* Benchmark reference line */}
-            {benchmarkLimit > 0 && (
-              <ReferenceLine 
-                y={benchmarkLimit} 
-                stroke="#DC2626" 
-                strokeDasharray="5 5"
-                label={{
-                  value: benchmarkLimit,
-                  position: "right",
-                  offset: 10,
-                  style: { 
-                    fill: "#ef4444", 
-                    fontSize: "12px", 
-                    fontWeight: "500",
-                    textAnchor: "start"
-                  }
-                }}
-              />
-            )}
+            {/* Benchmark reference lines */}
+            {/* Định mức 90 - xanh nước biển, nét đứt */}
+            <ReferenceLine 
+              y={benchmarkLimit} 
+              stroke="#2962ff" 
+              strokeDasharray="5 5"
+              label={{
+                value: benchmarkLimit,
+                position: "right",
+                offset: 10,
+                style: { 
+                  fill: "#2962ff", 
+                  fontSize: "12px", 
+                  fontWeight: "500",
+                  textAnchor: "start"
+                }
+              }}
+            />
+            {/* Định mức 180 - đỏ, nét đứt */}
+            <ReferenceLine 
+              y={getSecondBenchmarkLimit()} 
+              stroke="#f23645" 
+              strokeDasharray="5 5"
+              label={{
+                value: getSecondBenchmarkLimit(),
+                position: "right",
+                offset: 10,
+                style: { 
+                  fill: "#f23645", 
+                  fontSize: "12px", 
+                  fontWeight: "500",
+                  textAnchor: "start"
+                }
+              }}
+            />
 
             {/* Internal Medicine data line */}
             <Line

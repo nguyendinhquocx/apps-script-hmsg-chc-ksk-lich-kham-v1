@@ -183,10 +183,10 @@ const BenchmarkUltrasoundChart = ({
             <>
               <hr className="my-2 border-gray-200" />
               <div className="text-xs text-gray-700">
-                <p className="font-medium">Tối ưu hóa phòng siêu âm:</p>
+                <p className="font-medium">Kế hoạch phòng siêu âm:</p>
                 <p>{`Tổng ca: ${totalUltrasoundCases} ca`}</p>
                 <p className="text-blue-600 font-medium">
-                  {`Cần tối ưu: ${optimalRooms} phòng`}
+                  {`Cần: ${optimalRooms} phòng siêu âm`}
                 </p>
                 <div className="mt-1 space-y-0.5">
                   {roomOptions.map(room => (
