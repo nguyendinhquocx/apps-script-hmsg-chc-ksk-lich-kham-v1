@@ -8,6 +8,7 @@ import BenchmarkTable from './BenchmarkTable'
 import BenchmarkUltrasoundChart from './BenchmarkUltrasoundChart'
 import BenchmarkECGChart from './BenchmarkECGChart'
 import BenchmarkGynecologyChart from './BenchmarkGynecologyChart'
+import BenchmarkInternalMedicineChart from './BenchmarkInternalMedicineChart'
 
 const Benchmark = ({ filters }) => {
   const { data: benchmarkData, loading: benchmarkLoading, error: benchmarkError } = useBenchmarkData()
@@ -87,6 +88,13 @@ const Benchmark = ({ filters }) => {
         />
         
         <BenchmarkGynecologyChart
+          data={filteredData || []}
+          benchmarkData={benchmarkData || []}
+          monthFilter={filters?.monthFilter}
+          dateFilter={filters?.dateFilter}
+        />
+        
+        <BenchmarkInternalMedicineChart
           data={filteredData || []}
           benchmarkData={benchmarkData || []}
           monthFilter={filters?.monthFilter}
