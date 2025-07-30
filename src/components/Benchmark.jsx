@@ -80,6 +80,13 @@ const Benchmark = ({ filters }) => {
           dateFilter={filters?.dateFilter}
         />
         
+        <BenchmarkInternalMedicineChart
+          data={filteredData || []}
+          benchmarkData={benchmarkData || []}
+          monthFilter={filters?.monthFilter}
+          dateFilter={filters?.dateFilter}
+        />
+        
         <BenchmarkECGChart
           data={filteredData || []}
           benchmarkData={benchmarkData || []}
@@ -88,13 +95,6 @@ const Benchmark = ({ filters }) => {
         />
         
         <BenchmarkGynecologyChart
-          data={filteredData || []}
-          benchmarkData={benchmarkData || []}
-          monthFilter={filters?.monthFilter}
-          dateFilter={filters?.dateFilter}
-        />
-        
-        <BenchmarkInternalMedicineChart
           data={filteredData || []}
           benchmarkData={benchmarkData || []}
           monthFilter={filters?.monthFilter}

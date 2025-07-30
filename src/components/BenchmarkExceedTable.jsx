@@ -124,10 +124,24 @@ const BenchmarkExceedTable = ({
           const gynecoAfternoon = parseInt(item['kham phu khoa chieu'] || 0)
           dayData.gynecology += gynecoMorning + gynecoAfternoon
           
-          // Internal Medicine - SPECIAL LOGIC: distribute total people across examination days
-          const totalPeople = parseInt(item['so nguoi kham']) || 0
-          const peoplePerDay = examDates.length > 0 ? Math.round(totalPeople / examDates.length) : 0
-          dayData.internalMedicine += peoplePerDay
+                     // Internal Medicine - SPECIAL LOGIC: use the same logic as DataTable
+           const isCompleted = item['trang thai kham'] === 'Đã khám xong'
+           const totalPeople = parseInt(item['so nguoi kham']) || 0
+           
+           let dailyCount = 0
+           if (examDates.length > 0) {
+             if (isCompleted) {
+               // For completed exams: distribute total people across examination days
+               dailyCount = Math.round(totalPeople / examDates.length)
+             } else {
+               // For ongoing exams: use calculated averages
+               const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+               const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+               dailyCount = Math.round(morningAvg + afternoonAvg)
+             }
+           }
+           
+           dayData.internalMedicine += dailyCount
           
           // Ultrasound total (all categories)
           const ultrasoundMappings = [
@@ -176,6 +190,11 @@ const BenchmarkExceedTable = ({
         rooms: sortedDays.map(day => getRequiredRooms(day.ultrasound, 'ultrasound'))
       },
       {
+        name: 'Nội tổng quát',
+        key: 'internalMedicine',
+        rooms: sortedDays.map(day => getRequiredRooms(day.internalMedicine, 'internalMedicine'))
+      },
+      {
         name: 'Điện tim',
         key: 'ecg',
         rooms: sortedDays.map(day => getRequiredRooms(day.ecg, 'ecg'))
@@ -184,11 +203,6 @@ const BenchmarkExceedTable = ({
         name: 'Phụ khoa',
         key: 'gynecology',
         rooms: sortedDays.map(day => getRequiredRooms(day.gynecology, 'gynecology'))
-      },
-      {
-        name: 'Nội tổng quát',
-        key: 'internalMedicine',
-        rooms: sortedDays.map(day => getRequiredRooms(day.internalMedicine, 'internalMedicine'))
       }
     ]
 

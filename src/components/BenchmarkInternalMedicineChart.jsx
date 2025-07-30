@@ -13,7 +13,17 @@ const BenchmarkInternalMedicineChart = ({
   const getBenchmarkLimit = () => {
     const benchmark = benchmarkData.find(b => b.chuyen_khoa === 'Nội tổng quát')
     if (!benchmark) return 0
-    return Math.round((benchmark.so_ca_ngay_bs_min + benchmark.so_ca_ngay_bs_max) / 2)
+    
+    // Debug: log benchmark data
+    console.log('Benchmark data for Nội tổng quát:', benchmark)
+    
+    const min = benchmark.so_ca_ngay_bs_min
+    const max = benchmark.so_ca_ngay_bs_max
+    const average = Math.round((min + max) / 2)
+    
+    console.log(`Benchmark calculation: (${min} + ${max}) / 2 = ${average}`)
+    
+    return average
   }
 
   // Calculate chart data
@@ -50,11 +60,12 @@ const BenchmarkInternalMedicineChart = ({
       })
     })
 
-    // Process actual data - DIFFERENT LOGIC: Calculate based on total people examined per day
+    // Process actual data - Use the same logic as DataTable for consistency
     data.forEach(item => {
       const startDateStr = item['ngay bat dau kham']
       const endDateStr = item['ngay ket thuc kham'] || startDateStr
       const specificDatesStr = item['cac ngay kham thuc te']
+      const isCompleted = item['trang thai kham'] === 'Đã khám xong'
       const totalPeople = parseInt(item['so nguoi kham']) || 0
       
       if (!startDateStr || totalPeople === 0) return
@@ -93,20 +104,29 @@ const BenchmarkInternalMedicineChart = ({
           )
       }
 
-      // Calculate people per day (distribute total people across examination days)
-      const peoplePerDay = examDates.length > 0 ? Math.round(totalPeople / examDates.length) : 0
-
-      // Add internal medicine counts to each examination date
-      examDates.forEach(examDate => {
-        const dateKey = format(examDate, 'yyyy-MM-dd')
-        const dayData = dateMap.get(dateKey)
-        
-        if (dayData) {
-          // For internal medicine, we use the total people examined per day
-          // This is different from other charts that use specific examination counts
-          dayData.internalMedicine += peoplePerDay
+      // Calculate people per day using the same logic as DataTable
+      let dailyCount = 0
+      if (examDates.length > 0) {
+        if (isCompleted) {
+          // For completed exams: distribute total people across examination days
+          dailyCount = Math.round(totalPeople / examDates.length)
+        } else {
+          // For ongoing exams: use calculated averages
+          const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+          const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+          dailyCount = Math.round(morningAvg + afternoonAvg)
         }
-      })
+        
+        // Add to each examination date
+        examDates.forEach(examDate => {
+          const dateKey = format(examDate, 'yyyy-MM-dd')
+          const dayData = dateMap.get(dateKey)
+          
+          if (dayData) {
+            dayData.internalMedicine += dailyCount
+          }
+        })
+      }
     })
 
     return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date))
@@ -124,7 +144,7 @@ const BenchmarkInternalMedicineChart = ({
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900">{`Ngày: ${displayDate}`}</p>
-          <p className="text-sm" style={{ color: isExceeding ? '#ef4444' : '#0891b2' }}>
+          <p className="text-sm" style={{ color: isExceeding ? '#ef4444' : '#000000' }}>
             {`Nội tổng quát: ${value} người`}
           </p>
           {benchmarkLimit > 0 && (
@@ -189,7 +209,7 @@ const BenchmarkInternalMedicineChart = ({
             <Line
               type="monotone"
               dataKey="internalMedicine"
-              stroke="#0891b2"
+              stroke="#000000"
               strokeWidth={2}
               dot={(props) => {
                 const { cx, cy, payload } = props
@@ -199,8 +219,8 @@ const BenchmarkInternalMedicineChart = ({
                     cx={cx}
                     cy={cy}
                     r={isToday ? 6 : 3}
-                    fill={isToday ? "#FFFFFF" : "#0891b2"}
-                    stroke="#0891b2"
+                    fill={isToday ? "#FFFFFF" : "#000000"}
+                    stroke="#000000"
                     strokeWidth={2}
                   />
                 )
@@ -215,7 +235,7 @@ const BenchmarkInternalMedicineChart = ({
                     cy={cy}
                     r={6}
                     fill="transparent"
-                    stroke={isExceeding ? "#ef4444" : "#0891b2"}
+                    stroke={isExceeding ? "#ef4444" : "#000000"}
                     strokeWidth={2}
                   />
                 )
