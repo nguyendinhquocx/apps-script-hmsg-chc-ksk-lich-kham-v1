@@ -2,14 +2,14 @@ import React from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getCurrentMonth, getMonthName } from '../utils/vietnamese'
 
-const GlobalFilters = ({ 
-  searchTerm, 
+const GlobalFilters = ({
+  searchTerm,
   onSearchChange,
-  statusFilter, 
+  statusFilter,
   onStatusChange,
-  employeeFilter, 
+  employeeFilter,
   onEmployeeChange,
-  showGold, 
+  showGold,
   onGoldChange,
   monthFilter,
   setMonthFilter,
@@ -21,15 +21,13 @@ const GlobalFilters = ({
     'Đã khám xong',
     'Chưa khám xong'
   ]
-  
-  const currentMonth = getCurrentMonth()
-  
+
   const handlePreviousMonth = () => {
     const newMonth = monthFilter.month === 1 ? 12 : monthFilter.month - 1
     const newYear = monthFilter.month === 1 ? monthFilter.year - 1 : monthFilter.year
     setMonthFilter({ month: newMonth, year: newYear })
   }
-  
+
   const handleNextMonth = () => {
     const newMonth = monthFilter.month === 12 ? 1 : monthFilter.month + 1
     const newYear = monthFilter.month === 12 ? monthFilter.year + 1 : monthFilter.year
@@ -37,114 +35,110 @@ const GlobalFilters = ({
   }
 
   return (
-    <div className="w-full p-6 mb-8">
-      <div className="flex flex-wrap gap-4 items-end justify-between">
-        {/* Left side - Month and Date filters */}
-        <div className="flex flex-wrap gap-4 items-end">
-          {/* Month Filter - First position */}
-          <div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handlePreviousMonth}
-                className="p-2 bg-white text-gray-600 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
-                title="Tháng trước"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <div className="text-center min-w-[100px]">
-                <div className="text-sm font-medium text-gray-900">
-                  {getMonthName(monthFilter.month)}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {monthFilter.year}
-                </div>
-              </div>
-              <button
-                onClick={handleNextMonth}
-                className="p-2 bg-white text-gray-600 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
-                title="Tháng sau"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
+    <div className="w-full p-3 sm:p-4 lg:p-6 mb-6 lg:mb-8">
+      <div className="flex flex-wrap justify-center gap-2 sm:gap-3 lg:gap-4 items-end">
+        {/* Month Filter */}
+        <div className="flex items-center space-x-1 sm:space-x-2 order-1">
+          <button
+            onClick={handlePreviousMonth}
+            className="p-1 sm:p-2 bg-white text-gray-600 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
+            title="Tháng trước"
+          >
+            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+          </button>
+          <div className="text-center min-w-[70px] sm:min-w-[80px] lg:min-w-[100px]">
+            <div className="text-xs sm:text-sm font-medium text-gray-900">
+              {getMonthName(monthFilter.month)}
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-500">
+              {monthFilter.year}
             </div>
           </div>
-
-          {/* Date Range Filter - Second position */}
-          <div className="flex gap-2">
-            <input
-              type="date"
-              value={dateFilter.startDate}
-              onChange={(e) => onDateFilterChange({ ...dateFilter, startDate: e.target.value })}
-              className="px-3 py-2 bg-white text-xs rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
-              title="Từ ngày"
-            />
-            <input
-              type="date"
-              value={dateFilter.endDate}
-              onChange={(e) => onDateFilterChange({ ...dateFilter, endDate: e.target.value })}
-              className="px-3 py-2 bg-white text-xs rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
-              title="Đến ngày"
-            />
-          </div>
+          <button
+            onClick={handleNextMonth}
+            className="p-1 sm:p-2 bg-white text-gray-600 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
+            title="Tháng sau"
+          >
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+          </button>
         </div>
 
-        {/* Right side - Other filters */}
-        <div className="flex flex-wrap gap-4 items-end">
-          {/* Search */}
-          <div className="relative">
+        {/* Date Range Filter */}
+        <div className="flex gap-1 sm:gap-2 order-2">
+          <input
+            type="date"
+            value={dateFilter.startDate}
+            onChange={(e) => onDateFilterChange({ ...dateFilter, startDate: e.target.value })}
+            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-[10px] sm:text-xs rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-[90px] sm:w-[110px] lg:w-[120px]"
+            title="Từ ngày"
+          />
+          <input
+            type="date"
+            value={dateFilter.endDate}
+            onChange={(e) => onDateFilterChange({ ...dateFilter, endDate: e.target.value })}
+            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-[10px] sm:text-xs rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-[90px] sm:w-[110px] lg:w-[120px]"
+            title="Đến ngày"
+          />
+        </div>
+
+        {/* Search */}
+        <div className="order-3 w-full sm:w-auto">
+          <input
+            type="text"
+            placeholder="Tìm công ty..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-xs sm:text-sm rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[120px] md:w-[140px] lg:w-[150px]"
+          />
+        </div>
+
+        {/* Employee Filter */}
+        <div className="order-4 w-full sm:w-auto">
+          <input
+            type="text"
+            placeholder="Lọc nhân viên..."
+            value={employeeFilter}
+            onChange={(e) => onEmployeeChange(e.target.value)}
+            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-xs sm:text-sm rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[120px] md:w-[140px] lg:w-[150px]"
+          />
+        </div>
+
+        {/* Status Filter */}
+        <div className="order-5">
+          <select
+            value={statusFilter}
+            onChange={(e) => onStatusChange(e.target.value)}
+            className="px-2 py-1 sm:px-3 sm:py-2 bg-white text-xs sm:text-sm rounded-lg hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out cursor-pointer w-[100px] sm:w-[120px] lg:w-[140px]"
+          >
+            <option value="">Tất cả</option>
+            {statusOptions.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Gold Filter */}
+        <div className="order-6">
+          <label className="flex items-center cursor-pointer px-2 py-1 sm:px-3 sm:py-2 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out">
             <input
-              type="text"
-              placeholder="Tìm kiếm công ty..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="px-3 py-2 bg-white rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
+              type="checkbox"
+              checked={showGold}
+              onChange={(e) => onGoldChange(e.target.checked)}
+              className="mr-1 sm:mr-2 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 transition-all duration-200 scale-75 sm:scale-100"
             />
-          </div>
+            <span className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Gold</span>
+          </label>
+        </div>
 
-          {/* Employee Filter - First */}
-          <div>
-            <input
-              type="text"
-              placeholder="Lọc theo nhân viên..."
-              value={employeeFilter}
-              onChange={(e) => onEmployeeChange(e.target.value)}
-              className="px-3 py-2 bg-white rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => onStatusChange(e.target.value)}
-              className="px-3 py-2 bg-white rounded-xl hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out cursor-pointer"
-            >
-              <option value="">Tất cả trạng thái</option>
-              {statusOptions.map(status => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Reset Button and Gold Filter */}
-          <div className="flex gap-2 items-center">
-            <label className="flex items-center cursor-pointer px-3 py-2 rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out">
-              <input
-                type="checkbox"
-                checked={showGold}
-                onChange={(e) => onGoldChange(e.target.checked)}
-                className="mr-2 rounded-md border-gray-300 text-blue-600 focus:ring-blue-500 transition-all duration-200"
-              />
-              <span className="text-sm font-medium text-gray-700">Gold</span>
-            </label>
-            <button
-              onClick={onReset}
-              className="px-4 py-2 bg-white text-black text-sm font-bold rounded-xl hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out"
-              title="Xóa tất cả bộ lọc"
-            >
-              Reset
-            </button>
-          </div>
+        {/* Reset Button */}
+        <div className="order-7">
+          <button
+            onClick={onReset}
+            className="px-3 py-1 sm:px-4 sm:py-2 bg-white text-black text-xs sm:text-sm font-bold rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-300 ease-out whitespace-nowrap"
+            title="Xóa tất cả bộ lọc"
+          >
+            Reset
+          </button>
         </div>
       </div>
     </div>
