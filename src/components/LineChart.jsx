@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, differenceInDays } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { getExamCountForDateNew } from '../utils/examUtils'
 
 const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } }) => {
   // Process data to create chart data grouped by date
@@ -39,123 +40,28 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
       })
     })
     
-    // Process actual data
+    // Process actual data using new unified logic
     data.forEach(item => {
-      const startDate = item['ngay bat dau kham']
-      const endDate = item['ngay ket thuc kham']
-      const specificDatesStr = item['cac ngay kham thuc te']
-      const bloodTestDateStr = item['ngay lay mau']
-      const isCompleted = item['trang thai kham'] === 'Đã khám xong'
-      const totalPeople = parseInt(item['so nguoi kham']) || 0
-      
-      if (startDate) {
-        try {
-          // Check if there are specific examination dates
-          if (specificDatesStr && specificDatesStr.trim()) {
-            // Parse specific dates (format: MM/dd, MM/dd, ...)
-            const specificDates = specificDatesStr.split(',').map(dateStr => {
-              const trimmed = dateStr.trim()
-              if (trimmed.includes('/')) {
-                const [month, day] = trimmed.split('/')
-                const year = chartStart.getFullYear() // Use current year from the date range
-                return new Date(year, parseInt(month) - 1, parseInt(day))
-              }
-              return null
-            }).filter(d => d !== null)
-            
-            // Filter out Sundays from specific dates
-            const workingSpecificDates = specificDates.filter(d => getDay(d) !== 0)
-            
-            let dailyCount
-            if (isCompleted) {
-              // For completed exams with specific dates: total people ÷ number of working specific dates
-              dailyCount = workingSpecificDates.length > 0 ? totalPeople / workingSpecificDates.length : 0
-            } else {
-              // For ongoing exams: use calculated averages
-              const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-              const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-              dailyCount = morningAvg + afternoonAvg
-            }
-            
-            workingSpecificDates.forEach(examDate => {
-              // Only include data from the selected range and exclude Sundays
-              if (examDate >= chartStart && examDate <= chartEnd && getDay(examDate) !== 0) {
-                const dateKey = format(examDate, 'yyyy-MM-dd')
-                const existing = dateMap.get(dateKey)
-                if (existing) {
-                  // Only count companies if they have people being examined that day
-                  const companyIncrement = dailyCount > 0 ? 1 : 0
-                  dateMap.set(dateKey, {
-                    ...existing,
-                    people: existing.people + dailyCount,
-                    companies: existing.companies + companyIncrement
-                  })
-                }
-              }
+      // Use the new unified logic for all date calculations
+      allDaysInRange.forEach(date => {
+        const examResult = getExamCountForDateNew(item, date)
+        if (examResult.total > 0) {
+          const dateKey = format(date, 'yyyy-MM-dd')
+          const existing = dateMap.get(dateKey)
+          if (existing) {
+            // Only count companies if they have people being examined that day
+            const companyIncrement = examResult.total > 0 ? 1 : 0
+            dateMap.set(dateKey, {
+              ...existing,
+              people: existing.people + examResult.total,
+              companies: existing.companies + companyIncrement
             })
-          } else if (endDate) {
-            // Use original logic with start and end dates
-            const startDateObj = new Date(startDate + 'T00:00:00')
-            const endDateObj = new Date(endDate + 'T00:00:00')
-            
-            // Calculate the number of working days (excluding Sundays) in the examination period
-            const examDays = eachDayOfInterval({ start: startDateObj, end: endDateObj })
-              .filter(date => getDay(date) !== 0) // Exclude Sundays
-            
-            if (examDays.length > 0) {
-              let dailyCount
-              if (isCompleted) {
-                // For completed exams: total people ÷ number of working days (excluding Sundays)
-                dailyCount = totalPeople / examDays.length
-              } else {
-                // For ongoing exams: use calculated averages
-                const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-                const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-                dailyCount = morningAvg + afternoonAvg
-              }
-              
-              examDays.forEach(examDate => {
-                // Only include data from the selected range
-                if (examDate >= chartStart && examDate <= chartEnd) {
-                  const dateKey = format(examDate, 'yyyy-MM-dd')
-                  const existing = dateMap.get(dateKey)
-                  if (existing) {
-                    // Only count companies if they have people being examined that day
-                    const companyIncrement = dailyCount > 0 ? 1 : 0
-                    dateMap.set(dateKey, {
-                      ...existing,
-                      people: existing.people + dailyCount,
-                      companies: existing.companies + companyIncrement
-                    })
-                  }
-                }
-              })
-            }
-          } else {
-            // Fallback to single date logic if endDate is missing
-            const itemDate = new Date(startDate + 'T00:00:00')
-            // Only include data from the selected range and exclude Sundays
-            if (itemDate >= chartStart && itemDate <= chartEnd && getDay(itemDate) !== 0) {
-              const dateKey = format(itemDate, 'yyyy-MM-dd')
-              const existing = dateMap.get(dateKey)
-              if (existing) {
-                const dailyCount = isCompleted ? totalPeople : totalPeople
-                // Only count companies if they have people being examined that day
-                const companyIncrement = dailyCount > 0 ? 1 : 0
-                dateMap.set(dateKey, {
-                  ...existing,
-                  people: existing.people + dailyCount,
-                  companies: existing.companies + companyIncrement
-                })
-              }
-            }
           }
-        } catch (error) {
-          console.warn('Invalid date format:', startDate, endDate)
         }
-      }
+      })
       
       // Check for blood test date
+      const bloodTestDateStr = item['ngay lay mau']
       if (bloodTestDateStr) {
         try {
           const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')

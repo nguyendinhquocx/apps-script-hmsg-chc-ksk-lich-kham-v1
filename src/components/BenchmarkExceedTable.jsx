@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { AlertTriangle, Download } from 'lucide-react'
 import { format, getDay, eachDayOfInterval } from 'date-fns'
 import * as XLSX from 'xlsx'
+import { getExamCountForDateNew } from '../utils/examUtils'
 
 const BenchmarkExceedTable = ({ 
   data = [], 
@@ -71,77 +72,28 @@ const BenchmarkExceedTable = ({
 
     // Process actual data (same logic as charts)
     data.forEach(item => {
-      const startDateStr = item['ngay bat dau kham']
-      const endDateStr = item['ngay ket thuc kham'] || startDateStr
-      const specificDatesStr = item['cac ngay kham thuc te']
-      
-      if (!startDateStr) return
-
-      // Get examination dates (same logic as charts)
-      let examDates = []
-      
-      if (specificDatesStr && specificDatesStr.trim()) {
-        // Parse specific dates (format: MM/dd, MM/dd, ...)
-        const specificDates = specificDatesStr.split(',').map(dateStr => {
-          const trimmed = dateStr.trim()
-          if (trimmed.includes('/')) {
-            const [month, day] = trimmed.split('/')
-            const year = new Date().getFullYear()
-            return new Date(year, parseInt(month) - 1, parseInt(day))
-          }
-          return null
-        }).filter(d => d !== null)
-        
-        examDates = specificDates.filter(d => {
-          const dateKey = format(d, 'yyyy-MM-dd')
-          return dateMap.has(dateKey)
-        })
-      } else {
-        // Use start and end dates
-        const startDate = new Date(startDateStr + 'T00:00:00')
-        const endDate = new Date(endDateStr + 'T00:00:00')
-        
-        examDates = eachDayOfInterval({ start: startDate, end: endDate })
-          .filter(d => {
-            const dateKey = format(d, 'yyyy-MM-dd')
-            return getDay(d) !== 0 && dateMap.has(dateKey)
-          })
-      }
-
-      // Add counts to each examination date
-      examDates.forEach(examDate => {
-        const dateKey = format(examDate, 'yyyy-MM-dd')
-        const dayData = dateMap.get(dateKey)
-        
-        if (dayData) {
-          // ECG
-          const ecgMorning = parseInt(item['dien tam do sang'] || 0)
-          const ecgAfternoon = parseInt(item['dien tam do chieu'] || 0)
-          dayData.ecg += ecgMorning + ecgAfternoon
+      // Use the new unified logic for all date calculations
+      // daysToShow.forEach(date => {
+      days.forEach(dayInfo => {
+        const date = new Date(dayInfo.date)
+        const examResult = getExamCountForDateNew(item, date)
+        if (examResult.total > 0) {
+          const dateKey = format(date, 'yyyy-MM-dd')
+          const dayData = dateMap.get(dateKey)
           
-          // Gynecology
-          const gynecoMorning = parseInt(item['kham phu khoa sang'] || 0)
-          const gynecoAfternoon = parseInt(item['kham phu khoa chieu'] || 0)
-          dayData.gynecology += gynecoMorning + gynecoAfternoon
-          
-                     // Internal Medicine - SPECIAL LOGIC: use the same logic as DataTable
-           const isCompleted = item['trang thai kham'] === 'Đã khám xong'
-           const totalPeople = parseInt(item['so nguoi kham']) || 0
-           
-           let dailyCount = 0
-           if (examDates.length > 0) {
-             if (isCompleted) {
-               // For completed exams: distribute total people across examination days
-               dailyCount = Math.round(totalPeople / examDates.length)
-             } else {
-               // For ongoing exams: use calculated averages
-               const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-               const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-               dailyCount = Math.round(morningAvg + afternoonAvg)
-             }
-           }
-           
-           dayData.internalMedicine += dailyCount
+          if (dayData) {
+            // ECG
+            const ecgMorning = parseInt(item['dien tam do sang'] || 0)
+            const ecgAfternoon = parseInt(item['dien tam do chieu'] || 0)
+            dayData.ecg += ecgMorning + ecgAfternoon
+            
+            // Gynecology
+            const gynecoMorning = parseInt(item['kham phu khoa sang'] || 0)
+            const gynecoAfternoon = parseInt(item['kham phu khoa chieu'] || 0)
+            dayData.gynecology += gynecoMorning + gynecoAfternoon
+            
+            // Internal Medicine (using new unified logic)
+            dayData.internalMedicine += examResult.total
           
           // Ultrasound total (all categories)
           const ultrasoundMappings = [
@@ -157,6 +109,7 @@ const BenchmarkExceedTable = ({
             const afternoon = parseInt(item[fields[1]] || 0)
             dayData.ultrasound += morning + afternoon
           })
+          }
         }
       })
     })
