@@ -1,6 +1,7 @@
 import React from 'react'
 import { Building2, CheckCircle, Clock, Users } from 'lucide-react'
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isBefore, isAfter } from 'date-fns'
+import { getExamCountForDateNew } from '../utils/examUtils'
 
 const StatsCards = ({ data = [], monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } }) => {
   // Determine the date range to calculate examined people
@@ -63,17 +64,11 @@ const StatsCards = ({ data = [], monthFilter = { month: new Date().getMonth() + 
           date <= calculationEnd
         ).length
 
-        if (isCompleted) {
-          // For completed exams: distribute total people across examined days
-          const totalExamDays = specificDates.length
-          examinedPeople = totalExamDays > 0 ? (totalPeople * examinedDays / totalExamDays) : 0
-        } else {
-          // For ongoing exams: use average per day
-          const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-          const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-          const dailyAvg = morningAvg + afternoonAvg
-          examinedPeople = dailyAvg * examinedDays
-        }
+        // Use new unified logic to calculate examined people
+        examinedPeople = specificDates.reduce((total, date) => {
+          const examResult = getExamCountForDateNew(item, date)
+          return total + examResult.total
+        }, 0)
       } else {
         // Handle date range examination
         const examStartDate = new Date(startDate + 'T00:00:00')
@@ -89,17 +84,11 @@ const StatsCards = ({ data = [], monthFilter = { month: new Date().getMonth() + 
           date <= calculationEnd
         ).length
 
-        if (isCompleted) {
-          // For completed exams: distribute total people across examined days
-          const totalExamDays = examDays.length
-          examinedPeople = totalExamDays > 0 ? (totalPeople * examinedDays / totalExamDays) : 0
-        } else {
-          // For ongoing exams: use average per day
-          const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-          const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-          const dailyAvg = morningAvg + afternoonAvg
-          examinedPeople = dailyAvg * examinedDays
-        }
+        // Use new unified logic to calculate examined people
+        examinedPeople = examDays.reduce((total, date) => {
+          const examResult = getExamCountForDateNew(item, date)
+          return total + examResult.total
+        }, 0)
       }
 
       return sum + Math.round(examinedPeople)

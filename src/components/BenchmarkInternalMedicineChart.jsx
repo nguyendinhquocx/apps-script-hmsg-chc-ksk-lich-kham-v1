@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format, getDay, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns'
+import { getExamCountForDateNew } from '../utils/examUtils'
 
 const BenchmarkInternalMedicineChart = ({ 
   data = [], 
@@ -47,73 +48,20 @@ const BenchmarkInternalMedicineChart = ({
       })
     })
 
-    // Process actual data - Use the same logic as DataTable for consistency
+    // Process actual data using new unified logic
     data.forEach(item => {
-      const startDateStr = item['ngay bat dau kham']
-      const endDateStr = item['ngay ket thuc kham'] || startDateStr
-      const specificDatesStr = item['cac ngay kham thuc te']
-      const isCompleted = item['trang thai kham'] === 'Đã khám xong'
-      const totalPeople = parseInt(item['so nguoi kham']) || 0
-      
-      if (!startDateStr || totalPeople === 0) return
-
-      // Get examination dates
-      let examDates = []
-      
-      if (specificDatesStr && specificDatesStr.trim()) {
-        // Parse specific dates (format: MM/dd, MM/dd, ...)
-        const specificDates = specificDatesStr.split(',').map(dateStr => {
-          const trimmed = dateStr.trim()
-          if (trimmed.includes('/')) {
-            const [month, day] = trimmed.split('/')
-            const year = chartStart.getFullYear()
-            return new Date(year, parseInt(month) - 1, parseInt(day))
-          }
-          return null
-        }).filter(d => d !== null)
-        
-        // Filter out Sundays and dates outside range
-        examDates = specificDates.filter(d => 
-          getDay(d) !== 0 && 
-          d >= chartStart && 
-          d <= chartEnd
-        )
-      } else {
-        // Use start and end dates
-        const startDate = new Date(startDateStr + 'T00:00:00')
-        const endDate = new Date(endDateStr + 'T00:00:00')
-        
-        examDates = eachDayOfInterval({ start: startDate, end: endDate })
-          .filter(d => 
-            getDay(d) !== 0 && 
-            d >= chartStart && 
-            d <= chartEnd
-          )
-      }
-
-      // Calculate people per day using the same logic as DataTable
-      let dailyCount = 0
-      if (examDates.length > 0) {
-        if (isCompleted) {
-          // For completed exams: distribute total people across examination days
-          dailyCount = Math.round(totalPeople / examDates.length)
-        } else {
-          // For ongoing exams: use calculated averages
-          const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
-          const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
-          dailyCount = Math.round(morningAvg + afternoonAvg)
-        }
-        
-        // Add to each examination date
-        examDates.forEach(examDate => {
-          const dateKey = format(examDate, 'yyyy-MM-dd')
+      // Use the new unified logic for all date calculations
+      allDaysInRange.forEach(date => {
+        const examResult = getExamCountForDateNew(item, date)
+        if (examResult.total > 0) {
+          const dateKey = format(date, 'yyyy-MM-dd')
           const dayData = dateMap.get(dateKey)
           
           if (dayData) {
-            dayData.internalMedicine += dailyCount
+            dayData.internalMedicine += examResult.total
           }
-        })
-      }
+        }
+      })
     })
 
     return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date))
