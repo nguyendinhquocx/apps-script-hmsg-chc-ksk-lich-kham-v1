@@ -1,11 +1,96 @@
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
+// Parse specific examination dates with new format support
+export const parseSpecificDates = (specificDatesStr, referenceYear = new Date().getFullYear()) => {
+  if (!specificDatesStr || !specificDatesStr.trim()) {
+    return []
+  }
+
+  const results = []
+  const dateEntries = specificDatesStr.split(',').map(entry => entry.trim()).filter(entry => entry)
+
+  for (const entry of dateEntries) {
+    try {
+      // Check if entry has parentheses (new format)
+      const hasParentheses = entry.includes('(') && entry.includes(')')
+
+      if (hasParentheses) {
+        // New format: "MM/dd(morning,afternoon)" or "MM/dd(total)"
+        const match = entry.match(/^(\d{1,2})\/(\d{1,2})\s*\(([^)]*)\)$/)
+        if (match) {
+          const [, month, day, countsStr] = match
+          const date = new Date(referenceYear, parseInt(month) - 1, parseInt(day))
+
+          // Skip Sundays
+          if (date.getDay() === 0) continue
+
+          const counts = countsStr.split(',').map(c => c.trim())
+
+          if (counts.length === 1) {
+            // Format: "MM/dd(total)" - split evenly
+            const total = parseInt(counts[0]) || 0
+            const morning = Math.floor(total / 2)
+            const afternoon = total - morning
+
+            results.push({
+              date,
+              morning,
+              afternoon,
+              total,
+              useSpecific: true,
+              originalEntry: entry
+            })
+          } else if (counts.length === 2) {
+            // Format: "MM/dd(morning,afternoon)"
+            const morning = counts[0] === '' ? 0 : (parseInt(counts[0]) || 0)
+            const afternoon = counts[1] === '' ? 0 : (parseInt(counts[1]) || 0)
+            const total = morning + afternoon
+
+            results.push({
+              date,
+              morning,
+              afternoon,
+              total,
+              useSpecific: true,
+              originalEntry: entry
+            })
+          }
+        }
+      } else {
+        // Old format: "MM/dd" - use existing logic
+        const match = entry.match(/^(\d{1,2})\/(\d{1,2})$/)
+        if (match) {
+          const [, month, day] = match
+          const date = new Date(referenceYear, parseInt(month) - 1, parseInt(day))
+
+          // Skip Sundays
+          if (date.getDay() === 0) continue
+
+          results.push({
+            date,
+            morning: null,
+            afternoon: null,
+            total: null,
+            useSpecific: false,
+            originalEntry: entry
+          })
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to parse date entry: ${entry}`, error)
+      // Continue processing other entries
+    }
+  }
+
+  return results
+}
+
 // Helper function to count working days (excluding Sundays) between dates
 export const countWorkingDays = (startDate, endDate) => {
   let count = 0
   const current = new Date(startDate)
-  
+
   while (current <= endDate) {
     // Skip Sunday (getDay() === 0)
     if (current.getDay() !== 0) {
@@ -13,7 +98,7 @@ export const countWorkingDays = (startDate, endDate) => {
     }
     current.setDate(current.getDate() + 1)
   }
-  
+
   return count
 }
 
@@ -25,7 +110,7 @@ export const getDateRange = (dateFilter, monthFilter) => {
     const end = new Date(dateFilter.endDate + 'T00:00:00')
     const dates = []
     const current = new Date(start)
-    
+
     while (current <= end) {
       dates.push(new Date(current))
       current.setDate(current.getDate() + 1)
@@ -37,7 +122,7 @@ export const getDateRange = (dateFilter, monthFilter) => {
     const month = monthFilter.month
     const daysInMonth = new Date(year, month, 0).getDate()
     const dates = []
-    
+
     for (let day = 1; day <= daysInMonth; day++) {
       dates.push(new Date(year, month - 1, day))
     }
@@ -51,23 +136,138 @@ export const getDayOfWeek = (date) => {
   return days[date.getDay()]
 }
 
+// Helper function to get exam count using new parsing logic
+export const getExamCountForDateNew = (record, date) => {
+  const startDateStr = record['ngay bat dau kham']
+  const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
+  const specificDatesStr = record['cac ngay kham thuc te']
+  const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+  const totalPeople = parseInt(record['so nguoi kham']) || 0
+
+  if (!startDateStr) return { total: 0, morning: 0, afternoon: 0 }
+
+  // Create dates using local time to avoid timezone shifts
+  const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+  // Skip if current date is Sunday (hospital doesn't work on Sundays)
+  if (checkDate.getDay() === 0) return { total: 0, morning: 0, afternoon: 0 }
+
+  // Check if there are specific examination dates
+  if (specificDatesStr && specificDatesStr.trim()) {
+    const parsedDates = parseSpecificDates(specificDatesStr, date.getFullYear())
+
+    // Find matching date
+    const matchingDate = parsedDates.find(parsedDate =>
+      checkDate.getTime() === parsedDate.date.getTime()
+    )
+
+    if (matchingDate) {
+      if (matchingDate.useSpecific) {
+        // Use specific counts from new format
+        return {
+          total: matchingDate.total,
+          morning: matchingDate.morning,
+          afternoon: matchingDate.afternoon
+        }
+      } else {
+        // Use old logic for entries without parentheses
+        if (isCompleted) {
+          // For completed exams: calculate average per day
+          const specificDatesOnly = parsedDates.filter(d => !d.useSpecific)
+          const specificCountsTotal = parsedDates
+            .filter(d => d.useSpecific)
+            .reduce((sum, d) => sum + d.total, 0)
+
+          const remainingPeople = totalPeople - specificCountsTotal
+          const remainingDays = specificDatesOnly.length
+
+          if (remainingDays > 0) {
+            const dailyCount = Math.round(remainingPeople / remainingDays)
+            const morning = Math.floor(dailyCount / 2)
+            const afternoon = dailyCount - morning
+
+            return {
+              total: dailyCount,
+              morning,
+              afternoon
+            }
+          }
+        } else {
+          // For ongoing exams: use calculated averages
+          const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
+          const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+          const dailyCount = Math.round(morningAvg + afternoonAvg)
+
+          return {
+            total: dailyCount,
+            morning: Math.round(morningAvg),
+            afternoon: Math.round(afternoonAvg)
+          }
+        }
+      }
+    }
+
+    return { total: 0, morning: 0, afternoon: 0 }
+  } else {
+    // Use original logic with start and end dates
+    const startDate = new Date(startDateStr + 'T00:00:00')
+    const endDate = new Date(endDateStr + 'T00:00:00')
+
+    // Check if the date is within examination period
+    if (checkDate >= startDate && checkDate <= endDate) {
+      if (isCompleted) {
+        // For completed exams: total people ÷ number of working days (excluding Sundays)
+        const workingDays = countWorkingDays(startDate, endDate)
+        const dailyCount = workingDays > 0 ? Math.round(totalPeople / workingDays) : 0
+        const morning = Math.floor(dailyCount / 2)
+        const afternoon = dailyCount - morning
+
+        return {
+          total: dailyCount,
+          morning,
+          afternoon
+        }
+      } else {
+        // For ongoing exams: use calculated averages
+        const morningAvg = parseFloat(record['trung binh ngay sang']) || 0
+        const afternoonAvg = parseFloat(record['trung binh ngay chieu']) || 0
+        const dailyCount = Math.round(morningAvg + afternoonAvg)
+
+        return {
+          total: dailyCount,
+          morning: Math.round(morningAvg),
+          afternoon: Math.round(afternoonAvg)
+        }
+      }
+    }
+    return { total: 0, morning: 0, afternoon: 0 }
+  }
+}
+
 // Check if a company has examination on a specific date
 export const getExamCountForDate = (record, date) => {
+  // Use new logic and return only total for backward compatibility
+  const result = getExamCountForDateNew(record, date)
+  return result.total
+}
+
+// LEGACY function - keeping for reference but not used
+export const getExamCountForDateLegacy = (record, date) => {
   // Parse dates carefully to avoid timezone issues
   const startDateStr = record['ngay bat dau kham']
   const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
   const specificDatesStr = record['cac ngay kham thuc te']
   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
   const totalPeople = parseInt(record['so nguoi kham']) || 0
-  
+
   if (!startDateStr) return 0
-  
+
   // Create dates using local time to avoid timezone shifts
   const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  
+
   // Skip if current date is Sunday (hospital doesn't work on Sundays)
   if (checkDate.getDay() === 0) return 0
-  
+
   // Check if there are specific examination dates
   if (specificDatesStr && specificDatesStr.trim()) {
     // Parse specific dates (format: MM/dd, MM/dd, ...)
@@ -80,15 +280,15 @@ export const getExamCountForDate = (record, date) => {
       }
       return null
     }).filter(d => d !== null)
-    
+
     // Filter out Sundays from specific dates
     const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
-    
+
     // Check if current date matches any specific date (and it's not Sunday)
-    const isSpecificDate = workingSpecificDates.some(specificDate => 
+    const isSpecificDate = workingSpecificDates.some(specificDate =>
       checkDate.getTime() === specificDate.getTime()
     )
-    
+
     if (isSpecificDate) {
       if (isCompleted) {
         // For completed exams with specific dates: total people ÷ number of working specific dates
@@ -102,13 +302,13 @@ export const getExamCountForDate = (record, date) => {
         return dailyCount
       }
     }
-    
+
     return 0
   } else {
     // Use original logic with start and end dates
     const startDate = new Date(startDateStr + 'T00:00:00')
     const endDate = new Date(endDateStr + 'T00:00:00')
-    
+
     // Check if the date is within examination period
     if (checkDate >= startDate && checkDate <= endDate) {
       if (isCompleted) {
@@ -134,15 +334,15 @@ export const getBloodTestDisplay = (record, date) => {
   const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
   const bloodTestDateStr = record['ngay lay mau']
   const specificDatesStr = record['cac ngay kham thuc te']
-  
+
   if (!startDateStr) return null
-  
+
   // Create dates using local time to avoid timezone shifts
   const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  
+
   // Check if the date is within examination period (either specific dates or date range)
   let isInExamPeriod = false
-  
+
   if (specificDatesStr && specificDatesStr.trim()) {
     // Parse specific dates (format: MM/dd, MM/dd, ...)
     const specificDates = specificDatesStr.split(',').map(dateStr => {
@@ -154,9 +354,9 @@ export const getBloodTestDisplay = (record, date) => {
       }
       return null
     }).filter(d => d !== null)
-    
+
     // Check if current date matches any specific date
-    isInExamPeriod = specificDates.some(specificDate => 
+    isInExamPeriod = specificDates.some(specificDate =>
       checkDate.getTime() === specificDate.getTime()
     )
   } else {
@@ -165,14 +365,14 @@ export const getBloodTestDisplay = (record, date) => {
     const endDate = new Date(endDateStr + 'T00:00:00')
     isInExamPeriod = checkDate >= startDate && checkDate <= endDate
   }
-  
+
   if (isInExamPeriod) {
     const examCount = getExamCountForDate(record, date)
-    
+
     // If there's a blood test date
     if (bloodTestDateStr) {
       const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
-      
+
       // If blood test date matches the current exam date
       if (checkDate.getTime() === bloodTestDate.getTime()) {
         return {
@@ -182,7 +382,7 @@ export const getBloodTestDisplay = (record, date) => {
         }
       }
     }
-    
+
     // Regular exam date
     return {
       type: 'exam_only',
@@ -190,7 +390,7 @@ export const getBloodTestDisplay = (record, date) => {
       isBold: false
     }
   }
-  
+
   // If not in exam period, check if it's a standalone blood test date
   if (bloodTestDateStr) {
     const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
@@ -202,7 +402,7 @@ export const getBloodTestDisplay = (record, date) => {
       }
     }
   }
-  
+
   return null
 }
 
@@ -241,7 +441,7 @@ export const getCompanyDetails = (record) => {
       }
       return null
     }).filter(d => d !== null && d.getDay() !== 0) // Exclude Sundays
-    
+
     totalDays = specificDates.length
   } else if (startDateStr && endDateStr) {
     // Count working days in date range
@@ -268,23 +468,26 @@ export const getCompanyDetails = (record) => {
     bloodTestDate = format(new Date(bloodTestDateStr + 'T00:00:00'), 'dd/MM/yyyy', { locale: vi })
   }
 
-  // Format specific examination dates
+  // Format specific examination dates with new format support
   let specificExamDates = null
   if (specificDatesStr && specificDatesStr.trim()) {
-    const dates = specificDatesStr.split(',').map(dateStr => {
-      const trimmed = dateStr.trim()
-      if (trimmed.includes('/')) {
-        const [month, day] = trimmed.split('/')
-        // Định dạng lại thành dd/MM
-        const formattedMonth = month.padStart(2, '0')
-        const formattedDay = day.padStart(2, '0')
-        return `${formattedDay}/${formattedMonth}`
-      }
-      return null
-    }).filter(d => d !== null)
-    
-    if (dates.length > 0) {
-      specificExamDates = dates.join(' & ')
+    const parsedDates = parseSpecificDates(specificDatesStr, new Date().getFullYear())
+
+    if (parsedDates.length > 0) {
+      const formattedDates = parsedDates.map(parsedDate => {
+        const day = parsedDate.date.getDate().toString().padStart(2, '0')
+        const month = (parsedDate.date.getMonth() + 1).toString().padStart(2, '0')
+
+        if (parsedDate.useSpecific) {
+          // Show specific counts: "28/07 (S:10, C:15)"
+          return `${day}/${month} (S:${parsedDate.morning}, C:${parsedDate.afternoon})`
+        } else {
+          // Show old format: "28/07"
+          return `${day}/${month}`
+        }
+      })
+
+      specificExamDates = formattedDates.join(' & ')
     }
   }
 

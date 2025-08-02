@@ -12,6 +12,7 @@ import {
   getDateRange, 
   getDayOfWeek, 
   getExamCountForDate, 
+  getExamCountForDateNew,
   getBloodTestDisplay, 
   calculateDailyTotals, 
   getCompanyDetails 
@@ -108,34 +109,10 @@ const DataTable = ({ globalFilters = {} }) => {
     let afternoonTotal = 0
 
     data.forEach(record => {
-      const examCount = getExamCountForDate(record, targetDate, monthFilter, dateFilter)
-      if (examCount > 0) {
-        const isCompleted = record['trang thai kham'] === 'Đã khám xong'
-        
-        if (isCompleted) {
-          // Đối với công ty đã khám xong: phân bổ 50-50 sáng chiều
-          const halfCount = examCount / 2
-          morningTotal += Math.round(halfCount)
-          afternoonTotal += Math.round(halfCount)
-        } else {
-          // Đối với công ty chưa khám xong: sử dụng tỷ lệ trung bình
-          const morningCount = parseFloat(record['trung binh ngay sang']) || 0
-          const afternoonCount = parseFloat(record['trung binh ngay chieu']) || 0
-          
-          // Phân bổ theo tỷ lệ sáng/chiều
-          const totalAvg = morningCount + afternoonCount
-          if (totalAvg > 0) {
-            const morningRatio = morningCount / totalAvg
-            const afternoonRatio = afternoonCount / totalAvg
-            morningTotal += Math.round(examCount * morningRatio)
-            afternoonTotal += Math.round(examCount * afternoonRatio)
-          } else {
-            // Nếu không có dữ liệu trung bình, phân bổ đều
-            const halfCount = examCount / 2
-            morningTotal += Math.round(halfCount)
-            afternoonTotal += Math.round(halfCount)
-          }
-        }
+      const examResult = getExamCountForDateNew(record, targetDate)
+      if (examResult.total > 0) {
+        morningTotal += examResult.morning
+        afternoonTotal += examResult.afternoon
       }
     })
 
