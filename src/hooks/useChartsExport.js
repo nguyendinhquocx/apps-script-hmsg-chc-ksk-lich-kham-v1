@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { examCategories } from '../constants/examCategories'
-import { safeParseNumber } from '../utils/examUtils'
+import { safeParseNumber, getExamCountForDateNew } from '../utils/examUtils'
 
 export const useChartsExport = (filteredData, globalFilters) => {
   // Tính số người khám cho mỗi ngày và mục khám từ dữ liệu thực
@@ -58,16 +58,13 @@ export const useChartsExport = (filteredData, globalFilters) => {
     let totalCount = 0
     dayData.forEach(item => {
       const rawValue = item[columnName]
-      let count = 0
       
-      // Handle different data types after int8 → text conversion
-      if (rawValue !== null && rawValue !== undefined && rawValue !== '') {
-        const numericValue = Number(rawValue)
-        if (!isNaN(numericValue) && isFinite(numericValue) && numericValue >= 0) {
-          count = Math.floor(numericValue) // Always use integer, handle decimals gracefully
-        }
-      }
+      // Get actual people count for this company on this date
+      const examResult = getExamCountForDateNew(item, date)
+      const actualPeopleCount = period === 'morning' ? examResult.morning : examResult.afternoon
       
+      // Use new safeParseNumber with dynamic parsing
+      const count = safeParseNumber(rawValue, actualPeopleCount)
       totalCount += count
     })
     
@@ -128,7 +125,12 @@ export const useChartsExport = (filteredData, globalFilters) => {
     // Tạo danh sách các công ty với số lượng và nhân viên phụ trách
     const companies = []
     dayData.forEach(item => {
-      const count = safeParseNumber(item[columnName])
+      // Get actual people count for this company on this date
+      const examResult = getExamCountForDateNew(item, date)
+      const actualPeopleCount = period === 'morning' ? examResult.morning : examResult.afternoon
+      
+      // Use new safeParseNumber with dynamic parsing
+      const count = safeParseNumber(item[columnName], actualPeopleCount)
       if (count > 0) {
         companies.push({
           name: item['ten cong ty'] || 'Không xác định',
@@ -204,14 +206,22 @@ export const useChartsExport = (filteredData, globalFilters) => {
       // Tính tổng sáng cho hạng mục này
       let morningTotal = 0
       dayData.forEach(item => {
-        const morningCount = safeParseNumber(item[category.morning])
+        // Get actual people count for this company on this date
+        const examResult = getExamCountForDateNew(item, date)
+        const actualMorningCount = examResult.morning
+        
+        const morningCount = safeParseNumber(item[category.morning], actualMorningCount)
         morningTotal += morningCount
       })
       
       // Tính tổng chiều cho hạng mục này
       let afternoonTotal = 0
       dayData.forEach(item => {
-        const afternoonCount = safeParseNumber(item[category.afternoon])
+        // Get actual people count for this company on this date
+        const examResult = getExamCountForDateNew(item, date)
+        const actualAfternoonCount = examResult.afternoon
+        
+        const afternoonCount = safeParseNumber(item[category.afternoon], actualAfternoonCount)
         afternoonTotal += afternoonCount
       })
       

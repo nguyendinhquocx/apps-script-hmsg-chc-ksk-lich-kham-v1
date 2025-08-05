@@ -2,14 +2,38 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
 // Helper function to safely parse numeric values from database (handles int8 → text conversion)
-export const safeParseNumber = (value) => {
+// Also handles special values like 'X', 'x', 'X/2', 'x/2' for dynamic clinical exam counts
+export const safeParseNumber = (value, actualPeopleCount = null) => {
   if (value === null || value === undefined || value === '') {
     return 0
   }
   
+  // Handle string values
+  if (typeof value === 'string') {
+    const trimmed = value.trim().toLowerCase()
+    
+    // Handle special dynamic values
+    if (trimmed === 'x') {
+      return actualPeopleCount || 0
+    }
+    
+    if (trimmed === 'x/2') {
+      return Math.round((actualPeopleCount || 0) / 2)
+    }
+    
+    // Handle regular numeric strings
+    const numericValue = Number(value)
+    if (!isNaN(numericValue) && isFinite(numericValue) && numericValue >= 0) {
+      return Math.floor(numericValue) // Always return integer for counts
+    }
+    
+    return 0
+  }
+  
+  // Handle numeric values directly
   const numericValue = Number(value)
   if (!isNaN(numericValue) && isFinite(numericValue) && numericValue >= 0) {
-    return Math.floor(numericValue) // Always return integer for counts
+    return Math.floor(numericValue)
   }
   
   return 0
