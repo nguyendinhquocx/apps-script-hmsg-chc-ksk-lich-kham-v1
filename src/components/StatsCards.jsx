@@ -59,16 +59,30 @@ const StatsCards = ({ data = [], monthFilter = { month: new Date().getMonth() + 
               if (parsedDate.useSpecific) {
                 return total + parsedDate.total
               } else {
-                // For old format dates without specific counts: use original total people divided by dates
-                const totalSpecificDays = parsedDates.filter(d => 
+                // For old format dates without specific counts: 
+                // Calculate how many people for THIS specific date (proportional allocation)
+                const totalDaysInExam = parsedDates.length // All exam days
+                const daysInFilter = parsedDates.filter(d => 
                   d.date >= filterStart && d.date <= calculationEnd
                 ).length
-                return total + (totalSpecificDays > 0 ? Math.round(totalPeople / totalSpecificDays) : 0)
+                
+                if (totalDaysInExam > 0) {
+                  // Allocate total people proportionally: only count the portion for dates in filter
+                  const peoplePerDay = totalPeople / totalDaysInExam
+                  return total + Math.round(peoplePerDay) // Add people for this one day only
+                }
+                return total
               }
             } else {
-              // For ongoing exams: use calculated averages
-              const examResult = getExamCountForDateNew(item, date)
-              return total + examResult.total
+              // For ongoing exams: use parsed data directly, don't call getExamCountForDateNew again!
+              if (parsedDate.useSpecific) {
+                return total + parsedDate.total
+              } else {
+                // For old format ongoing exams: use calculated averages from record
+                const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+                const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+                return total + Math.round(morningAvg + afternoonAvg)
+              }
             }
           }
           return total
