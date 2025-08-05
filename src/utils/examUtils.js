@@ -1,6 +1,43 @@
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
+// Smart split function that respects parentheses
+const smartSplitDateEntries = (str) => {
+  const entries = []
+  let current = ''
+  let inParentheses = false
+  let i = 0
+  
+  while (i < str.length) {
+    const char = str[i]
+    
+    if (char === '(') {
+      inParentheses = true
+      current += char
+    } else if (char === ')') {
+      inParentheses = false
+      current += char
+    } else if (char === ',' && !inParentheses) {
+      // Split here - we're not inside parentheses
+      if (current.trim()) {
+        entries.push(current.trim())
+      }
+      current = ''
+    } else {
+      current += char
+    }
+    
+    i++
+  }
+  
+  // Add the last entry
+  if (current.trim()) {
+    entries.push(current.trim())
+  }
+  
+  return entries
+}
+
 // Parse specific examination dates with new format support
 export const parseSpecificDates = (specificDatesStr, referenceYear = new Date().getFullYear()) => {
   if (!specificDatesStr || !specificDatesStr.trim()) {
@@ -8,7 +45,9 @@ export const parseSpecificDates = (specificDatesStr, referenceYear = new Date().
   }
 
   const results = []
-  const dateEntries = specificDatesStr.split(',').map(entry => entry.trim()).filter(entry => entry)
+  
+  // Smart split that respects parentheses
+  const dateEntries = smartSplitDateEntries(specificDatesStr)
 
   for (const entry of dateEntries) {
     try {
