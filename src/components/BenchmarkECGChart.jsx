@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format, getDay, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns'
+import { parseIntSafe } from '../utils/parseUtils'
 
 const BenchmarkECGChart = ({ 
   data = [], 
@@ -98,8 +99,8 @@ const BenchmarkECGChart = ({
         const dayData = dateMap.get(dateKey)
         
         if (dayData) {
-          const morningCount = parseInt(item['dien tam do sang'] || 0)
-          const afternoonCount = parseInt(item['dien tam do chieu'] || 0)
+          const morningCount = parseIntSafe(item['dien tam do sang'])
+          const afternoonCount = parseIntSafe(item['dien tam do chieu'])
           dayData.ecg += morningCount + afternoonCount
         }
       })

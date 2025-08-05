@@ -3,6 +3,7 @@ import { AlertTriangle, Download } from 'lucide-react'
 import { format, getDay, eachDayOfInterval } from 'date-fns'
 import * as XLSX from 'xlsx'
 import { getExamCountForDateNew } from '../utils/examUtils'
+import { parseIntSafe } from '../utils/parseUtils'
 
 const BenchmarkExceedTable = ({ 
   data = [], 
@@ -83,13 +84,13 @@ const BenchmarkExceedTable = ({
           
           if (dayData) {
             // ECG
-            const ecgMorning = parseInt(item['dien tam do sang'] || 0)
-            const ecgAfternoon = parseInt(item['dien tam do chieu'] || 0)
+            const ecgMorning = parseIntSafe(item['dien tam do sang'])
+            const ecgAfternoon = parseIntSafe(item['dien tam do chieu'])
             dayData.ecg += ecgMorning + ecgAfternoon
             
             // Gynecology
-            const gynecoMorning = parseInt(item['kham phu khoa sang'] || 0)
-            const gynecoAfternoon = parseInt(item['kham phu khoa chieu'] || 0)
+            const gynecoMorning = parseIntSafe(item['kham phu khoa sang'])
+            const gynecoAfternoon = parseIntSafe(item['kham phu khoa chieu'])
             dayData.gynecology += gynecoMorning + gynecoAfternoon
             
             // Internal Medicine (using new unified logic)
@@ -105,8 +106,8 @@ const BenchmarkExceedTable = ({
           ]
           
           ultrasoundMappings.forEach(fields => {
-            const morning = parseInt(item[fields[0]] || 0)
-            const afternoon = parseInt(item[fields[1]] || 0)
+            const morning = parseIntSafe(item[fields[0]])
+            const afternoon = parseIntSafe(item[fields[1]])
             dayData.ultrasound += morning + afternoon
           })
           }

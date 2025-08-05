@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format, getDay, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns'
+import { parseIntSafe } from '../utils/parseUtils'
 
 const BenchmarkGynecologyChart = ({ 
   data = [], 
@@ -98,8 +99,8 @@ const BenchmarkGynecologyChart = ({
         const dayData = dateMap.get(dateKey)
         
         if (dayData) {
-          const morningCount = parseInt(item['kham phu khoa sang'] || 0)
-          const afternoonCount = parseInt(item['kham phu khoa chieu'] || 0)
+          const morningCount = parseIntSafe(item['kham phu khoa sang'])
+          const afternoonCount = parseIntSafe(item['kham phu khoa chieu'])
           dayData.gynecology += morningCount + afternoonCount
         }
       })
