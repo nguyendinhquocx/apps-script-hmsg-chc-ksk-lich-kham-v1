@@ -1,7 +1,7 @@
 import React from 'react'
 import { Building2, CheckCircle, Clock, Users } from 'lucide-react'
 import { startOfMonth, endOfMonth, eachDayOfInterval, getDay, format, isBefore, isAfter } from 'date-fns'
-import { getExamCountForDateNew } from '../utils/examUtils'
+import { getExamCountForDateNew, parseSpecificDates } from '../utils/examUtils'
 
 const StatsCards = ({ data = [], monthFilter = { month: new Date().getMonth() + 1, year: new Date().getFullYear() }, dateFilter = { startDate: '', endDate: '' } }) => {
   // Determine the date range to calculate examined people
@@ -47,48 +47,66 @@ const StatsCards = ({ data = [], monthFilter = { month: new Date().getMonth() + 
       let examinedPeople = 0
 
       if (specificDatesStr && specificDatesStr.trim()) {
-        // Handle specific examination dates
-        const specificDates = specificDatesStr.split(',').map(dateStr => {
-          const trimmed = dateStr.trim()
-          if (trimmed.includes('/')) {
-            const [month, day] = trimmed.split('/')
-            const year = filterStart.getFullYear()
-            return new Date(year, parseInt(month) - 1, parseInt(day))
+        // Handle specific examination dates using new parsing logic
+        const parsedDates = parseSpecificDates(specificDatesStr, filterStart.getFullYear())
+        
+        // Calculate examined people for dates within filter range and before calculation end
+        examinedPeople = parsedDates.reduce((total, parsedDate) => {
+          const date = parsedDate.date
+          if (date >= filterStart && date <= calculationEnd) {
+            if (isCompleted) {
+              // For completed exams with specific dates: use the parsed specific counts or calculated averages
+              if (parsedDate.useSpecific) {
+                return total + parsedDate.total
+              } else {
+                // For old format dates without specific counts: 
+                // Calculate how many people for THIS specific date (proportional allocation)
+                const totalDaysInExam = parsedDates.length // All exam days
+                const daysInFilter = parsedDates.filter(d => 
+                  d.date >= filterStart && d.date <= calculationEnd
+                ).length
+                
+                if (totalDaysInExam > 0) {
+                  // Allocate total people proportionally: only count the portion for dates in filter
+                  const peoplePerDay = totalPeople / totalDaysInExam
+                  return total + Math.round(peoplePerDay) // Add people for this one day only
+                }
+                return total
+              }
+            } else {
+              // For ongoing exams: use parsed data directly, don't call getExamCountForDateNew again!
+              if (parsedDate.useSpecific) {
+                return total + parsedDate.total
+              } else {
+                // For old format ongoing exams: use calculated averages from record
+                const morningAvg = parseFloat(item['trung binh ngay sang']) || 0
+                const afternoonAvg = parseFloat(item['trung binh ngay chieu']) || 0
+                return total + Math.round(morningAvg + afternoonAvg)
+              }
+            }
           }
-          return null
-        }).filter(d => d !== null && getDay(d) !== 0) // Exclude Sundays and null dates
-
-        // Count days that are within filter range and before/on calculation end
-        const examinedDays = specificDates.filter(date => 
-          date >= filterStart && 
-          date <= calculationEnd
-        ).length
-
-        // Use new unified logic to calculate examined people
-        examinedPeople = specificDates.reduce((total, date) => {
-          const examResult = getExamCountForDateNew(item, date)
-          return total + examResult.total
+          return total
         }, 0)
       } else {
         // Handle date range examination
         const examStartDate = new Date(startDate + 'T00:00:00')
         const examEndDate = new Date(endDate + 'T00:00:00')
         
-        // Calculate working days in examination period
+        // Calculate working days in examination period that fall within filter range
         const examDays = eachDayOfInterval({ start: examStartDate, end: examEndDate })
           .filter(date => getDay(date) !== 0) // Exclude Sundays
+          .filter(date => date >= filterStart && date <= calculationEnd) // Only count days within filter and up to today
 
-        // Calculate examined days (within filter range and before/on calculation end)
-        const examinedDays = examDays.filter(date => 
-          date >= filterStart && 
-          date <= calculationEnd
-        ).length
-
-        // Use new unified logic to calculate examined people
-        examinedPeople = examDays.reduce((total, date) => {
-          const examResult = getExamCountForDateNew(item, date)
-          return total + examResult.total
-        }, 0)
+        if (isCompleted) {
+          // For completed exams: total people for the entire examination period (not per day)
+          examinedPeople = totalPeople
+        } else {
+          // For ongoing exams: calculate based on actual days examined
+          examinedPeople = examDays.reduce((total, date) => {
+            const examResult = getExamCountForDateNew(item, date)
+            return total + examResult.total
+          }, 0)
+        }
       }
 
       return sum + Math.round(examinedPeople)

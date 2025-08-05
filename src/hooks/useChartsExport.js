@@ -1,64 +1,100 @@
 import * as XLSX from 'xlsx'
 import { examCategories } from '../constants/examCategories'
+import { safeParseNumber, getExamCountForDateNew, parseSpecificDates } from '../utils/examUtils'
 
 export const useChartsExport = (filteredData, globalFilters) => {
+  // Helper function to check if a company has examination on a specific date
+  const hasExaminationOnDate = (item, date) => {
+    const startDateStr = item['ngay bat dau kham']
+    const endDateStr = item['ngay ket thuc kham'] || item['ngay bat dau kham']
+    const specificDatesStr = item['cac ngay kham thuc te']
+    
+    if (!startDateStr) return false
+    
+    // Create dates using local time to avoid timezone shifts
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    
+    // Skip if current date is Sunday (hospital doesn't work on Sundays)
+    if (checkDate.getDay() === 0) return false
+    
+    // Check if there are specific examination dates
+    if (specificDatesStr && specificDatesStr.trim()) {
+      // Use the improved parseSpecificDates function that handles parentheses
+      const parsedResult = parseSpecificDates(specificDatesStr, date.getFullYear())
+      const specificDates = parsedResult.map(entry => entry.date).filter(d => d !== null)
+      
+      // Filter out Sundays from specific dates
+      const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
+      
+      // Check if current date matches any specific date (and it's not Sunday)
+      return workingSpecificDates.some(specificDate => 
+        checkDate.getTime() === specificDate.getTime()
+      )
+    } else {
+      // Use original logic with start and end dates
+      const startDate = new Date(startDateStr + 'T00:00:00')
+      const endDate = new Date(endDateStr + 'T00:00:00')
+      
+      // Check if the date is within examination period
+      return checkDate >= startDate && checkDate <= endDate
+    }
+  }
+
   // Tính số người khám cho mỗi ngày và mục khám từ dữ liệu thực
   const getExamCount = (date, categoryIndex, period) => {
     const category = examCategories[categoryIndex]
     const columnName = period === 'morning' ? category.morning : category.afternoon
     
-    // Lọc dữ liệu cho ngày cụ thể
-    const dayData = filteredData.filter(item => {
-      const startDateStr = item['ngay bat dau kham']
-      const endDateStr = item['ngay ket thuc kham'] || item['ngay bat dau kham']
-      const specificDatesStr = item['cac ngay kham thuc te']
-      
-      if (!startDateStr) return false
-      
-      // Create dates using local time to avoid timezone shifts
-      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-      
-      // Skip if current date is Sunday (hospital doesn't work on Sundays)
-      if (checkDate.getDay() === 0) return false
-      
-      // Check if there are specific examination dates
-      if (specificDatesStr && specificDatesStr.trim()) {
-        // Parse specific dates (format: MM/dd, MM/dd, ...)
-        const specificDates = specificDatesStr.split(',').map(dateStr => {
-          const trimmed = dateStr.trim()
-          if (trimmed.includes('/')) {
-            const [month, day] = trimmed.split('/')
-            const year = date.getFullYear() // Use current year from the date range
-            return new Date(year, parseInt(month) - 1, parseInt(day))
-          }
-          return null
-        }).filter(d => d !== null)
-        
-        // Filter out Sundays from specific dates
-        const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
-        
-        // Check if current date matches any specific date (and it's not Sunday)
-        const isSpecificDate = workingSpecificDates.some(specificDate => 
-          checkDate.getTime() === specificDate.getTime()
-        )
-        
-        return isSpecificDate
-      } else {
-        // Use original logic with start and end dates
-        const startDate = new Date(startDateStr + 'T00:00:00')
-        const endDate = new Date(endDateStr + 'T00:00:00')
-        
-        // Check if the date is within examination period
-        return checkDate >= startDate && checkDate <= endDate
-      }
-    })
+    // Lọc dữ liệu cho ngày cụ thể sử dụng helper function
+    const dayData = filteredData.filter(item => hasExaminationOnDate(item, date))
     
     // Tính tổng số lượng từ cột tương ứng cho ngày đó
     let totalCount = 0
-    dayData.forEach(item => {
-      const count = parseInt(item[columnName]) || 0
-      totalCount += count
+    
+    console.log(`Debug getExamCount ${date.toDateString()}, ${period}:`, {
+      columnName,
+      dayDataCount: dayData.length,
+      dayDataSample: dayData.slice(0, 2).map(item => ({ 
+        company: item['ten cong ty'], 
+        rawValue: item[columnName],
+        specificDates: item['cac ngay kham thuc te']
+      }))
     })
+    
+    dayData.forEach(item => {
+      const rawValue = item[columnName]
+      
+      // Get actual people count for this company on this date
+      const examResult = getExamCountForDateNew(item, date)
+      const actualPeopleCount = period === 'morning' ? examResult.morning : examResult.afternoon
+      
+      console.log(`Debug company processing:`, {
+        company: item['ten cong ty'],
+        columnName,
+        rawValue,
+        rawValueType: typeof rawValue,
+        actualPeopleCount,
+        examResult
+      })
+      
+      // Use new safeParseNumber with dynamic parsing
+      const count = safeParseNumber(rawValue, actualPeopleCount)
+      
+      // Debug logging for NaN values
+      if (isNaN(count)) {
+        console.warn('NaN detected in getExamCount:', {
+          date: date.toDateString(),
+          columnName,
+          rawValue,
+          actualPeopleCount,
+          company: item['ten cong ty']
+        })
+      }
+      
+      totalCount += count || 0 // Ensure we never add NaN
+    })
+    
+    console.log(`Debug getExamCount result:`, { date: date.toDateString(), columnName, totalCount })
     
     return totalCount
   }
@@ -68,56 +104,18 @@ export const useChartsExport = (filteredData, globalFilters) => {
     const category = examCategories[categoryIndex]
     const columnName = period === 'morning' ? category.morning : category.afternoon
     
-    // Lọc dữ liệu cho ngày cụ thể
-    const dayData = filteredData.filter(item => {
-      const startDateStr = item['ngay bat dau kham']
-      const endDateStr = item['ngay ket thuc kham'] || item['ngay bat dau kham']
-      const specificDatesStr = item['cac ngay kham thuc te']
-      
-      if (!startDateStr) return false
-      
-      // Create dates using local time to avoid timezone shifts
-      const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-      
-      // Skip if current date is Sunday (hospital doesn't work on Sundays)
-      if (checkDate.getDay() === 0) return false
-      
-      // Check if there are specific examination dates
-      if (specificDatesStr && specificDatesStr.trim()) {
-        // Parse specific dates (format: MM/dd, MM/dd, ...)
-        const specificDates = specificDatesStr.split(',').map(dateStr => {
-          const trimmed = dateStr.trim()
-          if (trimmed.includes('/')) {
-            const [month, day] = trimmed.split('/')
-            const year = date.getFullYear() // Use current year from the date range
-            return new Date(year, parseInt(month) - 1, parseInt(day))
-          }
-          return null
-        }).filter(d => d !== null)
-        
-        // Filter out Sundays from specific dates
-        const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
-        
-        // Check if current date matches any specific date (and it's not Sunday)
-        const isSpecificDate = workingSpecificDates.some(specificDate => 
-          checkDate.getTime() === specificDate.getTime()
-        )
-        
-        return isSpecificDate
-      } else {
-        // Use original logic with start and end dates
-        const startDate = new Date(startDateStr + 'T00:00:00')
-        const endDate = new Date(endDateStr + 'T00:00:00')
-        
-        // Check if the date is within examination period
-        return checkDate >= startDate && checkDate <= endDate
-      }
-    })
+    // Lọc dữ liệu cho ngày cụ thể sử dụng helper function
+    const dayData = filteredData.filter(item => hasExaminationOnDate(item, date))
     
     // Tạo danh sách các công ty với số lượng và nhân viên phụ trách
     const companies = []
     dayData.forEach(item => {
-      const count = parseInt(item[columnName]) || 0
+      // Get actual people count for this company on this date
+      const examResult = getExamCountForDateNew(item, date)
+      const actualPeopleCount = period === 'morning' ? examResult.morning : examResult.afternoon
+      
+      // Use new safeParseNumber with dynamic parsing
+      const count = safeParseNumber(item[columnName], actualPeopleCount)
       if (count > 0) {
         companies.push({
           name: item['ten cong ty'] || 'Không xác định',
@@ -139,51 +137,8 @@ export const useChartsExport = (filteredData, globalFilters) => {
       return 0
     }
     
-    // Lọc dữ liệu cho ngày cụ thể
-    const dayData = filteredData.filter(item => {
-      const startDateStr = item['ngay bat dau kham']
-      const endDateStr = item['ngay ket thuc kham'] || item['ngay bat dau kham']
-      const specificDatesStr = item['cac ngay kham thuc te']
-      
-      if (!startDateStr) return false
-      
-      // Create dates using local time to avoid timezone shifts
-      const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
-      
-      // Skip if current date is Sunday (hospital doesn't work on Sundays)
-      if (checkDate.getDay() === 0) return false
-      
-      // Check if there are specific examination dates
-      if (specificDatesStr && specificDatesStr.trim()) {
-        // Parse specific dates (format: MM/dd, MM/dd, ...)
-        const specificDates = specificDatesStr.split(',').map(dateStr => {
-          const trimmed = dateStr.trim()
-          if (trimmed.includes('/')) {
-            const [month, day] = trimmed.split('/')
-            const year = currentDate.getFullYear() // Use current year from the date range
-            return new Date(year, parseInt(month) - 1, parseInt(day))
-          }
-          return null
-        }).filter(d => d !== null)
-        
-        // Filter out Sundays from specific dates
-        const workingSpecificDates = specificDates.filter(d => d.getDay() !== 0)
-        
-        // Check if current date matches any specific date (and it's not Sunday)
-        const isSpecificDate = workingSpecificDates.some(specificDate => 
-          checkDate.getTime() === specificDate.getTime()
-        )
-        
-        return isSpecificDate
-      } else {
-        // Use original logic with start and end dates
-        const startDate = new Date(startDateStr + 'T00:00:00')
-        const endDate = new Date(endDateStr + 'T00:00:00')
-        
-        // Check if the date is within examination period
-        return checkDate >= startDate && checkDate <= endDate
-      }
-    })
+    // Lọc dữ liệu cho ngày cụ thể sử dụng helper function
+    const dayData = filteredData.filter(item => hasExaminationOnDate(item, date))
     
     // Tìm giá trị lớn nhất trong tất cả các hạng mục cận lâm sàng của ngày đó
     let maxCount = 0
@@ -193,14 +148,22 @@ export const useChartsExport = (filteredData, globalFilters) => {
       // Tính tổng sáng cho hạng mục này
       let morningTotal = 0
       dayData.forEach(item => {
-        const morningCount = parseInt(item[category.morning]) || 0
+        // Get actual people count for this company on this date
+        const examResult = getExamCountForDateNew(item, date)
+        const actualMorningCount = examResult.morning
+        
+        const morningCount = safeParseNumber(item[category.morning], actualMorningCount)
         morningTotal += morningCount
       })
       
       // Tính tổng chiều cho hạng mục này
       let afternoonTotal = 0
       dayData.forEach(item => {
-        const afternoonCount = parseInt(item[category.afternoon]) || 0
+        // Get actual people count for this company on this date
+        const examResult = getExamCountForDateNew(item, date)
+        const actualAfternoonCount = examResult.afternoon
+        
+        const afternoonCount = safeParseNumber(item[category.afternoon], actualAfternoonCount)
         afternoonTotal += afternoonCount
       })
       

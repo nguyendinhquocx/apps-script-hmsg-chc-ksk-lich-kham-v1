@@ -23,14 +23,41 @@ const MaxExamChart = ({
       // Tính toán chi tiết cho từng hạng mục
       const examDetails = {}
       
-      // Nhóm siêu âm
+      // Nhóm siêu âm - Fixed logic to handle multiple ultrasound categories properly
       const ultraSoundCategories = examCategories.filter(cat => cat.name.includes('Siêu âm') || cat.name.includes('SA'))
       let maxUltraSound = 0
-      ultraSoundCategories.forEach((category, index) => {
+      
+      console.log(`Debug ${dayInfo.date.toDateString()}: Found ${ultraSoundCategories.length} ultrasound categories`)
+      
+      ultraSoundCategories.forEach((category) => {
         const categoryIndex = examCategories.findIndex(c => c.name === category.name)
-        const morningCount = getExamCount(dayInfo.date, categoryIndex, 'morning')
-        const afternoonCount = getExamCount(dayInfo.date, categoryIndex, 'afternoon')
-        maxUltraSound = Math.max(maxUltraSound, morningCount, afternoonCount)
+        if (categoryIndex !== -1) {
+          const morningCount = getExamCount(dayInfo.date, categoryIndex, 'morning')
+          const afternoonCount = getExamCount(dayInfo.date, categoryIndex, 'afternoon')
+          
+          console.log(`Debug ${dayInfo.date.toDateString()} - ${category.name}:`, {
+            categoryIndex,
+            morningCount,
+            afternoonCount,
+            morning_isNaN: isNaN(morningCount),
+            afternoon_isNaN: isNaN(afternoonCount)
+          })
+          
+          // Debug logging for NaN values
+          if (isNaN(morningCount) || isNaN(afternoonCount)) {
+            console.warn('NaN detected in MaxExamChart ultrasound:', {
+              date: dayInfo.date.toDateString(),
+              category: category.name,
+              morningCount,
+              afternoonCount,
+              categoryIndex
+            })
+          }
+          
+          const validMorning = isNaN(morningCount) ? 0 : morningCount
+          const validAfternoon = isNaN(afternoonCount) ? 0 : afternoonCount
+          maxUltraSound = Math.max(maxUltraSound, validMorning, validAfternoon)
+        }
       })
       if (maxUltraSound > 0) examDetails['Siêu âm'] = maxUltraSound
       
@@ -48,7 +75,20 @@ const MaxExamChart = ({
       if (ecgIndex !== -1) {
         const ecgMorning = getExamCount(dayInfo.date, ecgIndex, 'morning')
         const ecgAfternoon = getExamCount(dayInfo.date, ecgIndex, 'afternoon')
-        const maxEcg = Math.max(ecgMorning, ecgAfternoon)
+        
+        // Debug logging for NaN values
+        if (isNaN(ecgMorning) || isNaN(ecgAfternoon)) {
+          console.warn('NaN detected in MaxExamChart ECG:', {
+            date: dayInfo.date.toDateString(),
+            ecgMorning,
+            ecgAfternoon,
+            ecgIndex
+          })
+        }
+        
+        const validEcgMorning = isNaN(ecgMorning) ? 0 : ecgMorning
+        const validEcgAfternoon = isNaN(ecgAfternoon) ? 0 : ecgAfternoon
+        const maxEcg = Math.max(validEcgMorning, validEcgAfternoon)
         if (maxEcg > 0) examDetails['Điện tâm đồ'] = maxEcg
       }
       
@@ -57,7 +97,20 @@ const MaxExamChart = ({
       if (gyneIndex !== -1) {
         const gyneMorning = getExamCount(dayInfo.date, gyneIndex, 'morning')
         const gyneAfternoon = getExamCount(dayInfo.date, gyneIndex, 'afternoon')
-        const maxGyne = Math.max(gyneMorning, gyneAfternoon)
+        
+        // Debug logging for NaN values
+        if (isNaN(gyneMorning) || isNaN(gyneAfternoon)) {
+          console.warn('NaN detected in MaxExamChart Gynecology:', {
+            date: dayInfo.date.toDateString(),
+            gyneMorning,
+            gyneAfternoon,
+            gyneIndex
+          })
+        }
+        
+        const validGyneMorning = isNaN(gyneMorning) ? 0 : gyneMorning
+        const validGyneAfternoon = isNaN(gyneAfternoon) ? 0 : gyneAfternoon
+        const maxGyne = Math.max(validGyneMorning, validGyneAfternoon)
         if (maxGyne > 0) examDetails['Khám phụ khoa'] = maxGyne
       }
       
@@ -79,7 +132,15 @@ const MaxExamChart = ({
       }
     })
     
-    return processedData.filter(item => item.maxCount > 0) // Only show days with data
+    // Debug: Log all processed data to see what's happening
+    console.log('MaxExamChart processed data:', processedData.map(item => ({
+      date: item.date,
+      maxCount: item.maxCount,
+      examDetails: item.examDetails
+    })))
+    
+    return processedData // Show all days to debug the issue
+    // return processedData.filter(item => item.maxCount > 0) // Only show days with data
   }, [getMaxForDay, getDaysToShow, getExamCount])
 
   // Calculate average
@@ -95,16 +156,20 @@ const MaxExamChart = ({
       return (
         <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900 mb-2">
-            {format(new Date(data.date), 'dd/MM/yyyy', { locale: vi })}
+            Ngày: {format(new Date(data.date), 'dd/MM/yyyy', { locale: vi })}
           </p>
           <p className="text-blue-600 mb-2">
-            Max cận lâm sàng: <span className="font-semibold">{data.maxCount}</span>
+            Max cận lâm sàng: <span className="font-semibold">{data.maxCount || 0}</span>
           </p>
-          {Object.entries(data.examDetails).map(([key, value]) => (
-            <p key={key} className="text-gray-600 text-sm">
-              {key}: <span className="font-semibold">{value}</span>
-            </p>
-          ))}
+          {Object.entries(data.examDetails).map(([key, value]) => {
+            // Ensure value is not NaN before displaying
+            const displayValue = isNaN(value) ? 0 : value
+            return (
+              <p key={key} className="text-gray-600 text-sm">
+                {key}: <span className="font-semibold">{displayValue} ca</span>
+              </p>
+            )
+          })}
         </div>
       )
     }
@@ -165,16 +230,46 @@ const MaxExamChart = ({
               dot={(props) => {
                 const { cx, cy, payload } = props
                 const isToday = payload?.isToday
-                return (
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={isToday ? 7 : 4}
-                    fill={isToday ? '#ffffff' : '#000000'}
-                    stroke={isToday ? '#000000' : '#000000'}
-                    strokeWidth={isToday ? 2 : 2}
-                  />
-                )
+                
+                // Find max value in the dataset
+                const maxValue = Math.max(...chartData.map(d => d.maxCount))
+                const isMaxValue = payload?.maxCount === maxValue && maxValue > 0
+                
+                // Priority: Max value > Today > Normal
+                if (isMaxValue) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={8}
+                      fill="transparent"
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                    />
+                  )
+                } else if (isToday) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={8}
+                      fill="#ffffff"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                } else {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill="#000000"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                }
               }}
               activeDot={{ r: 8, stroke: '#000000', strokeWidth: 2, fill: '#ffffff' }}
             />

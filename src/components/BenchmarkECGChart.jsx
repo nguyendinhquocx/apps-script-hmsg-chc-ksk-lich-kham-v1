@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format, getDay, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns'
+import { parseIntSafe } from '../utils/parseUtils'
+import { getExamCountForDateNew } from '../utils/examUtils'
 
 const BenchmarkECGChart = ({ 
   data = [], 
@@ -98,8 +100,11 @@ const BenchmarkECGChart = ({
         const dayData = dateMap.get(dateKey)
         
         if (dayData) {
-          const morningCount = parseInt(item['dien tam do sang'] || 0)
-          const afternoonCount = parseInt(item['dien tam do chieu'] || 0)
+          // Get actual people count for this date using getExamCountForDateNew
+          const examResult = getExamCountForDateNew(item, examDate)
+
+          const morningCount = parseIntSafe(item['dien tam do sang'], examResult.morning)
+          const afternoonCount = parseIntSafe(item['dien tam do chieu'], examResult.afternoon)
           dayData.ecg += morningCount + afternoonCount
         }
       })
@@ -190,16 +195,46 @@ const BenchmarkECGChart = ({
               dot={(props) => {
                 const { cx, cy, payload } = props
                 const isToday = payload?.isToday
-                return (
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={isToday ? 6 : 3}
-                    fill={isToday ? "#FFFFFF" : "#000000"}
-                    stroke="#000000"
-                    strokeWidth={2}
-                  />
-                )
+                
+                // Find max value in the dataset
+                const maxValue = Math.max(...chartData.map(d => d.ecg))
+                const isMaxValue = payload?.ecg === maxValue && maxValue > 0
+                
+                // Priority: Max value > Today > Normal
+                if (isMaxValue) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={6}
+                      fill="transparent"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                    />
+                  )
+                } else if (isToday) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={6}
+                      fill="#FFFFFF"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                } else {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={3}
+                      fill="#000000"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                }
               }}
               activeDot={(props) => {
                 const { cx, cy, payload } = props
