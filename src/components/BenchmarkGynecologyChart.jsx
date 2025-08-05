@@ -195,16 +195,46 @@ const BenchmarkGynecologyChart = ({
               dot={(props) => {
                 const { cx, cy, payload } = props
                 const isToday = payload?.isToday
-                return (
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={isToday ? 6 : 3}
-                    fill={isToday ? "#FFFFFF" : "#000000"}
-                    stroke="#000000"
-                    strokeWidth={2}
-                  />
-                )
+                
+                // Find max value in the dataset
+                const maxValue = Math.max(...chartData.map(d => d.gynecology))
+                const isMaxValue = payload?.gynecology === maxValue && maxValue > 0
+                
+                // Priority: Max value > Today > Normal
+                if (isMaxValue) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={6}
+                      fill="transparent"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                    />
+                  )
+                } else if (isToday) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={6}
+                      fill="#FFFFFF"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                } else {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={3}
+                      fill="#000000"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                }
               }}
               activeDot={(props) => {
                 const { cx, cy, payload } = props
