@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
 import { examCategories } from '../constants/examCategories'
+import { safeParseNumber } from '../utils/examUtils'
 
 export const useChartsExport = (filteredData, globalFilters) => {
   // Tính số người khám cho mỗi ngày và mục khám từ dữ liệu thực
@@ -56,7 +57,17 @@ export const useChartsExport = (filteredData, globalFilters) => {
     // Tính tổng số lượng từ cột tương ứng cho ngày đó
     let totalCount = 0
     dayData.forEach(item => {
-      const count = parseInt(item[columnName]) || 0
+      const rawValue = item[columnName]
+      let count = 0
+      
+      // Handle different data types after int8 → text conversion
+      if (rawValue !== null && rawValue !== undefined && rawValue !== '') {
+        const numericValue = Number(rawValue)
+        if (!isNaN(numericValue) && isFinite(numericValue) && numericValue >= 0) {
+          count = Math.floor(numericValue) // Always use integer, handle decimals gracefully
+        }
+      }
+      
       totalCount += count
     })
     
@@ -117,7 +128,7 @@ export const useChartsExport = (filteredData, globalFilters) => {
     // Tạo danh sách các công ty với số lượng và nhân viên phụ trách
     const companies = []
     dayData.forEach(item => {
-      const count = parseInt(item[columnName]) || 0
+      const count = safeParseNumber(item[columnName])
       if (count > 0) {
         companies.push({
           name: item['ten cong ty'] || 'Không xác định',
@@ -193,14 +204,14 @@ export const useChartsExport = (filteredData, globalFilters) => {
       // Tính tổng sáng cho hạng mục này
       let morningTotal = 0
       dayData.forEach(item => {
-        const morningCount = parseInt(item[category.morning]) || 0
+        const morningCount = safeParseNumber(item[category.morning])
         morningTotal += morningCount
       })
       
       // Tính tổng chiều cho hạng mục này
       let afternoonTotal = 0
       dayData.forEach(item => {
-        const afternoonCount = parseInt(item[category.afternoon]) || 0
+        const afternoonCount = safeParseNumber(item[category.afternoon])
         afternoonTotal += afternoonCount
       })
       

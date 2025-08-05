@@ -1,6 +1,20 @@
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
+// Helper function to safely parse numeric values from database (handles int8 → text conversion)
+export const safeParseNumber = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return 0
+  }
+  
+  const numericValue = Number(value)
+  if (!isNaN(numericValue) && isFinite(numericValue) && numericValue >= 0) {
+    return Math.floor(numericValue) // Always return integer for counts
+  }
+  
+  return 0
+}
+
 // Smart split function that respects parentheses
 const smartSplitDateEntries = (str) => {
   const entries = []
@@ -68,7 +82,7 @@ export const parseSpecificDates = (specificDatesStr, referenceYear = new Date().
 
           if (counts.length === 1) {
             // Format: "MM/dd(total)" - split evenly
-            const total = parseInt(counts[0]) || 0
+            const total = safeParseNumber(counts[0])
             const morning = Math.floor(total / 2)
             const afternoon = total - morning
 
@@ -82,8 +96,8 @@ export const parseSpecificDates = (specificDatesStr, referenceYear = new Date().
             })
           } else if (counts.length === 2) {
             // Format: "MM/dd(morning,afternoon)"
-            const morning = counts[0] === '' ? 0 : (parseInt(counts[0]) || 0)
-            const afternoon = counts[1] === '' ? 0 : (parseInt(counts[1]) || 0)
+            const morning = counts[0] === '' ? 0 : safeParseNumber(counts[0])
+            const afternoon = counts[1] === '' ? 0 : safeParseNumber(counts[1])
             const total = morning + afternoon
 
             results.push({
@@ -181,7 +195,7 @@ export const getExamCountForDateNew = (record, date) => {
   const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
   const specificDatesStr = record['cac ngay kham thuc te']
   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
-  const totalPeople = parseInt(record['so nguoi kham']) || 0
+  const totalPeople = safeParseNumber(record['so nguoi kham'])
 
   if (!startDateStr) return { total: 0, morning: 0, afternoon: 0 }
 
@@ -297,7 +311,7 @@ export const getExamCountForDateLegacy = (record, date) => {
   const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
   const specificDatesStr = record['cac ngay kham thuc te']
   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
-  const totalPeople = parseInt(record['so nguoi kham']) || 0
+  const totalPeople = safeParseNumber(record['so nguoi kham'])
 
   if (!startDateStr) return 0
 
@@ -462,7 +476,7 @@ export const getCompanyDetails = (record) => {
   const endDateStr = record['ngay ket thuc kham'] || record['ngay bat dau kham']
   const specificDatesStr = record['cac ngay kham thuc te']
   const bloodTestDateStr = record['ngay lay mau']
-  const totalPeople = parseInt(record['so nguoi kham']) || 0
+  const totalPeople = safeParseNumber(record['so nguoi kham'])
   const morningCount = parseFloat(record['trung binh ngay sang']) || 0
   const afternoonCount = parseFloat(record['trung binh ngay chieu']) || 0
   const employee = record['ten nhan vien'] || '-'
