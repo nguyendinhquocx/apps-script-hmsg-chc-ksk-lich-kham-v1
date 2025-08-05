@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format, getDay, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns'
 import { parseIntSafe } from '../utils/parseUtils'
+import { getExamCountForDateNew } from '../utils/examUtils'
 
 const BenchmarkUltrasoundChart = ({ 
   data = [], 
@@ -114,9 +115,12 @@ const BenchmarkUltrasoundChart = ({
         const dayData = dateMap.get(dateKey)
         
         if (dayData) {
+          // Get actual people count for this date using getExamCountForDateNew
+          const examResult = getExamCountForDateNew(item, examDate)
+
           ultrasoundCategories.forEach(category => {
-            const morningValue = parseIntSafe(item[category.fields[0]])
-            const afternoonValue = parseIntSafe(item[category.fields[1]])
+            const morningValue = parseIntSafe(item[category.fields[0]], examResult.morning)
+            const afternoonValue = parseIntSafe(item[category.fields[1]], examResult.afternoon)
             const totalValue = morningValue + afternoonValue
             
             dayData[category.key] += totalValue

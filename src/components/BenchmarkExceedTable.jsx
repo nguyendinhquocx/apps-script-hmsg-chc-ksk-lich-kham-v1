@@ -84,13 +84,13 @@ const BenchmarkExceedTable = ({
           
           if (dayData) {
             // ECG
-            const ecgMorning = parseIntSafe(item['dien tam do sang'])
-            const ecgAfternoon = parseIntSafe(item['dien tam do chieu'])
+            const ecgMorning = parseIntSafe(item['dien tam do sang'], examResult.morning)
+            const ecgAfternoon = parseIntSafe(item['dien tam do chieu'], examResult.afternoon)
             dayData.ecg += ecgMorning + ecgAfternoon
             
             // Gynecology
-            const gynecoMorning = parseIntSafe(item['kham phu khoa sang'])
-            const gynecoAfternoon = parseIntSafe(item['kham phu khoa chieu'])
+            const gynecoMorning = parseIntSafe(item['kham phu khoa sang'], examResult.morning)
+            const gynecoAfternoon = parseIntSafe(item['kham phu khoa chieu'], examResult.afternoon)
             dayData.gynecology += gynecoMorning + gynecoAfternoon
             
             // Internal Medicine (using new unified logic)
@@ -106,8 +106,8 @@ const BenchmarkExceedTable = ({
           ]
           
           ultrasoundMappings.forEach(fields => {
-            const morning = parseIntSafe(item[fields[0]])
-            const afternoon = parseIntSafe(item[fields[1]])
+            const morning = parseIntSafe(item[fields[0]], examResult.morning)
+            const afternoon = parseIntSafe(item[fields[1]], examResult.afternoon)
             dayData.ultrasound += morning + afternoon
           })
           }

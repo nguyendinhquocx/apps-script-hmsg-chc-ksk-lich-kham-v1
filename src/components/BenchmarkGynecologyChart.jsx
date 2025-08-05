@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { format, getDay, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay } from 'date-fns'
 import { parseIntSafe } from '../utils/parseUtils'
+import { getExamCountForDateNew } from '../utils/examUtils'
 
 const BenchmarkGynecologyChart = ({ 
   data = [], 
@@ -99,8 +100,11 @@ const BenchmarkGynecologyChart = ({
         const dayData = dateMap.get(dateKey)
         
         if (dayData) {
-          const morningCount = parseIntSafe(item['kham phu khoa sang'])
-          const afternoonCount = parseIntSafe(item['kham phu khoa chieu'])
+          // Get actual people count for this date using getExamCountForDateNew
+          const examResult = getExamCountForDateNew(item, examDate)
+
+          const morningCount = parseIntSafe(item['kham phu khoa sang'], examResult.morning)
+          const afternoonCount = parseIntSafe(item['kham phu khoa chieu'], examResult.afternoon)
           dayData.gynecology += morningCount + afternoonCount
         }
       })

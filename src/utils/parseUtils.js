@@ -2,11 +2,16 @@
 
 /**
  * Safely parse integer value, handling "x" marks and other invalid values
+ * This function handles special clinical lab values:
+ * - "x" or "X" = actualPeopleCount (100% of people examined)
+ * - "x/2" or "X/2" = Math.round(actualPeopleCount / 2) (50% of people examined)
+ * - Regular numbers = parsed as integer
  * @param {any} value - The value to parse
+ * @param {number} actualPeopleCount - Actual number of people examined for dynamic calculation
  * @param {number} defaultValue - Default value to return if parsing fails (default: 0)
  * @returns {number} - Parsed integer or default value
  */
-export const parseIntSafe = (value, defaultValue = 0) => {
+export const parseIntSafe = (value, actualPeopleCount = 0, defaultValue = 0) => {
   if (value === null || value === undefined || value === '') {
     return defaultValue
   }
@@ -14,9 +19,13 @@ export const parseIntSafe = (value, defaultValue = 0) => {
   // Convert to string and trim
   const strValue = String(value).trim().toLowerCase()
   
-  // Handle "x" marks (indicates skip/not applicable)
-  if (strValue === 'x' || strValue === 'X') {
-    return 0
+  // Handle special dynamic values for clinical exams
+  if (strValue === 'x') {
+    return actualPeopleCount || 0
+  }
+  
+  if (strValue === 'x/2') {
+    return Math.round((actualPeopleCount || 0) / 2)
   }
   
   // Parse as integer
@@ -29,10 +38,11 @@ export const parseIntSafe = (value, defaultValue = 0) => {
 /**
  * Safely parse float value, handling "x" marks and other invalid values
  * @param {any} value - The value to parse
+ * @param {number} actualPeopleCount - Actual number of people examined for dynamic calculation
  * @param {number} defaultValue - Default value to return if parsing fails (default: 0)
  * @returns {number} - Parsed float or default value
  */
-export const parseFloatSafe = (value, defaultValue = 0) => {
+export const parseFloatSafe = (value, actualPeopleCount = 0, defaultValue = 0) => {
   if (value === null || value === undefined || value === '') {
     return defaultValue
   }
@@ -40,9 +50,13 @@ export const parseFloatSafe = (value, defaultValue = 0) => {
   // Convert to string and trim
   const strValue = String(value).trim().toLowerCase()
   
-  // Handle "x" marks (indicates skip/not applicable)
-  if (strValue === 'x' || strValue === 'X') {
-    return 0
+  // Handle special dynamic values for clinical exams
+  if (strValue === 'x') {
+    return actualPeopleCount || 0
+  }
+  
+  if (strValue === 'x/2') {
+    return Math.round((actualPeopleCount || 0) / 2)
   }
   
   // Parse as float
@@ -63,5 +77,5 @@ export const isSkipValue = (value) => {
   }
   
   const strValue = String(value).trim().toLowerCase()
-  return strValue === 'x'
+  return strValue === 'x' || strValue === 'x/2'
 }
