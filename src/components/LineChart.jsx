@@ -170,16 +170,46 @@ const CustomLineChart = ({ data = [], monthFilter = { month: new Date().getMonth
               dot={(props) => {
                 const { cx, cy, payload } = props
                 const isToday = payload?.isToday
-                return (
-                  <circle
-                    cx={cx}
-                    cy={cy}
-                    r={isToday ? 7 : 4}
-                    fill={isToday ? '#ffffff' : '#000000'}
-                    stroke={isToday ? '#000000' : '#000000'}
-                    strokeWidth={isToday ? 2 : 2}
-                  />
-                )
+                
+                // Find max value in the dataset
+                const maxValue = Math.max(...chartData.map(d => d.people))
+                const isMaxValue = payload?.people === maxValue && maxValue > 0
+                
+                // Priority: Max value > Today > Normal
+                if (isMaxValue) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={8}
+                      fill="transparent"
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                    />
+                  )
+                } else if (isToday) {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={8}
+                      fill="#ffffff"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                } else {
+                  return (
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill="#000000"
+                      stroke="#000000"
+                      strokeWidth={2}
+                    />
+                  )
+                }
               }}
               activeDot={{ r: 8, stroke: '#000000', strokeWidth: 2, fill: '#ffffff' }}
             />
