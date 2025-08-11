@@ -118,6 +118,31 @@ export const useTableData = (globalFilters, sortBy, sortOrder, currentPage, page
           const statusB = b['trang thai kham']
           const today = new Date()
           
+          // Check if today is included in the current filter range
+          const isTodayInFilter = () => {
+            // Check date range filter
+            if (dateFilter.startDate || dateFilter.endDate) {
+              const todayStr = today.toISOString().split('T')[0] // YYYY-MM-DD format
+              
+              if (dateFilter.startDate && dateFilter.endDate) {
+                return todayStr >= dateFilter.startDate && todayStr <= dateFilter.endDate
+              } else if (dateFilter.startDate) {
+                return todayStr >= dateFilter.startDate
+              } else if (dateFilter.endDate) {
+                return todayStr <= dateFilter.endDate
+              }
+            }
+            
+            // Check month filter (default behavior when no date range is set)
+            if (monthFilter) {
+              return today.getMonth() + 1 === monthFilter.month && today.getFullYear() === monthFilter.year
+            }
+            
+            return true // If no filters, assume today is included
+          }
+          
+          const todayIncluded = isTodayInFilter()
+          
           // Priority: "Chưa khám xong" comes first
           if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
             return -1
@@ -126,17 +151,19 @@ export const useTableData = (globalFilters, sortBy, sortOrder, currentPage, page
             return 1
           }
           
-          // Within same status group, sort differently
+          // Within same status group, sort differently based on filter
           if (statusA === 'Chưa khám xong' && statusB === 'Chưa khám xong') {
-            // For companies currently being examined, sort by today's exam count (descending)
-            const todayCountA = getExamCountForDate(a, today)
-            const todayCountB = getExamCountForDate(b, today)
-            
-            if (todayCountA !== todayCountB) {
-              return todayCountB - todayCountA
+            if (todayIncluded) {
+              // For companies currently being examined, sort by today's exam count (descending) when today is in filter
+              const todayCountA = getExamCountForDate(a, today)
+              const todayCountB = getExamCountForDate(b, today)
+              
+              if (todayCountA !== todayCountB) {
+                return todayCountB - todayCountA
+              }
             }
             
-            // If today's count is same, fallback to total people count
+            // Fallback to total people count (when today not in filter, or when today counts are equal)
             const peopleA = parseInt(a['so nguoi kham']) || 0
             const peopleB = parseInt(b['so nguoi kham']) || 0
             return peopleB - peopleA
