@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import LichKhamService from '../services/supabase'
 import { matchesSearch, isDateInMonth } from '../utils/vietnamese'
+import { getExamCountForDate } from '../utils/examUtils'
 
 export const useTableData = (globalFilters, sortBy, sortOrder, currentPage, pageSize) => {
   const [data, setData] = useState([])
@@ -111,12 +112,11 @@ export const useTableData = (globalFilters, sortBy, sortOrder, currentPage, page
           })
         }
         
-        // Custom sorting: "Chưa khám xong" first (by số người khám desc), then "Đã khám xong" (by số người khám desc)
+        // Custom sorting: "Chưa khám xong" first, then "Đã khám xong"
         filteredData = filteredData.sort((a, b) => {
           const statusA = a['trang thai kham']
           const statusB = b['trang thai kham']
-          const peopleA = parseInt(a['so nguoi kham']) || 0
-          const peopleB = parseInt(b['so nguoi kham']) || 0
+          const today = new Date()
           
           // Priority: "Chưa khám xong" comes first
           if (statusA === 'Chưa khám xong' && statusB !== 'Chưa khám xong') {
@@ -126,8 +126,26 @@ export const useTableData = (globalFilters, sortBy, sortOrder, currentPage, page
             return 1
           }
           
-          // Within same status group, sort by số người khám (descending)
-          return peopleB - peopleA
+          // Within same status group, sort differently
+          if (statusA === 'Chưa khám xong' && statusB === 'Chưa khám xong') {
+            // For companies currently being examined, sort by today's exam count (descending)
+            const todayCountA = getExamCountForDate(a, today)
+            const todayCountB = getExamCountForDate(b, today)
+            
+            if (todayCountA !== todayCountB) {
+              return todayCountB - todayCountA
+            }
+            
+            // If today's count is same, fallback to total people count
+            const peopleA = parseInt(a['so nguoi kham']) || 0
+            const peopleB = parseInt(b['so nguoi kham']) || 0
+            return peopleB - peopleA
+          } else {
+            // For completed companies, sort by total số người khám (descending) as before
+            const peopleA = parseInt(a['so nguoi kham']) || 0
+            const peopleB = parseInt(b['so nguoi kham']) || 0
+            return peopleB - peopleA
+          }
         })
         
         // Apply pagination
