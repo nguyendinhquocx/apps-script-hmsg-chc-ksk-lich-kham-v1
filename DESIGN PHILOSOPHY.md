@@ -1,12 +1,20 @@
 # DESIGN PHILOSOPHY
 
-## Triết lý thiết kế tổng thể - "Quantum Pragmatic Minimalism"
+## Triết lý thiết kế tổng thể - "Quantum Pragmatic Minimalism + ChatGPT Sophistication"
 
 ### Meta-Philosophy: Cognitive Liberation Architecture
 
 Đây là triết lý thiết kế **universal system** có thể áp dụng cho **mọi loại project**: web apps, mobile apps, desktop software, documentation, code structure, README files, UX/UI, technical architecture, và cả prompt engineering.
 
-**Core DNA**: `Function over Form, Clarity over Complexity, Attention over Engagement`
+**Core DNA**: `Function over Form, Clarity over Complexity, Soft over Sharp`
+
+### **ChatGPT-Inspired Evolution (2024 Update)**
+
+**Key Insights Integrated:**
+- **Intelligent Icons**: Black monochrome icons when they improve efficiency (not banned completely)
+- **Soft Rounded Interactions**: Pill-shaped buttons, rounded hover effects
+- **Clean Table Design**: Bold headers + single underline, no borders, no zebra stripes  
+- **Sophisticated Polish**: Modern aesthetics with gentle refinement
 
 ### The 4-Layer Consciousness Model
 
@@ -247,11 +255,13 @@ EXCELLENCE_STANDARDS:
 
 #### Visual Elements Rules
 
-**Icons & Graphics:**
-- **Default**: NO ICONS - use clear text labels instead
-- **Exception**: Only when user explicitly requests, or for universal symbols (❌✅⚠️)
-- **Rationale**: Icons often confuse rather than clarify, increase cognitive load
-- **Alternative**: Use typography weight, color, spacing for differentiation
+**Icons & Graphics - ChatGPT-Inspired Intelligence:**
+- **Default**: Text labels first for clarity
+- **Intelligent Exception**: Black monochrome icons when they improve efficiency
+- **Color Restriction**: Icons ONLY in black (#111827) - never colored
+- **Style**: Simple line icons, minimal, universally recognizable
+- **Context**: Navigation shortcuts, universal actions, replace long text
+- **Forbidden**: Colored icons, complex illustrations, decorative graphics
 
 **Color System Architecture:**
 ```css
@@ -280,14 +290,32 @@ NEUTRAL_SCALE = {
 }
 ```
 
-**Interactive States:**
+**Interactive States - ChatGPT Sophisticated Style:**
 ```css
 INTERACTION_STATES = {
   default: "Clean, minimal appearance",
-  hover: "Subtle background shift to gray_50 (#f9fafb)",
-  focus: "2px blue ring (#3b82f6) with 2px offset",
-  active: "Slightly darker background, no dramatic changes",
-  disabled: "gray_400 (#9ca3af) text, no interactions"
+  hover: {
+    background: "#f9fafb",       // Soft gray background
+    border_radius: "6px",        // Gentle rounded corners
+    transition: "150ms ease",    // Smooth animation
+    no_dramatic_changes: true
+  },
+  focus: {
+    ring: "2px blue (#3b82f6) with 2px offset",
+    border_radius: "maintained", // Keep rounded corners
+    accessibility: "always_visible"
+  },
+  active: {
+    background: "slightly_darker",
+    border_radius: "maintained",
+    no_harsh_changes: true
+  },
+  disabled: {
+    color: "#9ca3af",           // Gray text
+    background: "transparent",
+    no_interactions: true,
+    opacity: 0.6
+  }
 }
 ```
 
@@ -325,49 +353,75 @@ FONT_SYSTEM = {
 
 #### Component Specifications
 
-**Buttons & Controls:**
+**Buttons & Controls - ChatGPT Soft Rounded Style:**
 ```css
 BUTTON_STYLES = {
   primary: {
-    background: "#111827",
-    color: "#ffffff", 
-    padding: "12px 24px",
-    border_radius: "8px",
+    background: "#111827",        // Black
+    color: "#ffffff",             // White text
+    padding: "10px 16px",         // Compact padding
+    border_radius: "20px",        // Soft pill shape (ChatGPT style)
+    border: "none",               // No border by default
     font_weight: 500,
     transition: "all 200ms ease"
   },
   
   secondary: {
-    background: "#ffffff",
-    color: "#111827",
-    border: "1px solid #d1d5db",
-    padding: "12px 24px", 
-    border_radius: "8px"
+    background: "#ffffff",        // White
+    color: "#111827",             // Black text
+    padding: "10px 16px",
+    border_radius: "20px",        // Soft pill shape
+    border: "none",               // No border by default
+    
+    // Only when user explicitly requests border:
+    optional_border: "1px solid #e5e7eb"  // Light gray if needed
   },
   
   hover_effects: {
-    primary: "Background to #374151 (darker gray)",
-    secondary: "Background to #f9fafb (light gray)"
-  }
+    primary: {
+      background: "#374151",      // Darker gray
+      border_radius: "20px",      // Maintain soft rounded
+      transition: "150ms ease"
+    },
+    secondary: {
+      background: "#f9fafb",      // Light gray hover
+      border_radius: "20px",      // Soft rounded hover
+      transition: "150ms ease"
+    }
+  },
+  
+  interaction_language: "soft_rounded_gentle_hover"
 }
 ```
 
-**Tables & Data Display:**
+**Tables & Data Display - ChatGPT Clean Style:**
 ```css
 TABLE_DESIGN = {
   header: {
-    background: "#f9fafb",
-    font_weight: 500,
-    text_color: "#374151",
+    background: "#ffffff",        // Clean white, no background
+    font_weight: 600,             // Bold headers only
+    text_color: "#111827",        // Black text
     padding: "12px 16px",
-    border_bottom: "1px solid #e5e7eb"
+    border_bottom: "1px solid #e5e7eb",  // Single light line only
+    border_top: "none",           // No top border
+    border_sides: "none"          // No side borders
   },
   
   rows: {
-    background: "#ffffff",
-    padding: "12px 16px", 
-    border_bottom: "1px solid #f3f4f6",
-    hover_background: "#f9fafb"
+    background: "#ffffff",        // Pure white, no zebra stripes
+    padding: "12px 16px",
+    border: "none",               // No row borders
+    hover: {
+      background: "#f9fafb",      // Light gray hover
+      border_radius: "6px",       // Soft rounded hover effect
+      transition: "150ms ease"
+    }
+  },
+  
+  table_container: {
+    border: "none",               // No external table borders
+    box_shadow: "none",           // No shadows
+    clean_separation: "spacing and typography only"
   },
   
   cells: {
@@ -394,10 +448,12 @@ BORDER_SYSTEM = {
 #### Application-Specific Templates
 
 #### For Web/Mobile Applications:
-- **No Icons Rule**: Text-only navigation, clear labeling
+- **Intelligent Icons**: Black monochrome icons when beneficial, text labels primary
 - **Color Restraint**: White base + Single accent + Gray scale only
+- **Soft Interactions**: Rounded hover effects, pill-shaped buttons
 - **Touch Targets**: Minimum 44px for mobile accessibility
 - **Loading States**: Skeleton screens, not spinners
+- **Modern Aesthetics**: ChatGPT-inspired clean sophistication
 
 #### For Code/Documentation:
 - **Syntax Highlighting**: Minimal, monochrome + single accent
@@ -491,23 +547,33 @@ AUTOMATIC_ACTIVATION_SEQUENCE:
 
 ```javascript
 DESIGN_DNA = {
-  philosophy: "Quantum Pragmatic Minimalism",
-  core_principle: "Function > Form, Clarity > Complexity",
+  philosophy: "Quantum Pragmatic Minimalism + ChatGPT Sophistication",
+  core_principle: "Function > Form, Clarity > Complexity, Soft > Sharp",
   cognitive_approach: "4-Layer Consciousness Model",
   quality_standard: "95%+ across Clarity/Efficiency/Satisfaction",
+  
+  visual_language: {
+    icons: "intelligent_black_monochrome_when_beneficial",
+    buttons: "soft_rounded_pill_shapes",
+    tables: "clean_bold_headers_no_borders",
+    hover: "gentle_gray_with_rounded_corners",
+    borders: "minimal_or_none"
+  },
   
   automatic_filters: {
     attention_economics: "Treat focus as sacred resource",
     essence_distillation: "100→1 complexity, 1→100 functionality", 
     cognitive_sovereignty: "User controls experience",
-    progressive_disclosure: "Hide complexity until needed"
+    progressive_disclosure: "Hide complexity until needed",
+    interaction_sophistication: "ChatGPT-level polish and refinement"
   },
   
   implementation_protocol: {
     phase_1: "Consciousness Analysis",
     phase_2: "Essence Distillation", 
     phase_3: "Architecture Design",
-    phase_4: "Quality Assurance"
+    phase_4: "Quality Assurance",
+    phase_5: "Sophistication Polish"
   }
 }
 ```
@@ -546,4 +612,4 @@ DESIGN_DNA = {
 
 ---
 
-**🎯 Activation Trigger**: Mỗi khi start project mới, AI Agent sẽ tự động reference file này để ensure consistency và excellence across all deliverables.
+**Activation Trigger**: Mỗi khi start project mới, AI Agent sẽ tự động reference file này để ensure consistency và excellence across all deliverables.
