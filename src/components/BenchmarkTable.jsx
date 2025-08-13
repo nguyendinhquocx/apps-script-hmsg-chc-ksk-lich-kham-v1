@@ -12,7 +12,8 @@ const BenchmarkTable = ({ benchmarkData = [] }) => {
     'Siêu âm - Combo (Vú, Giáp...)': 'Siêu âm vú + giáp',
     'Siêu âm - Mạch máu chi': 'SA mạch máu chi',
     'Điện tim (ECG)': 'Điện tâm đồ',
-    'Sản phụ khoa': 'Khám phụ khoa'
+    'Sản phụ khoa': 'Khám phụ khoa',
+    'X-Quang': 'X-Quang'
   }
 
   // Sort benchmark data according to specified order
@@ -29,10 +30,10 @@ const BenchmarkTable = ({ benchmarkData = [] }) => {
       'Siêu âm - Bụng',    // Siêu âm bụng
       'Siêu âm - Vú',      // Siêu âm vú
       'Siêu âm - Giáp',    // Siêu âm giáp
-      'Siêu âm - Combo (Vú, Giáp...)', // Siêu âm vú + giáp
       'Siêu âm - Tim',     // Siêu âm tim
       'Siêu âm - Động mạch cảnh',      // SA động mạch cảnh
-      'Siêu âm - Mạch máu chi'          // SA mạch máu chi
+      'Siêu âm - Mạch máu chi',         // SA mạch máu chi
+      'X-Quang'            // X-Quang
     ]
     
     const aIndex = specialtyOrder.indexOf(a.chuyen_khoa)
