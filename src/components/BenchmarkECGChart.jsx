@@ -14,8 +14,12 @@ const BenchmarkECGChart = ({
   // Get benchmark limit for ECG
   const getBenchmarkLimit = () => {
     const benchmark = benchmarkData.find(b => b.chuyen_khoa === 'Điện tim (ECG)')
-    if (!benchmark) return 0
+    if (!benchmark) return 100
     return Math.round((benchmark.so_ca_ngay_bs_min + benchmark.so_ca_ngay_bs_max) / 2)
+  }
+  
+  const getSecondBenchmarkLimit = () => {
+    return getBenchmarkLimit() * 2
   }
 
   // Calculate chart data
@@ -118,26 +122,31 @@ const BenchmarkECGChart = ({
     if (active && payload && payload.length) {
       const dataPoint = chartData.find(d => d.day === parseInt(label))
       const displayDate = dataPoint ? new Date(dataPoint.date).toLocaleDateString('vi-VN') : ''
-      const benchmarkLimit = getBenchmarkLimit()
       const value = payload[0]?.value || 0
-      const isExceeding = value > benchmarkLimit && benchmarkLimit > 0
+      const benchmarkLimit = getBenchmarkLimit()
+      const secondBenchmarkLimit = getSecondBenchmarkLimit()
+      
+      // Determine room count and color
+      let roomText = ''
+      let roomColor = '#000000'
+      if (value < benchmarkLimit) {
+        roomText = 'Cần 1 phòng điện tâm đồ'
+        roomColor = '#000000'
+      } else if (value < secondBenchmarkLimit) {
+        roomText = 'Cần 2 phòng điện tâm đồ'
+        roomColor = '#2962ff'
+      } else {
+        roomText = 'Cần 3 phòng điện tâm đồ'
+        roomColor = '#f23645'
+      }
       
       return (
         <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900">{`Ngày: ${displayDate}`}</p>
-          <p className="text-sm" style={{ color: isExceeding ? '#ef4444' : '#000000' }}>
+          <p className="text-sm font-normal" style={{ color: '#000000' }}>
             {`Điện tâm đồ: ${value} ca`}
           </p>
-          {benchmarkLimit > 0 && (
-            <p className="text-xs text-black">
-              {`Định mức: ${benchmarkLimit} ca`}
-            </p>
-          )}
-          {isExceeding && (
-            <p className="text-xs text-red-600 font-medium">
-              {`Vượt +${value - benchmarkLimit} ca`}
-            </p>
-          )}
+          <p className="text-xs font-normal" style={{ color: roomColor }}>{roomText}</p>
         </div>
       )
     }
@@ -166,18 +175,39 @@ const BenchmarkECGChart = ({
             />
             <Tooltip content={<CustomTooltip />} />
             
-            {/* Benchmark reference line */}
+            {/* Benchmark reference lines */}
+            {/* Định mức 100 - xanh nước biển, nét đứt */}
             {benchmarkLimit > 0 && (
               <ReferenceLine 
                 y={benchmarkLimit} 
-                stroke="#DC2626" 
+                stroke="#2962ff" 
                 strokeDasharray="5 5"
                 label={{
                   value: benchmarkLimit,
                   position: "right",
                   offset: 10,
                   style: { 
-                    fill: "#ef4444", 
+                    fill: "#2962ff", 
+                    fontSize: "12px", 
+                    fontWeight: "500",
+                    textAnchor: "start"
+                  }
+                }}
+              />
+            )}
+            
+            {/* Định mức 200 - đỏ, nét đứt */}
+            {getSecondBenchmarkLimit() > 0 && (
+              <ReferenceLine 
+                y={getSecondBenchmarkLimit()} 
+                stroke="#f23645" 
+                strokeDasharray="5 5"
+                label={{
+                  value: getSecondBenchmarkLimit(),
+                  position: "right",
+                  offset: 10,
+                  style: { 
+                    fill: "#f23645", 
                     fontSize: "12px", 
                     fontWeight: "500",
                     textAnchor: "start"
