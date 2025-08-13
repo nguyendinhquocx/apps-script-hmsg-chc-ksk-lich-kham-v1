@@ -172,10 +172,10 @@
     "chuyen_khoa": "X-Quang",
     "phut_tb_1_ca_min": "5",
     "phut_tb_1_ca_max": "5",
-    "so_ca_gio_bs_min": "10",
-    "so_ca_gio_bs_max": "10",
-    "so_ca_ngay_bs_min": "50",
-    "so_ca_ngay_bs_max": "50",
+    "so_ca_gio_bs_min": "20",
+    "so_ca_gio_bs_max": "20",
+    "so_ca_ngay_bs_min": "100",
+    "so_ca_ngay_bs_max": "100",
     "nhan_su": "KTV",
     "ghi_chu": "Chụp X-Quang + in kết quả"
   }

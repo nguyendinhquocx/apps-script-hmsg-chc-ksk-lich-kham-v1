@@ -126,11 +126,13 @@ const BenchmarkExceedTable = ({
       if (totalCases === 0) return 0
       
       let dailyCapacity = 90 // default fallback
+      let maxRooms = null // no limit by default
       
       if (category === 'ultrasound') {
-        // Use siêu âm bụng benchmark (110 ca/ngày)
+        // Use siêu âm bụng benchmark (110 ca/ngày), max 3 phòng
         const ultrasoundBenchmark = getBenchmarkLimit('Siêu âm bụng')
         dailyCapacity = ultrasoundBenchmark || 110
+        maxRooms = 3
       } else if (category === 'internalMedicine') {
         // Use nội tổng quát benchmark (90 ca/ngày)
         const internalBenchmark = getBenchmarkLimit('Nội tổng quát')
@@ -144,12 +146,14 @@ const BenchmarkExceedTable = ({
         const gynecoBenchmark = getBenchmarkLimit('Khám phụ khoa')
         dailyCapacity = gynecoBenchmark || 40
       } else if (category === 'xray') {
-        // Use X-Quang benchmark (50 ca/ngày)
+        // Use X-Quang benchmark (100 ca/ngày), max 3 phòng
         const xrayBenchmark = getBenchmarkLimit('X-Quang')
-        dailyCapacity = xrayBenchmark || 50
+        dailyCapacity = xrayBenchmark || 100
+        maxRooms = 3
       }
       
-      return Math.ceil(totalCases / dailyCapacity)
+      const calculatedRooms = Math.ceil(totalCases / dailyCapacity)
+      return maxRooms ? Math.min(calculatedRooms, maxRooms) : calculatedRooms
     }
 
     // Prepare sorted days data
