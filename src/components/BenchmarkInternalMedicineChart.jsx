@@ -165,12 +165,39 @@ const BenchmarkInternalMedicineChart = ({
                 const { cx, cy, payload } = props
                 const isToday = payload?.isToday
                 
-                // Find max value in the dataset
+                // Find max value and determine which day should be highlighted
                 const maxValue = Math.max(...chartData.map(d => d.internalMedicine))
-                const isMaxValue = payload?.internalMedicine === maxValue && maxValue > 0
+                const maxDays = chartData.filter(d => d.internalMedicine === maxValue && maxValue > 0)
+                
+                let shouldHighlight = false
+                if (maxDays.length > 0) {
+                  if (maxDays.length === 1) {
+                    // Only one max day, highlight it
+                    shouldHighlight = payload?.internalMedicine === maxValue
+                  } else {
+                    // Multiple max days, choose the one closest to today (future preferred)
+                    const today = new Date()
+                    const currentDateStr = format(today, 'yyyy-MM-dd')
+                    
+                    // Separate future and past max days
+                    const futureDays = maxDays.filter(d => d.date >= currentDateStr)
+                    const pastDays = maxDays.filter(d => d.date < currentDateStr)
+                    
+                    let targetDay = null
+                    if (futureDays.length > 0) {
+                      // Choose closest future day
+                      targetDay = futureDays.sort((a, b) => a.date.localeCompare(b.date))[0]
+                    } else if (pastDays.length > 0) {
+                      // Choose closest past day
+                      targetDay = pastDays.sort((a, b) => b.date.localeCompare(a.date))[0]
+                    }
+                    
+                    shouldHighlight = targetDay && payload?.date === targetDay.date
+                  }
+                }
                 
                 // Priority: Max value > Today > Normal
-                if (isMaxValue) {
+                if (shouldHighlight) {
                   return (
                     <circle
                       cx={cx}
