@@ -4,7 +4,9 @@
       "Bash(npm run dev:*)",
       "Bash(del:*)",
       "Bash(rm:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(node:*)",
+      "Bash(npm install:*)"
     ],
     "deny": []
   }
