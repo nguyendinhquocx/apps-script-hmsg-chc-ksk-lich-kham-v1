@@ -18,10 +18,10 @@ const BenchmarkExceedTable = ({
     'Siêu âm giáp': ['sieuam_giap_sang', 'sieuam_giap_chieu'],
     'Siêu âm tim': ['sieuam_tim_sang', 'sieuam_tim_chieu'],
     'SA động mạch cảnh': ['sieuam_dong_mach_canh_sang', 'sieuam_dong_mach_canh_chieu'],
-    'Siêu âm vú + giáp': ['sieuam_combo_sang', 'sieuam_combo_chieu'],
     'Điện tâm đồ': ['dien_tam_do_sang', 'dien_tam_do_chieu'],
     'Khám phụ khoa': ['kham_phu_khoa_sang', 'kham_phu_khoa_chieu'],
-    'Nội tổng quát': ['so_nguoi_kham'] // Special case: uses total people examined
+    'Nội tổng quát': ['so_nguoi_kham'], // Special case: uses total people examined
+    'X-Quang': ['x quang sang', 'x quang chieu']
   }
 
   // Get benchmark limits for each category
@@ -32,10 +32,10 @@ const BenchmarkExceedTable = ({
       'Siêu âm giáp': 'Siêu âm - Giáp', 
       'Siêu âm tim': 'Siêu âm - Tim',
       'SA động mạch cảnh': 'Siêu âm - Động mạch cảnh',
-      'Siêu âm vú + giáp': 'Siêu âm - Combo (Vú, Giáp...)',
       'Điện tâm đồ': 'Điện tim (ECG)',
       'Khám phụ khoa': 'Sản phụ khoa',
-      'Nội tổng quát': 'Nội tổng quát'
+      'Nội tổng quát': 'Nội tổng quát',
+      'X-Quang': 'X-Quang'
     }
 
     const benchmarkName = benchmarkMapping[categoryName]
@@ -67,7 +67,8 @@ const BenchmarkExceedTable = ({
         ultrasound: 0,  // Total ultrasound cases
         ecg: 0,         // ECG cases
         gynecology: 0,  // Gynecology cases
-        internalMedicine: 0  // Internal Medicine cases
+        internalMedicine: 0,  // Internal Medicine cases
+        xray: 0         // X-Ray cases
       })
     })
 
@@ -95,6 +96,11 @@ const BenchmarkExceedTable = ({
             
             // Internal Medicine (using new unified logic)
             dayData.internalMedicine += examResult.total
+            
+            // X-Ray
+            const xrayMorning = parseIntSafe(item['x quang sang'], examResult.morning)
+            const xrayAfternoon = parseIntSafe(item['x quang chieu'], examResult.afternoon)
+            dayData.xray += xrayMorning + xrayAfternoon
           
           // Ultrasound total (all categories)
           const ultrasoundMappings = [
@@ -115,20 +121,39 @@ const BenchmarkExceedTable = ({
       })
     })
 
-    // Calculate required rooms for each category and day
+    // Calculate required rooms for each category and day using dynamic benchmarks
     const getRequiredRooms = (totalCases, category) => {
       if (totalCases === 0) return 0
+      
+      let dailyCapacity = 90 // default fallback
+      let maxRooms = null // no limit by default
+      
       if (category === 'ultrasound') {
-        if (totalCases <= 90) return 1
-        if (totalCases <= 200) return 2
-        return 3
-             } else if (category === 'internalMedicine') {
-         // Internal Medicine: assume 90 cases per room (fixed benchmark)
-         return Math.ceil(totalCases / 90)
-      } else {
-        // ECG and Gynecology: assume 90 cases per room
-        return Math.ceil(totalCases / 90)
+        // Use siêu âm bụng benchmark (110 ca/ngày), max 3 phòng
+        const ultrasoundBenchmark = getBenchmarkLimit('Siêu âm bụng')
+        dailyCapacity = ultrasoundBenchmark || 110
+        maxRooms = 3
+      } else if (category === 'internalMedicine') {
+        // Use nội tổng quát benchmark (90 ca/ngày)
+        const internalBenchmark = getBenchmarkLimit('Nội tổng quát')
+        dailyCapacity = internalBenchmark || 90
+      } else if (category === 'ecg') {
+        // Use điện tâm đồ benchmark (100 ca/ngày)
+        const ecgBenchmark = getBenchmarkLimit('Điện tâm đồ')
+        dailyCapacity = ecgBenchmark || 100
+      } else if (category === 'gynecology') {
+        // Use khám phụ khoa benchmark (40 ca/ngày)
+        const gynecoBenchmark = getBenchmarkLimit('Khám phụ khoa')
+        dailyCapacity = gynecoBenchmark || 40
+      } else if (category === 'xray') {
+        // Use X-Quang benchmark (100 ca/ngày), max 3 phòng
+        const xrayBenchmark = getBenchmarkLimit('X-Quang')
+        dailyCapacity = xrayBenchmark || 100
+        maxRooms = 3
       }
+      
+      const calculatedRooms = Math.ceil(totalCases / dailyCapacity)
+      return maxRooms ? Math.min(calculatedRooms, maxRooms) : calculatedRooms
     }
 
     // Prepare sorted days data
@@ -157,6 +182,11 @@ const BenchmarkExceedTable = ({
         name: 'Phụ khoa',
         key: 'gynecology',
         rooms: sortedDays.map(day => getRequiredRooms(day.gynecology, 'gynecology'))
+      },
+      {
+        name: 'X-Quang',
+        key: 'xray',
+        rooms: sortedDays.map(day => getRequiredRooms(day.xray, 'xray'))
       }
     ]
 

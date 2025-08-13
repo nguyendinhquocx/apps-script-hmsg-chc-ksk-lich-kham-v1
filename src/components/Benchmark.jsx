@@ -9,6 +9,7 @@ import BenchmarkUltrasoundChart from './BenchmarkUltrasoundChart'
 import BenchmarkECGChart from './BenchmarkECGChart'
 import BenchmarkGynecologyChart from './BenchmarkGynecologyChart'
 import BenchmarkInternalMedicineChart from './BenchmarkInternalMedicineChart'
+import BenchmarkXRayChart from './BenchmarkXRayChart'
 
 const Benchmark = ({ filters }) => {
   const { data: benchmarkData, loading: benchmarkLoading, error: benchmarkError } = useBenchmarkData()
@@ -80,23 +81,33 @@ const Benchmark = ({ filters }) => {
           dateFilter={filters?.dateFilter}
         />
         
-        <BenchmarkInternalMedicineChart
-          data={filteredData || []}
-          benchmarkData={benchmarkData || []}
-          monthFilter={filters?.monthFilter}
-          dateFilter={filters?.dateFilter}
-        />
-        
-        {/* ECG and Gynecology charts in the same row */}
+        {/* Internal Medicine and ECG charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <BenchmarkECGChart
+          <BenchmarkInternalMedicineChart
             data={filteredData || []}
             benchmarkData={benchmarkData || []}
             monthFilter={filters?.monthFilter}
             dateFilter={filters?.dateFilter}
           />
           
+          <BenchmarkECGChart
+            data={filteredData || []}
+            benchmarkData={benchmarkData || []}
+            monthFilter={filters?.monthFilter}
+            dateFilter={filters?.dateFilter}
+          />
+        </div>
+        
+        {/* Gynecology and X-Ray charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <BenchmarkGynecologyChart
+            data={filteredData || []}
+            benchmarkData={benchmarkData || []}
+            monthFilter={filters?.monthFilter}
+            dateFilter={filters?.dateFilter}
+          />
+          
+          <BenchmarkXRayChart
             data={filteredData || []}
             benchmarkData={benchmarkData || []}
             monthFilter={filters?.monthFilter}
