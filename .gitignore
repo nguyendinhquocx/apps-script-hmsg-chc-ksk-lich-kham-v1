@@ -1,8 +1,5 @@
-# BMAD directories
-.bmad-core/
-.claude/
-.expert/
-docs/
-
-# Image files
-image.png
+# # BMAD directories
+# .bmad-core/
+# .claude/
+# .expert/
+# docs/
