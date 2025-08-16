@@ -1,24 +1,29 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run dev:*)",
-      "Bash(del:*)",
-      "Bash(rm:*)",
-      "Bash(rm:*)",
+      "Bash(dir)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm install)",
+      "Bash(npm link:*)",
+      "Bash(bmad-vn create:*)",
+      "Bash(bmad-vn init:*)",
+      "Bash(npm publish:*)",
+      "Bash(npm:*)",
+      "Bash(npx ndq-bmad-vn create:*)",
+      "Bash(npx:*)",
+      "Bash(dir:*)",
       "Bash(node:*)",
-      "Bash(npm install:*)",
-      "Bash(npm run build:*)",
-      "Bash(curl:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "Bash(rm:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
+    "ask": [],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
-      "D:\\pcloud\\_file tam",
-      "D:\\pcloud\\code\\ai\\Prompt AI NguyenX"
+      "D:\\pcloud\\code\\ai\\BMAD\\BMAD-METHOD-4",
+      "D:\\pcloud\\code\\ai\\BMAD\\test-bmad-project",
+      "D:\\pcloud\\code\\ai\\BMAD"
     ]
   }
 }
