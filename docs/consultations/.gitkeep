@@ -1,0 +1,26 @@
+# Expert Consultations Log Directory
+
+This directory contains automatically generated consultation logs from expert sessions.
+
+## Structure
+- File naming: `YYYY-MM-DD-[expert-topic]-[session-id].md`
+- Content: Question, expert response, action items, integration notes
+
+## Purpose  
+- Track expert guidance throughout project development
+- Create searchable knowledge base of expert insights
+- Enable follow-up and action item tracking
+- Provide context for future consultations
+
+## Integration with BMad
+Expert consultation insights feed back into:
+- Story refinements and new story creation
+- Architecture document updates  
+- Code quality improvements
+- Design direction changes
+
+Each consultation log includes:
+- Context of when/why expert was consulted
+- Full expert response and recommendations
+- Action items extracted from expert advice
+- Integration status with BMad workflow
