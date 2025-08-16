@@ -11,8 +11,14 @@
       "Bash(curl:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "D:\\pcloud\\_file tam",
+      "D:\\pcloud\\code\\ai\\Prompt AI NguyenX"
+    ]
   }
 }

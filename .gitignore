@@ -1,3 +1,8 @@
+# BMAD directories
+.bmad-core/
+.claude/
+.expert/
+docs/
 
-# YoYo AI version control directory
-.yoyo/
+.vercel
+.vscode
