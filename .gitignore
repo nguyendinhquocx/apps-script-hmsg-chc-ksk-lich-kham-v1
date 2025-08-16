@@ -3,3 +3,6 @@
 .claude/
 .expert/
 docs/
+
+# Image files
+image.png
