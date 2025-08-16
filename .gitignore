@@ -1,5 +1,5 @@
-# # BMAD directories
-# .bmad-core/
-# .claude/
-# .expert/
-# docs/
+# BMAD directories
+.bmad-core/
+.claude/
+.expert/
+docs/
