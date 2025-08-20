@@ -213,11 +213,22 @@ const BenchmarkExceedTable = ({
     XLSX.writeFile(wb, `so-phong-can-thiet-${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
-  // Helper function to get cell styling based on room count
-  const getRoomCellStyle = (roomCount) => {
+  // Helper function to get cell styling based on room count and date
+  const getRoomCellStyle = (roomCount, dayDate) => {
+    const today = new Date()
+    const currentDate = new Date(dayDate)
+    const isPastDate = currentDate < today && currentDate.toDateString() !== today.toDateString()
+    
     if (roomCount === 0 || !roomCount) return 'text-gray-300'
+    
+    // If it's a past date, use muted colors
+    if (isPastDate) {
+      return 'text-gray-400 font-normal'
+    }
+    
+    // Current and future dates use original logic
     if (roomCount === 1) return 'text-gray-800 font-normal'
-    if (roomCount === 2) return 'text-blue-600 font-semibold'
+    if (roomCount === 2) return 'text-blue-600 font-normal'
     if (roomCount >= 3) return 'text-red-600 font-bold'
     return 'text-gray-800'
   }
@@ -278,7 +289,7 @@ const BenchmarkExceedTable = ({
                     
                     return (
                       <td key={dayIndex} className={`px-2 py-3 text-center text-sm ${isToday ? 'bg-gray-100' : ''}`}>
-                        <span className={getRoomCellStyle(roomCount)}>
+                        <span className={getRoomCellStyle(roomCount, day.date)}>
                           {roomCount || ''}
                         </span>
                       </td>

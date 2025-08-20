@@ -11,13 +11,13 @@ const BenchmarkUltrasoundChart = ({
   dateFilter = { startDate: '', endDate: '' } 
 }) => {
 
-  // Define ultrasound categories with correct field names and new colors
+  // Define ultrasound categories with blue-toned color palette
   const ultrasoundCategories = [
-    { key: 'sieuAm_bung', name: 'Siêu âm bụng', color: '#073b4c', fields: ['sieu am bung sang', 'sieu am bung chieu'], benchmark: 'Siêu âm - Bụng' },
-    { key: 'sieuAm_giap', name: 'Siêu âm giáp', color: '#118ab2', fields: ['sieu am giap sang', 'sieu am giap chieu'], benchmark: 'Siêu âm - Giáp' },
-    { key: 'sieuAm_vu', name: 'Siêu âm vú', color: '#06d6a0', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Vú' },
-    { key: 'sieuAm_tim', name: 'Siêu âm tim', color: '#ffd166', fields: ['sieu am tim sang', 'sieu am tim chieu'], benchmark: 'Siêu âm - Tim' },
-    { key: 'sieuAm_canh', name: 'SA động mạch cảnh', color: '#ef476f', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'], benchmark: 'Siêu âm - Động mạch cảnh' },
+    { key: 'sieuAm_bung', name: 'Siêu âm bụng', color: '#051923', fields: ['sieu am bung sang', 'sieu am bung chieu'], benchmark: 'Siêu âm - Bụng' },
+    { key: 'sieuAm_giap', name: 'Siêu âm giáp', color: '#003554', fields: ['sieu am giap sang', 'sieu am giap chieu'], benchmark: 'Siêu âm - Giáp' },
+    { key: 'sieuAm_vu', name: 'Siêu âm vú', color: '#006494', fields: ['sieu am vu sang', 'sieu am vu chieu'], benchmark: 'Siêu âm - Vú' },
+    { key: 'sieuAm_tim', name: 'Siêu âm tim', color: '#0582ca', fields: ['sieu am tim sang', 'sieu am tim chieu'], benchmark: 'Siêu âm - Tim' },
+    { key: 'sieuAm_canh', name: 'SA động mạch cảnh', color: '#00a6fb', fields: ['sieu am dong mach canh sang', 'sieu am dong mach canh chieu'], benchmark: 'Siêu âm - Động mạch cảnh' },
   ]
 
   // Get benchmark limits
@@ -242,14 +242,15 @@ const BenchmarkUltrasoundChart = ({
                     key={`benchmark-${category.key}`}
                     y={benchmarkLimit} 
                     stroke="#DC2626" 
-                    strokeDasharray="5 5"
+                    strokeWidth={0.5}
+                    strokeDasharray="3 3"
                     label={{
                       value: benchmarkLimit,
                       position: "right",
-                      offset: 10,
+                      offset: 5,
                       style: { 
                         fill: "#ef4444", 
-                        fontSize: "12px", 
+                        fontSize: "11px", 
                         fontWeight: "500",
                         textAnchor: "start"
                       }
@@ -267,7 +268,7 @@ const BenchmarkUltrasoundChart = ({
                 type="monotone"
                 dataKey={category.key}
                 stroke={category.color}
-                strokeWidth={2}
+                strokeWidth={1.5}
                 dot={(props) => {
                   const { cx, cy, payload } = props
                   const isToday = payload?.isToday

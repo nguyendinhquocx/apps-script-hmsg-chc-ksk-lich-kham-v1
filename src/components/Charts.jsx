@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, Fragment } from 'react'
 import { FileSpreadsheet } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import GlobalFilters from './GlobalFilters'
@@ -24,7 +24,17 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
   // Sử dụng hook để xử lý Excel export và các calculations
   const { exportToExcel, getExamCount, getMaxForDay, getDaysToShow, getExamDetailData } = useChartsExport(filteredData, globalFilters)
 
-  const days = getDaysToShow() // Đã loại bỏ chủ nhật trong function
+  const allDays = getDaysToShow() // Đã loại bỏ chủ nhật trong function
+  
+  // Sắp xếp ngày: ngày hiện tại và tương lai lên trên, ngày đã qua xuống dưới
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Reset về đầu ngày để so sánh chính xác
+  
+  const futureDays = allDays.filter(dayInfo => dayInfo.date >= today)
+  const pastDays = allDays.filter(dayInfo => dayInfo.date < today)
+  
+  // Kết hợp: tương lai + hiện tại trước, quá khứ sau (cả 2 nhóm đều tăng dần)
+  const days = [...futureDays, ...pastDays]
 
   // Handle exam cell click
   const handleExamClick = (date, categoryIndex, period) => {
@@ -208,7 +218,24 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                 
                 if (hasAnyFilter && !hasData) return null
                 
+                // Kiểm tra xem có cần thêm separator không (chuyển từ future sang past days)
+                const isFirstPastDay = dayIndex > 0 && 
+                  futureDays.length > 0 && 
+                  dayIndex === futureDays.length &&
+                  pastDays.length > 0
+                
                 return (
+                  <Fragment key={dayInfo.date}>
+                    {/* Separator row giữa ngày tương lai và ngày đã qua */}
+                    {isFirstPastDay && (
+                      <tr>
+                        <td colSpan={2 + examCategories.length * 2} className="px-0 py-2">
+                          <div className="border-t border-dashed border-gray-300 opacity-60"></div>
+                        </td>
+                      </tr>
+                    )}
+                    
+                    {/* Row ngày thường */}
                   <tr key={dayInfo.date} className={isToday ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]'}>
                     {/* Cột ngày */}
                     <td className="px-3 py-2 whitespace-nowrap text-sm">
@@ -273,8 +300,8 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                                       ...(isMaxInPeriod ? {
                                         border: `1px solid ${isPastDate ? '#2962ff' : '#000000'}`,
                                         borderRadius: '50%',
-                                        width: '24px',
-                                        height: '24px',
+                                        width: '28px',
+                                        height: '28px',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         justifyContent: 'center'
@@ -332,8 +359,8 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                                       ...(isMaxInPeriod ? {
                                         border: `1px solid ${isPastDate ? '#2962ff' : '#000000'}`,
                                         borderRadius: '50%',
-                                        width: '24px',
-                                        height: '24px',
+                                        width: '28px',
+                                        height: '28px',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         justifyContent: 'center'
@@ -364,6 +391,7 @@ const Charts = ({ globalFilters, updateGlobalFilter, resetGlobalFilters }) => {
                       )
                     })()}
                   </tr>
+                  </Fragment>
                 )
               }).filter(Boolean)} {/* Lọc bỏ null values khi có filter */}
             </tbody>

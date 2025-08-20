@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, Fragment } from 'react'
 import { FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import StatsCards from './StatsCards'
@@ -14,7 +14,8 @@ import {
   getExamCountForDate, 
   getExamCountForDateNew,
   getBloodTestDisplay, 
-  calculateDailyTotals, 
+  calculateDailyTotals,
+  calculateBloodTestTotals, 
   getCompanyDetails 
 } from '../utils/examUtils'
 
@@ -87,7 +88,7 @@ const DataTable = ({ globalFilters = {} }) => {
   }
 
   // Toggle dropdown for all daily totals
-  const [showAllBreakdown, setShowAllBreakdown] = useState(false)
+  const [showAllBreakdown, setShowAllBreakdown] = useState(true)
 
   // Toggle dropdown for daily totals
   const toggleDayExpansion = (dayIndex) => {
@@ -172,6 +173,18 @@ const DataTable = ({ globalFilters = {} }) => {
   // Memoized calculations
   const dateRange = useMemo(() => getDateRange(dateFilter, monthFilter), [dateFilter, monthFilter])
   const dailyTotals = useMemo(() => calculateDailyTotals(data, dateRange), [data, dateRange])
+  const bloodTestTotals = useMemo(() => calculateBloodTestTotals(data, dateRange, dailyTotals), [data, dateRange, dailyTotals])
+  
+  // Sắp xếp dữ liệu: chưa khám xong trên, đã khám xong dưới (giữ nguyên thứ tự gốc trong từng nhóm)
+  const sortedData = useMemo(() => {
+    if (!data || !Array.isArray(data)) return []
+    
+    const notCompleted = data.filter(record => record['trang thai kham'] !== 'Đã khám xong')
+    const completed = data.filter(record => record['trang thai kham'] === 'Đã khám xong')
+    
+    // KHÔNG sắp xếp lại - giữ nguyên thứ tự gốc đã được sort bởi useTableData
+    return [...notCompleted, ...completed]
+  }, [data])
 
   return (
     <div className="space-y-8">
@@ -350,7 +363,7 @@ const DataTable = ({ globalFilters = {} }) => {
                       )
                     })}
                   </tr>
-                  <tr className="bg-white border-b border-gray-200">
+                  <tr className="bg-white">
                     <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-0 bg-white z-30">Chiều</td>
                     <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-[200px] bg-white z-20">-</td>
                     {dailyTotals.map((total, index) => {
@@ -372,6 +385,52 @@ const DataTable = ({ globalFilters = {} }) => {
                       )
                     })}
                   </tr>
+                  
+                  {/* Lấy máu ngoại viện row */}
+                  <tr className="bg-white">
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium italic sticky left-0 bg-white z-30">Lấy máu ngoại viện</td>
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-[200px] bg-white z-20">-</td>
+                    {bloodTestTotals.map((bloodTest, index) => {
+                      const today = new Date()
+                      const isToday = dateRange[index] && isSameDay(dateRange[index], today)
+                      
+                      return (
+                        <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : 'bg-white'}`}>
+                          {bloodTest.external > 0 && (
+                            <span 
+                              className="italic" 
+                              style={{color: '#666666', fontSize: '11px'}}
+                            >
+                              {bloodTest.external}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                  
+                  {/* Lấy máu nội viện row */}
+                  <tr className="bg-white border-b border-gray-200">
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium italic sticky left-0 bg-white z-30">Lấy máu nội viện</td>
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-[200px] bg-white z-20">-</td>
+                    {bloodTestTotals.map((bloodTest, index) => {
+                      const today = new Date()
+                      const isToday = dateRange[index] && isSameDay(dateRange[index], today)
+                      
+                      return (
+                        <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : 'bg-white'}`}>
+                          {bloodTest.internal > 0 && (
+                            <span 
+                              className="italic" 
+                              style={{color: '#666666', fontSize: '11px'}}
+                            >
+                              {bloodTest.internal}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
                 </>
               )}
             </thead>
@@ -383,9 +442,28 @@ const DataTable = ({ globalFilters = {} }) => {
                   </td>
                 </tr>
               ) : (
-                data.map((record, index) => {
-                  const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+                (() => {
+                  // Tính notCompletedCount một lần duy nhất
+                  const notCompletedCount = sortedData.filter(r => r['trang thai kham'] !== 'Đã khám xong').length
+                  
+                  return sortedData.map((record, index) => {
+                    const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+                    
+                    // Kiểm tra xem có cần thêm separator không (chuyển từ chưa xong sang đã xong)
+                    const isFirstCompletedRow = index === notCompletedCount && notCompletedCount > 0 && index < sortedData.length
+                  
                   return (
+                    <Fragment key={record['ID'] || record.id || index}>
+                      {/* Separator row giữa chưa khám xong và đã khám xong */}
+                      {isFirstCompletedRow && (
+                        <tr>
+                          <td colSpan={dateRange.length + 2} className="px-0 py-2">
+                            <div className="border-t border-dashed border-gray-300 opacity-60"></div>
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {/* Row công ty thường */}
                     <tr key={record['ID'] || record.id || index}>
                       <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-30" style={{width: '200px', color: isCompleted ? '#2962ff' : '#000000'}}>
                          <div 
@@ -405,7 +483,7 @@ const DataTable = ({ globalFilters = {} }) => {
                         const isToday = isSameDay(date, today)
                         
                         return (
-                          <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
+                          <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday && !isCompleted ? 'bg-[#f8f9fa]' : ''}`}>
                             {bloodTestDisplay && bloodTestDisplay.value !== '-' && bloodTestDisplay.value > 0 && (
                               <span 
                                 className={`text-xs ${bloodTestDisplay.isBold ? 'font-bold' : 'font-normal'}`} 
@@ -447,8 +525,10 @@ const DataTable = ({ globalFilters = {} }) => {
                         )
                       })}
                     </tr>
+                    </Fragment>
                   )
-                })
+                  })
+                })()
               )}
             </tbody>
           </table>
