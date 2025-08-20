@@ -1,0 +1,75 @@
+12:46:06 PM: Waiting for other deploys from your team to complete. Check the queue: https://app.netlify.com/teams/nguyendinhquoc/builds
+12:47:35 PM: build-image version: 71a98eb82b055b934e7d58946f59957e90f5a76f (noble)
+12:47:35 PM: buildbot version: 72ba091da8478e084b7407a21cd8435e7ecab808
+12:47:35 PM: Fetching cached dependencies
+12:47:35 PM: Starting to download cache of 405.8MB (Last modified: 2025-08-11 06:06:51 +0000 UTC)
+12:47:37 PM: Finished downloading cache in 1.397s
+12:47:37 PM: Starting to extract cache
+12:47:40 PM: Finished extracting cache in 3.666s
+12:47:40 PM: Finished fetching cache in 5.136s
+12:47:40 PM: Starting to prepare the repo for build
+12:47:41 PM: Preparing Git Reference refs/heads/main
+12:47:45 PM: Custom build command detected. Proceeding with the specified command: 'npm install && npm run build'
+12:47:45 PM: Starting to install dependencies
+12:47:45 PM: Started restoring cached python cache
+12:47:45 PM: Finished restoring cached python cache
+12:47:45 PM: Started restoring cached ruby cache
+12:47:46 PM: Finished restoring cached ruby cache
+12:47:46 PM: Started restoring cached go cache
+12:47:46 PM: Finished restoring cached go cache
+12:47:47 PM: Started restoring cached Node.js version
+12:47:48 PM: Finished restoring cached Node.js version
+12:47:48 PM: Downloading and installing node v18.19.0...
+12:47:48 PM: Downloading https://nodejs.org/dist/v18.19.0/node-v18.19.0-linux-x64.tar.xz...
+12:47:48 PM: Computing checksum with sha256sum
+12:47:48 PM: Checksums matched!
+12:47:51 PM: Now using node v18.19.0 (npm v10.2.3)
+12:47:51 PM: Enabling Node.js Corepack
+12:47:51 PM: Started restoring cached build plugins
+12:47:51 PM: Finished restoring cached build plugins
+12:47:51 PM: Started restoring cached corepack dependencies
+12:47:51 PM: Finished restoring cached corepack dependencies
+12:47:51 PM: No npm workspaces detected
+12:47:51 PM: Started restoring cached node modules
+12:47:52 PM: Finished restoring cached node modules
+12:47:53 PM: Found npm version (10.2.3) that doesn't match expected (10.2.4)
+Installing npm version 10.2.4
+12:47:55 PM: removed 10 packages, and changed 30 packages in 2s
+12:47:55 PM: 28 packages are looking for funding
+12:47:55 PM:   run `npm fund` for details
+12:47:55 PM: npm installed successfully
+12:47:55 PM: Installing npm packages using npm version 10.2.4
+12:47:56 PM: Failed during stage 'Install dependencies': dependency_installation script returned non-zero exit code: 1
+12:47:56 PM: npm ERR! code ERESOLVE
+12:47:56 PM: npm ERR! ERESOLVE could not resolve
+12:47:56 PM: npm ERR!
+12:47:56 PM: npm ERR! While resolving: eslint-plugin-react-hooks@4.6.2
+12:47:56 PM: npm ERR! Found: eslint@9.33.0
+12:47:56 PM: npm ERR! node_modules/eslint
+12:47:56 PM: npm ERR!   dev eslint@"^9.33.0" from the root project
+12:47:56 PM: npm ERR!   peer eslint@"^6.0.0 || ^7.0.0 || >=8.0.0" from @eslint-community/eslint-utils@4.7.0
+12:47:56 PM: npm ERR!   node_modules/@eslint-community/eslint-utils
+12:47:56 PM: npm ERR!     @eslint-community/eslint-utils@"^4.2.0" from eslint@9.33.0
+12:47:56 PM: npm ERR!   2 more (eslint-plugin-react, eslint-plugin-react-refresh)
+12:47:56 PM: npm ERR!
+12:47:56 PM: npm ERR! Could not resolve dependency:
+12:47:56 PM: npm ERR! peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0" from eslint-plugin-react-hooks@4.6.2
+12:47:56 PM: npm ERR! node_modules/eslint-plugin-react-hooks
+12:47:56 PM: npm ERR!   dev eslint-plugin-react-hooks@"^4.6.0" from the root project
+12:47:56 PM: npm ERR!
+12:47:56 PM: npm ERR! Conflicting peer dependency: eslint@8.57.1
+12:47:56 PM: npm ERR! node_modules/eslint
+12:47:56 PM: npm ERR!   peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0" from eslint-plugin-react-hooks@4.6.2
+12:47:56 PM: npm ERR!   node_modules/eslint-plugin-react-hooks
+12:47:56 PM: npm ERR!     dev eslint-plugin-react-hooks@"^4.6.0" from the root project
+12:47:56 PM: npm ERR!
+12:47:56 PM: npm ERR! Fix the upstream dependency conflict, or retry
+12:47:56 PM: npm ERR! this command with --force or --legacy-peer-deps
+12:47:56 PM: npm ERR! to accept an incorrect (and potentially broken) dependency resolution.
+12:47:56 PM: npm ERR!
+12:47:56 PM: npm ERR!
+12:47:56 PM: npm ERR! For a full report see:
+12:47:56 PM: npm ERR! /opt/buildhome/.npm/_logs/2025-08-13T05_47_55_961Z-eresolve-report.txt
+12:47:56 PM: npm ERR! A complete log of this run can be found in: /opt/buildhome/.npm/_logs/2025-08-13T05_47_55_961Z-debug-0.log
+12:47:56 PM: Error during npm install
+12:47:56 PM: Failing build: Failed to install dependencies
