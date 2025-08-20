@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, Fragment } from 'react'
 import { FileSpreadsheet, ChevronDown, ChevronRight } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import StatsCards from './StatsCards'
@@ -174,6 +174,18 @@ const DataTable = ({ globalFilters = {} }) => {
   const dateRange = useMemo(() => getDateRange(dateFilter, monthFilter), [dateFilter, monthFilter])
   const dailyTotals = useMemo(() => calculateDailyTotals(data, dateRange), [data, dateRange])
   const bloodTestTotals = useMemo(() => calculateBloodTestTotals(data, dateRange, dailyTotals), [data, dateRange, dailyTotals])
+  
+  // Sắp xếp dữ liệu: chưa khám xong trên, đã khám xong dưới
+  const sortedData = useMemo(() => {
+    const notCompleted = data.filter(record => record['trang thai kham'] !== 'Đã khám xong')
+    const completed = data.filter(record => record['trang thai kham'] === 'Đã khám xong')
+    
+    // Sắp xếp từng nhóm theo số người khám (tăng dần cho chưa xong, giảm dần cho đã xong)
+    notCompleted.sort((a, b) => (parseInt(a['so nguoi kham']) || 0) - (parseInt(b['so nguoi kham']) || 0))
+    completed.sort((a, b) => (parseInt(b['so nguoi kham']) || 0) - (parseInt(a['so nguoi kham']) || 0))
+    
+    return [...notCompleted, ...completed]
+  }, [data])
 
   return (
     <div className="space-y-8">
@@ -431,9 +443,25 @@ const DataTable = ({ globalFilters = {} }) => {
                   </td>
                 </tr>
               ) : (
-                data.map((record, index) => {
+                sortedData.map((record, index) => {
                   const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+                  
+                  // Kiểm tra xem có cần thêm separator không (chuyển từ chưa xong sang đã xong)
+                  const notCompletedCount = data.filter(r => r['trang thai kham'] !== 'Đã khám xong').length
+                  const isFirstCompletedRow = index === notCompletedCount && notCompletedCount > 0 && index < sortedData.length
+                  
                   return (
+                    <Fragment key={record['ID'] || record.id || index}>
+                      {/* Separator row giữa chưa khám xong và đã khám xong */}
+                      {isFirstCompletedRow && (
+                        <tr>
+                          <td colSpan={dateRange.length + 2} className="px-0 py-2">
+                            <div className="border-t border-dashed border-gray-300 opacity-60"></div>
+                          </td>
+                        </tr>
+                      )}
+                      
+                      {/* Row công ty thường */}
                     <tr key={record['ID'] || record.id || index}>
                       <td className="px-3 py-1.5 text-sm font-normal sticky left-0 bg-white z-30" style={{width: '200px', color: isCompleted ? '#2962ff' : '#000000'}}>
                          <div 
@@ -495,6 +523,7 @@ const DataTable = ({ globalFilters = {} }) => {
                         )
                       })}
                     </tr>
+                    </Fragment>
                   )
                 })
               )}
