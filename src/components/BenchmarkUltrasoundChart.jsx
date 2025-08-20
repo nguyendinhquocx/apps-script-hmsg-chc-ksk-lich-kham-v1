@@ -242,14 +242,15 @@ const BenchmarkUltrasoundChart = ({
                     key={`benchmark-${category.key}`}
                     y={benchmarkLimit} 
                     stroke="#DC2626" 
-                    strokeDasharray="5 5"
+                    strokeWidth={0.5}
+                    strokeDasharray="3 3"
                     label={{
                       value: benchmarkLimit,
                       position: "right",
-                      offset: 10,
+                      offset: 5,
                       style: { 
                         fill: "#ef4444", 
-                        fontSize: "12px", 
+                        fontSize: "11px", 
                         fontWeight: "500",
                         textAnchor: "start"
                       }

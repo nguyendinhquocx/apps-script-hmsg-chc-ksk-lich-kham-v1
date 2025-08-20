@@ -181,14 +181,15 @@ const BenchmarkGynecologyChart = ({
               <ReferenceLine 
                 y={benchmarkLimit} 
                 stroke="#2962ff" 
-                strokeDasharray="5 5"
+                strokeWidth={0.5}
+                strokeDasharray="3 3"
                 label={{
                   value: benchmarkLimit,
                   position: "right",
-                  offset: 10,
+                  offset: 5,
                   style: { 
                     fill: "#2962ff", 
-                    fontSize: "12px", 
+                    fontSize: "11px", 
                     fontWeight: "500",
                     textAnchor: "start"
                   }
@@ -201,14 +202,15 @@ const BenchmarkGynecologyChart = ({
               <ReferenceLine 
                 y={getSecondBenchmarkLimit()} 
                 stroke="#f23645" 
-                strokeDasharray="5 5"
+                strokeWidth={0.5}
+                strokeDasharray="3 3"
                 label={{
                   value: getSecondBenchmarkLimit(),
                   position: "right",
-                  offset: 10,
+                  offset: 5,
                   style: { 
                     fill: "#f23645", 
-                    fontSize: "12px", 
+                    fontSize: "11px", 
                     fontWeight: "500",
                     textAnchor: "start"
                   }
