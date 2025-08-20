@@ -492,6 +492,45 @@ export const calculateDailyTotals = (data, dates) => {
   })
 }
 
+// Calculate blood test totals for each date
+export const calculateBloodTestTotals = (data, dates, dailyTotals) => {
+  return dates.map((date, dateIndex) => {
+    let externalBloodTest = 0 // Lấy máu ngoại viện
+    
+    // Create checkDate using local time to avoid timezone shifts
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    
+    data.forEach(record => {
+      const bloodTestDateStr = record['ngay lay mau']
+      const totalPeople = safeParseNumber(record['so nguoi kham'])
+      
+      // 1. Kiểm tra lấy máu ngoại viện: chỉ tính vào đúng ngày lấy máu được chỉ định
+      if (bloodTestDateStr && bloodTestDateStr.trim()) {
+        try {
+          const bloodTestDate = new Date(bloodTestDateStr + 'T00:00:00')
+          const bloodTestCheck = new Date(bloodTestDate.getFullYear(), bloodTestDate.getMonth(), bloodTestDate.getDate())
+          
+          // Nếu ngày hiện tại trùng với ngày lấy máu
+          if (checkDate.getTime() === bloodTestCheck.getTime()) {
+            externalBloodTest += totalPeople // Tính toàn bộ số người của công ty
+          }
+        } catch (error) {
+          console.warn(`Invalid blood test date: ${bloodTestDateStr}`, error)
+        }
+      }
+    })
+    
+    // 2. Lấy máu nội viện = Tổng số người khám trong ngày (từ dailyTotals)
+    const internalBloodTest = dailyTotals[dateIndex] || 0
+    
+    return {
+      external: externalBloodTest,
+      internal: internalBloodTest,
+      total: externalBloodTest + internalBloodTest
+    }
+  })
+}
+
 // Calculate company examination details
 export const getCompanyDetails = (record) => {
   if (!record) return null

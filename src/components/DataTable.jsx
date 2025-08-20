@@ -14,7 +14,8 @@ import {
   getExamCountForDate, 
   getExamCountForDateNew,
   getBloodTestDisplay, 
-  calculateDailyTotals, 
+  calculateDailyTotals,
+  calculateBloodTestTotals, 
   getCompanyDetails 
 } from '../utils/examUtils'
 
@@ -172,6 +173,7 @@ const DataTable = ({ globalFilters = {} }) => {
   // Memoized calculations
   const dateRange = useMemo(() => getDateRange(dateFilter, monthFilter), [dateFilter, monthFilter])
   const dailyTotals = useMemo(() => calculateDailyTotals(data, dateRange), [data, dateRange])
+  const bloodTestTotals = useMemo(() => calculateBloodTestTotals(data, dateRange, dailyTotals), [data, dateRange, dailyTotals])
 
   return (
     <div className="space-y-8">
@@ -350,7 +352,7 @@ const DataTable = ({ globalFilters = {} }) => {
                       )
                     })}
                   </tr>
-                  <tr className="bg-white border-b border-gray-200">
+                  <tr className="bg-white">
                     <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-0 bg-white z-30">Chiều</td>
                     <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-[200px] bg-white z-20">-</td>
                     {dailyTotals.map((total, index) => {
@@ -366,6 +368,52 @@ const DataTable = ({ globalFilters = {} }) => {
                               style={{color: breakdown.afternoon > 100 ? '#f23645' : '#000000'}}
                             >
                               {breakdown.afternoon}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                  
+                  {/* Lấy máu ngoại viện row */}
+                  <tr className="bg-white">
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium italic sticky left-0 bg-white z-30">Lấy máu ngoại viện</td>
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-[200px] bg-white z-20">-</td>
+                    {bloodTestTotals.map((bloodTest, index) => {
+                      const today = new Date()
+                      const isToday = dateRange[index] && isSameDay(dateRange[index], today)
+                      
+                      return (
+                        <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : 'bg-white'}`}>
+                          {bloodTest.external > 0 && (
+                            <span 
+                              className="italic" 
+                              style={{color: '#666666', fontSize: '11px'}}
+                            >
+                              {bloodTest.external}
+                            </span>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                  
+                  {/* Lấy máu nội viện row */}
+                  <tr className="bg-white border-b border-gray-200">
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium italic sticky left-0 bg-white z-30">Lấy máu nội viện</td>
+                    <td className="px-3 py-1.5 text-xs text-gray-600 font-medium sticky left-[200px] bg-white z-20">-</td>
+                    {bloodTestTotals.map((bloodTest, index) => {
+                      const today = new Date()
+                      const isToday = dateRange[index] && isSameDay(dateRange[index], today)
+                      
+                      return (
+                        <td key={index} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : 'bg-white'}`}>
+                          {bloodTest.internal > 0 && (
+                            <span 
+                              className="italic" 
+                              style={{color: '#666666', fontSize: '11px'}}
+                            >
+                              {bloodTest.internal}
                             </span>
                           )}
                         </td>
