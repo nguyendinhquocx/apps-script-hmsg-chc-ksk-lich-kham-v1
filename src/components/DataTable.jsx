@@ -87,7 +87,7 @@ const DataTable = ({ globalFilters = {} }) => {
   }
 
   // Toggle dropdown for all daily totals
-  const [showAllBreakdown, setShowAllBreakdown] = useState(false)
+  const [showAllBreakdown, setShowAllBreakdown] = useState(true)
 
   // Toggle dropdown for daily totals
   const toggleDayExpansion = (dayIndex) => {
