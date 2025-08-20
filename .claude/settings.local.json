@@ -14,8 +14,7 @@
       "Bash(npx:*)",
       "Bash(dir:*)",
       "Bash(node:*)",
-      "Bash(rm:*)",
-      "Bash(git add:*)"
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": [],
