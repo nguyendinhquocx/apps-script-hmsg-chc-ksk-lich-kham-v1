@@ -15,11 +15,7 @@
       "Bash(dir:*)",
       "Bash(node:*)",
       "Bash(rm:*)",
-      "Bash(git add:*)",
-      "Bash(git push:*)",
-      "Bash(git rm:*)",
-      "WebFetch(domain:localhost)",
-      "WebFetch(domain:10.20.54.136)"
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": [],
