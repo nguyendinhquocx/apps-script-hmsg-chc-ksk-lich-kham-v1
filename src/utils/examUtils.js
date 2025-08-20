@@ -520,8 +520,22 @@ export const calculateBloodTestTotals = (data, dates, dailyTotals) => {
       }
     })
     
-    // 2. Lấy máu nội viện = Tổng số người khám trong ngày (từ dailyTotals)
-    const internalBloodTest = dailyTotals[dateIndex] || 0
+    // 2. Lấy máu nội viện = Tổng số người khám trong ngày - Số người đã lấy máu ngoại viện
+    let internalBloodTest = dailyTotals[dateIndex] || 0
+    
+    // Trừ đi số người của các công ty đã lấy máu ngoại viện và có khám trong ngày này
+    data.forEach(record => {
+      const hasExternalBloodTest = record['ngay lay mau'] && record['ngay lay mau'].trim()
+      if (hasExternalBloodTest) {
+        const examCountOnThisDate = getExamCountForDate(record, date)
+        if (examCountOnThisDate > 0) {
+          internalBloodTest -= examCountOnThisDate
+        }
+      }
+    })
+    
+    // Đảm bảo không âm
+    internalBloodTest = Math.max(0, internalBloodTest)
     
     return {
       external: externalBloodTest,
