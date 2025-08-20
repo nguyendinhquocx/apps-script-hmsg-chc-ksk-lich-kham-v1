@@ -223,7 +223,7 @@ const BenchmarkXRayChart = ({
               type="monotone"
               dataKey="xray"
               stroke="#000000"
-              strokeWidth={2}
+              strokeWidth={1.5}
               dot={(props) => {
                 const { cx, cy, payload } = props
                 const isToday = payload?.isToday
