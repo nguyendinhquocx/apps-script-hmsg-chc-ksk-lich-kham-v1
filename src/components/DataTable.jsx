@@ -175,15 +175,14 @@ const DataTable = ({ globalFilters = {} }) => {
   const dailyTotals = useMemo(() => calculateDailyTotals(data, dateRange), [data, dateRange])
   const bloodTestTotals = useMemo(() => calculateBloodTestTotals(data, dateRange, dailyTotals), [data, dateRange, dailyTotals])
   
-  // Sắp xếp dữ liệu: chưa khám xong trên, đã khám xong dưới
+  // Sắp xếp dữ liệu: chưa khám xong trên, đã khám xong dưới (giữ nguyên thứ tự gốc trong từng nhóm)
   const sortedData = useMemo(() => {
+    if (!data || !Array.isArray(data)) return []
+    
     const notCompleted = data.filter(record => record['trang thai kham'] !== 'Đã khám xong')
     const completed = data.filter(record => record['trang thai kham'] === 'Đã khám xong')
     
-    // Sắp xếp từng nhóm theo số người khám (tăng dần cho chưa xong, giảm dần cho đã xong)
-    notCompleted.sort((a, b) => (parseInt(a['so nguoi kham']) || 0) - (parseInt(b['so nguoi kham']) || 0))
-    completed.sort((a, b) => (parseInt(b['so nguoi kham']) || 0) - (parseInt(a['so nguoi kham']) || 0))
-    
+    // KHÔNG sắp xếp lại - giữ nguyên thứ tự gốc đã được sort bởi useTableData
     return [...notCompleted, ...completed]
   }, [data])
 
@@ -443,12 +442,15 @@ const DataTable = ({ globalFilters = {} }) => {
                   </td>
                 </tr>
               ) : (
-                sortedData.map((record, index) => {
-                  const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+                (() => {
+                  // Tính notCompletedCount một lần duy nhất
+                  const notCompletedCount = sortedData.filter(r => r['trang thai kham'] !== 'Đã khám xong').length
                   
-                  // Kiểm tra xem có cần thêm separator không (chuyển từ chưa xong sang đã xong)
-                  const notCompletedCount = data.filter(r => r['trang thai kham'] !== 'Đã khám xong').length
-                  const isFirstCompletedRow = index === notCompletedCount && notCompletedCount > 0 && index < sortedData.length
+                  return sortedData.map((record, index) => {
+                    const isCompleted = record['trang thai kham'] === 'Đã khám xong'
+                    
+                    // Kiểm tra xem có cần thêm separator không (chuyển từ chưa xong sang đã xong)
+                    const isFirstCompletedRow = index === notCompletedCount && notCompletedCount > 0 && index < sortedData.length
                   
                   return (
                     <Fragment key={record['ID'] || record.id || index}>
@@ -481,7 +483,7 @@ const DataTable = ({ globalFilters = {} }) => {
                         const isToday = isSameDay(date, today)
                         
                         return (
-                          <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday ? 'bg-[#f8f9fa]' : ''}`}>
+                          <td key={dateIndex} className={`px-1 py-1.5 text-center ${isToday && !isCompleted ? 'bg-[#f8f9fa]' : ''}`}>
                             {bloodTestDisplay && bloodTestDisplay.value !== '-' && bloodTestDisplay.value > 0 && (
                               <span 
                                 className={`text-xs ${bloodTestDisplay.isBold ? 'font-bold' : 'font-normal'}`} 
@@ -525,7 +527,8 @@ const DataTable = ({ globalFilters = {} }) => {
                     </tr>
                     </Fragment>
                   )
-                })
+                  })
+                })()
               )}
             </tbody>
           </table>

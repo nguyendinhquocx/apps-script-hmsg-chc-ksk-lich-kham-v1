@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx'
+import { useMemo } from 'react'
 import { examCategories } from '../constants/examCategories'
 import { safeParseNumber, getExamCountForDateNew, parseSpecificDates } from '../utils/examUtils'
 
@@ -45,56 +46,22 @@ export const useChartsExport = (filteredData, globalFilters) => {
     const category = examCategories[categoryIndex]
     const columnName = period === 'morning' ? category.morning : category.afternoon
     
-    // Lọc dữ liệu cho ngày cụ thể sử dụng helper function
-    const dayData = filteredData.filter(item => hasExaminationOnDate(item, date))
+    // Sử dụng cache thay vì filter lại
+    const dateKey = date.toDateString()
+    const dayData = dataByDate.get(dateKey) || []
     
     // Tính tổng số lượng từ cột tương ứng cho ngày đó
     let totalCount = 0
     
-    console.log(`Debug getExamCount ${date.toDateString()}, ${period}:`, {
-      columnName,
-      dayDataCount: dayData.length,
-      dayDataSample: dayData.slice(0, 2).map(item => ({ 
-        company: item['ten cong ty'], 
-        rawValue: item[columnName],
-        specificDates: item['cac ngay kham thuc te']
-      }))
-    })
-    
     dayData.forEach(item => {
-      const rawValue = item[columnName]
-      
       // Get actual people count for this company on this date
       const examResult = getExamCountForDateNew(item, date)
       const actualPeopleCount = period === 'morning' ? examResult.morning : examResult.afternoon
       
-      console.log(`Debug company processing:`, {
-        company: item['ten cong ty'],
-        columnName,
-        rawValue,
-        rawValueType: typeof rawValue,
-        actualPeopleCount,
-        examResult
-      })
-      
       // Use new safeParseNumber with dynamic parsing
-      const count = safeParseNumber(rawValue, actualPeopleCount)
-      
-      // Debug logging for NaN values
-      if (isNaN(count)) {
-        console.warn('NaN detected in getExamCount:', {
-          date: date.toDateString(),
-          columnName,
-          rawValue,
-          actualPeopleCount,
-          company: item['ten cong ty']
-        })
-      }
-      
+      const count = safeParseNumber(item[columnName], actualPeopleCount)
       totalCount += count || 0 // Ensure we never add NaN
     })
-    
-    console.log(`Debug getExamCount result:`, { date: date.toDateString(), columnName, totalCount })
     
     return totalCount
   }
@@ -104,8 +71,9 @@ export const useChartsExport = (filteredData, globalFilters) => {
     const category = examCategories[categoryIndex]
     const columnName = period === 'morning' ? category.morning : category.afternoon
     
-    // Lọc dữ liệu cho ngày cụ thể sử dụng helper function
-    const dayData = filteredData.filter(item => hasExaminationOnDate(item, date))
+    // Sử dụng cache thay vì filter lại
+    const dateKey = date.toDateString()
+    const dayData = dataByDate.get(dateKey) || []
     
     // Tạo danh sách các công ty với số lượng và nhân viên phụ trách
     const companies = []
@@ -137,8 +105,9 @@ export const useChartsExport = (filteredData, globalFilters) => {
       return 0
     }
     
-    // Lọc dữ liệu cho ngày cụ thể sử dụng helper function
-    const dayData = filteredData.filter(item => hasExaminationOnDate(item, date))
+    // Sử dụng cache thay vì filter lại
+    const dateKey = date.toDateString()
+    const dayData = dataByDate.get(dateKey) || []
     
     // Tìm giá trị lớn nhất trong tất cả các hạng mục cận lâm sàng của ngày đó
     let maxCount = 0
@@ -219,6 +188,20 @@ export const useChartsExport = (filteredData, globalFilters) => {
     
     return daysList
   }
+
+  // Cache data by date để tránh filter lặp lại
+  const dataByDate = useMemo(() => {
+    const cache = new Map()
+    const days = getDaysToShow()
+    
+    days.forEach(({ date }) => {
+      const dateKey = date.toDateString()
+      const dayData = filteredData.filter(item => hasExaminationOnDate(item, date))
+      cache.set(dateKey, dayData)
+    })
+    
+    return cache
+  }, [filteredData, globalFilters])
 
   // Hàm xuất Excel cho bảng cận lâm sàng
   const exportToExcel = () => {
