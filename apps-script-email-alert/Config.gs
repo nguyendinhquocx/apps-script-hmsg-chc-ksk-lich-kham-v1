@@ -7,7 +7,8 @@
 const EMAIL_CONFIG = {
   // Danh sách email nhận cảnh báo (có thể thêm nhiều email)
   recipients: [
-    'quoc.nguyen3@hoanmy.com',
+    // 'quoc.nguyen3@hoanmy.com',
+    'luan.tran@hoanmy.com, khanh.tran@hoanmy.com, hong.le@hoanmy.com, quynh.bui@hoanmy.com, thuy.pham@hoanmy.com, quoc.nguyen3@hoanmy.com',
     // 'manager@hmsg.vn'
     // Thêm email khác nếu cần
   ],
