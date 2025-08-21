@@ -13,8 +13,7 @@
       "Bash(npx ndq-bmad-vn create:*)",
       "Bash(npx:*)",
       "Bash(dir:*)",
-      "Bash(node:*)",
-      "Bash(rm:*)"
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": [],
