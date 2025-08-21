@@ -23,19 +23,38 @@ function checkAndSendAlert() {
       return
     }
     
-    // Tính toán cho tháng hiện tại
+    // Tính toán cho tháng hiện tại VÀ THÁNG SAU
     const now = new Date()
     const currentMonth = now.getMonth() + 1
     const currentYear = now.getFullYear()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()) // Ngày hiện tại (không có giờ)
     
-    const dates = getDateRange(currentYear, currentMonth)
+    // Lấy dates cho tháng hiện tại và tháng sau
+    const currentMonthDates = getDateRange(currentYear, currentMonth)
+    
+    // Tháng sau (xử lý trường hợp chuyển năm)
+    let nextMonth = currentMonth + 1
+    let nextYear = currentYear
+    if (nextMonth > 12) {
+      nextMonth = 1
+      nextYear = currentYear + 1
+    }
+    const nextMonthDates = getDateRange(nextYear, nextMonth)
+    
+    // Kết hợp 2 tháng
+    const dates = [...currentMonthDates, ...nextMonthDates]
     const dailyTotals = calculateDailyTotals(data, dates)
     
-    // Kiểm tra các ngày vượt ngưỡng
+    // Kiểm tra các ngày vượt ngưỡng (CHỈ NGÀY HIỆN TẠI VÀ TƯƠNG LAI)
     const threshold = getThresholdFromSheet()
     const alertDays = []
     
     dates.forEach((date, index) => {
+      // Bỏ qua những ngày đã qua
+      if (date < today) {
+        return
+      }
+      
       const total = dailyTotals[index]
       if (total > threshold) {
         const companies = getCompaniesForDate(data, date)
@@ -53,12 +72,13 @@ function checkAndSendAlert() {
     })
     
     if (alertDays.length === 0) {
-      console.log('Không có ngày nào vượt ngưỡng')
+      console.log('Không có ngày nào vượt ngưỡng (trong khoảng 2 tháng kiểm tra)')
       updateDailyCheckSheet(dates, dailyTotals, [])
       return
     }
     
-    console.log(`Tìm thấy ${alertDays.length} ngày vượt ngưỡng`)
+    console.log(`Tìm thấy ${alertDays.length} ngày vượt ngưỡng (tháng ${currentMonth}/${currentYear} + ${nextMonth}/${nextYear}):`, 
+                alertDays.map(d => `${formatDate(d.date)}(${d.total})`).join(', '))
     
     // Kiểm tra xem có cần gửi email không (tránh spam)
     const shouldSend = alertDays.filter(day => shouldSendAlertForDay(day))
@@ -98,6 +118,12 @@ function checkAndSendAlert() {
  * Kiểm tra xem có nên gửi cảnh báo cho ngày này không
  */
 function shouldSendAlertForDay(dayData) {
+  // Kiểm tra timing - chỉ cảnh báo trong khung thời gian hợp lý
+  if (!shouldAlertForDateTiming(dayData.date)) {
+    console.log(`Bỏ qua cảnh báo cho ${formatDate(dayData.date)} do ngoài khung thời gian phù hợp`)
+    return false
+  }
+  
   const sheet = getOrCreateLogSheet()
   const lastRow = sheet.getLastRow()
   
@@ -119,6 +145,35 @@ function shouldSendAlertForDay(dayData) {
   }
   
   return true // Chưa từng gửi cho ngày này
+}
+
+/**
+ * Kiểm tra timing có hợp lý để cảnh báo cho ngày này không
+ */
+function shouldAlertForDateTiming(targetDate) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
+  const currentHour = now.getHours()
+  
+  // Ngày trong quá khứ: không cảnh báo
+  if (targetDate < today) {
+    return false
+  }
+  
+  // Ngày hôm nay: chỉ cảnh báo nếu còn thời gian (trước giờ deadline)
+  if (targetDate.getTime() === today.getTime()) {
+    return currentHour < ALERT_CONFIG.timing.todayDeadlineHour
+  }
+  
+  // Ngày mai: cảnh báo từ giờ nhất định hôm nay
+  if (targetDate.getTime() === tomorrow.getTime()) {
+    return currentHour >= ALERT_CONFIG.timing.tomorrowStartHour
+  }
+  
+  // Các ngày xa hơn: chỉ cảnh báo trong số ngày cho phép
+  const daysDiff = Math.floor((targetDate - today) / (24 * 60 * 60 * 1000))
+  return daysDiff <= ALERT_CONFIG.timing.maxAdvanceDays && daysDiff >= 2
 }
 
 /**
@@ -168,13 +223,16 @@ function buildEmailContent(dayData) {
     .sort((a, b) => b.total - a.total)
     .slice(0, 6)
   
-  const companyList = topCompanies.map((company, index) => 
-    `${index + 1}. ${company.name} - ${company.total} người (Sáng: ${company.morning}, Chiều: ${company.afternoon})`
-  ).join('\n')
+  // Format danh sách công ty với thông tin NVKD và xuống dòng
+  const companyList = topCompanies.map((company, index) => {
+    const nvkd = company.employee ? `(NVKD: ${company.employee})` : ''
+    return `${index + 1}. <strong>${company.name}</strong> ${nvkd}<br>
+       └── ${company.total} người (Sáng: ${company.morning}, Chiều: ${company.afternoon})`
+  }).join('<br><br>')
   
   const suggestions = []
   if (dayData.total > dayData.threshold + 50) {
-    suggestions.push('Có thể chuyển một phần sang ngày khác')
+    suggestions.push('Chuyển một số công ty (hoặc nhân viên thuộc công ty) sang ngày khác để tối ưu')
   }
   if (topCompanies.length > 0 && topCompanies[0].total > 50) {
     suggestions.push('Ưu tiên điều chỉnh các công ty có số lượng lớn')
@@ -202,14 +260,14 @@ function buildEmailContent(dayData) {
       
       <div style="margin-bottom: 25px;">
         <h3 style="color: #000000; font-weight: bold; margin-bottom: 15px;">Danh sách công ty</h3>
-        <div style="line-height: 1.8; color: #000000; white-space: pre-line;">
-${companyList}
+        <div style="line-height: 1.6; color: #000000;">
+          ${companyList}
+          ${dayData.companies.length > 6 ? `<br><br><em>... và ${dayData.companies.length - 6} công ty khác</em>` : ''}
         </div>
-        ${dayData.companies.length > 6 ? `\n... và ${dayData.companies.length - 6} công ty khác` : ''}
       </div>
       
       <div style="margin-bottom: 25px;">
-        <h3 style="color: #000000; font-weight: bold; margin-bottom: 15px;">Gợi ý điều chỉnh</h3>
+        <h3 style="color: #000000; font-weight: bold; margin-bottom: 15px;">Điều chỉnh</h3>
         <div style="line-height: 1.8; color: #000000;">
           ${suggestions.join('<br>')}
         </div>
@@ -217,8 +275,7 @@ ${companyList}
       
       <div style="border-top: 1px dotted #cccccc; padding-top: 15px; margin-top: 25px;">
         <small style="color: #000000;">
-          Thời gian: ${timestamp}<br>
-          Email tự động từ hệ thống Apps Script
+          Trân trọng<br>
         </small>
       </div>
       
@@ -237,7 +294,10 @@ function recordSentAlerts(alertDays) {
     const topCompanies = dayData.companies
       .sort((a, b) => b.total - a.total)
       .slice(0, 3)
-      .map(c => `${c.name}(${c.total})`)
+      .map(c => {
+        const employee = c.employee ? ` [${c.employee}]` : ''
+        return `${c.name}${employee}(${c.total})`
+      })
       .join(', ')
     
     sheet.appendRow([
@@ -297,6 +357,7 @@ function getCompaniesForDate(data, date) {
     if (examCount.total > 0) {
       companies.push({
         name: record.companyName,
+        employee: record.employee || 'N/A', // Thêm thông tin nhân viên
         total: examCount.total,
         morning: examCount.morning,
         afternoon: examCount.afternoon
@@ -316,16 +377,16 @@ function testEmailAlert() {
   // Tạo dữ liệu test
   const testDay = {
     date: new Date(),
-    total: 250,
-    morning: 120,
-    afternoon: 130,
+    total: 268,
+    morning: 109,
+    afternoon: 159,
     threshold: 200,
     companies: [
-      { name: 'VINGROUP', total: 80, morning: 40, afternoon: 40 },
-      { name: 'FPT SOFTWARE', total: 60, morning: 30, afternoon: 30 },
-      { name: 'VIETTEL', total: 45, morning: 20, afternoon: 25 },
-      { name: 'TECHCOMBANK', total: 35, morning: 15, afternoon: 20 },
-      { name: 'SAMSUNG', total: 30, morning: 15, afternoon: 15 }
+      { name: 'CÔNG TY TNHH NIELSENIQ VIỆT NAM', employee: 'Nguyễn Văn A', total: 135, morning: 63, afternoon: 72 },
+      { name: 'TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI TP.HCM', employee: 'Trần Thị B', total: 43, morning: 21, afternoon: 22 },
+      { name: 'CHI NHÁNH CÔNG TY TNHH SAMSUNG SDS VIỆT NAM TẠI TP.HCM', employee: 'Lê Văn C', total: 28, morning: 1, afternoon: 27 },
+      { name: 'HỌC VIỆN CAN BỘ QUẢN LÝ XÂY DỰNG VÀ ĐÔ THỊ', employee: 'Phạm Thị D', total: 13, morning: 6, afternoon: 7 },
+      { name: 'CÔNG TY TNHH ĐẦU TƯ H VÀ O', employee: 'Hoàng Văn E', total: 9, morning: 4, afternoon: 5 }
     ]
   }
   

@@ -16,15 +16,13 @@ const EMAIL_CONFIG = {
   sender: Session.getActiveUser().getEmail(),
   
   // Tiêu đề email
-  subjectTemplate: '⚠️ Cảnh báo: Lịch khám ngày {date} vượt quá {threshold} người ({total} người)',
+  subjectTemplate: 'P.KD - CHC KSK: Lịch khám ngày {date} vượt quá {threshold} người ({total} người)',
   
   // Chữ ký email
   signature: `
 <br><hr>
 <small>
-📧 Email tự động từ hệ thống Apps Script<br>
-🕒 Thời gian: {timestamp}<br>
-⚙️ Để thay đổi cài đặt, liên hệ IT
+Trân trọng<br>
 </small>
   `
 }
@@ -44,7 +42,26 @@ const ALERT_CONFIG = {
   minimumIncreaseForResend: 20,
   
   // Số ngày tối đa lưu log (tự động xóa log cũ)
-  logRetentionDays: 30
+  logRetentionDays: 30,
+  
+  // Quy tắc timing cảnh báo
+  timing: {
+    // Hôm nay: chỉ cảnh báo nếu trước giờ này (tránh cảnh báo quá muộn)
+    todayDeadlineHour: 15,
+    
+    // Ngày mai: chỉ cảnh báo từ giờ này trở đi (chuẩn bị trước)  
+    tomorrowStartHour: 14,
+    
+    // Số ngày tối đa cảnh báo trước (tránh cảnh báo quá xa)
+    maxAdvanceDays: 5
+  },
+  
+  // Phạm vi kiểm tra
+  scope: {
+    // Kiểm tra 2 tháng: tháng hiện tại + tháng sau
+    checkCurrentMonth: true,
+    checkNextMonth: true
+  }
 }
 
 // Cấu hình Google Sheets

@@ -23,10 +23,10 @@ function setupTriggers() {
     }
   })
   
-  // Tạo trigger mới - chạy mỗi 30 phút trong giờ hành chính
+  // Tạo trigger mới - chạy mỗi 8 tiếng để tối ưu
   ScriptApp.newTrigger('onDataSyncComplete')
     .timeBased()
-    .everyHours(1) // Mỗi giờ
+    .everyHours(8) // Mỗi 8 giờ thay vì 1 giờ
     .create()
   
   console.log('Đã setup trigger tự động')
@@ -66,13 +66,28 @@ function testFullSystem() {
       return
     }
     
-    // Test tính toán
-    console.log('2. Test tính toán...')
+    // Test tính toán cho 2 tháng
+    console.log('2. Test tính toán (2 tháng)...')
     const now = new Date()
-    const dates = getDateRange(now.getFullYear(), now.getMonth() + 1)
+    const currentMonth = now.getMonth() + 1
+    const currentYear = now.getFullYear()
+    
+    // Tháng hiện tại
+    const currentMonthDates = getDateRange(currentYear, currentMonth)
+    
+    // Tháng sau
+    let nextMonth = currentMonth + 1
+    let nextYear = currentYear
+    if (nextMonth > 12) {
+      nextMonth = 1
+      nextYear = currentYear + 1
+    }
+    const nextMonthDates = getDateRange(nextYear, nextMonth)
+    
+    const dates = [...currentMonthDates, ...nextMonthDates]
     const dailyTotals = calculateDailyTotals(data, dates)
     
-    console.log(`Tính được totals cho ${dates.length} ngày`)
+    console.log(`Tính được totals cho ${dates.length} ngày (${currentMonthDates.length} tháng ${currentMonth} + ${nextMonthDates.length} tháng ${nextMonth})`)
     console.log('Sample totals:', dailyTotals.slice(0, 10))
     
     // Test sheet Daily_Check
@@ -95,6 +110,25 @@ function testFullSystem() {
   } catch (error) {
     console.error('Lỗi trong test:', error)
   }
+}
+
+/**
+ * Test timing logic
+ */
+function testTimingLogic() {
+  console.log('=== Test Timing Logic ===')
+  
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000)
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+  
+  console.log(`Hiện tại: ${now.toLocaleString('vi-VN')}`)
+  console.log(`Hôm qua ${formatDate(yesterday)}: ${shouldAlertForDateTiming(yesterday) ? '✅ Có cảnh báo' : '❌ Không cảnh báo'}`)
+  console.log(`Hôm nay ${formatDate(today)}: ${shouldAlertForDateTiming(today) ? '✅ Có cảnh báo' : '❌ Không cảnh báo'}`)
+  console.log(`Ngày mai ${formatDate(tomorrow)}: ${shouldAlertForDateTiming(tomorrow) ? '✅ Có cảnh báo' : '❌ Không cảnh báo'}`)
+  console.log(`Tuần tới ${formatDate(nextWeek)}: ${shouldAlertForDateTiming(nextWeek) ? '✅ Có cảnh báo' : '❌ Không cảnh báo'}`)
 }
 
 /**

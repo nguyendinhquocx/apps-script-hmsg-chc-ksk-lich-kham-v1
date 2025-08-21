@@ -152,7 +152,10 @@ function updateDailyCheckSheet(dates, dailyTotals, alertDays) {
     const topCompanies = companies
       .sort((a, b) => b.total - a.total)
       .slice(0, 3)
-      .map(c => `${c.name}(${c.total})`)
+      .map(c => {
+        const employee = c.employee ? ` [${c.employee}]` : ''
+        return `${c.name}${employee}(${c.total})`
+      })
       .join(', ')
     
     // Email sent status
