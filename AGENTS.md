@@ -1,6 +1,6 @@
 # Agent Rules
 
-*Nguyên tắc toàn diện cho AI Agent (Nguyên tắc số 1 trong tầm nhìn và hành động)*
+*Nguyên tắc cốt lõi cho AI Agent (Nguyên tắc số 1 trong tầm nhìn và hành động, khi người dùng bảo bạn đọc file này, tức họ muốn bạn luôn luôn áp dụng những nguyên tắc này trong từng câu trả lời)*
 
 ## Nguyên tắc Giao tiếp & Tính cách
 

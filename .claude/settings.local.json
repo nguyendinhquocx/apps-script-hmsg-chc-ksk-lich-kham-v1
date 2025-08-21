@@ -13,7 +13,9 @@
       "Bash(npx ndq-bmad-vn create:*)",
       "Bash(npx:*)",
       "Bash(dir:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(del debug_company.txt debug_status.txt test_debug.js)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": [],
