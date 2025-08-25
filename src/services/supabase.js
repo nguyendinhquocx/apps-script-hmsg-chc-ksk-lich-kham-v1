@@ -466,4 +466,480 @@ export class LichKhamService {
   }
 }
 
+// Service class cho bảng trả hồ sơ
+export class TraHoSoService {
+  static tableName = 'tra_ho_so'
+
+  /**
+   * Lấy dữ liệu trả hồ sơ với filters và pagination
+   * @param {Object} options - Tùy chọn query
+   * @param {number} options.page - Trang hiện tại (bắt đầu từ 1)
+   * @param {number} options.limit - Số record mỗi trang
+   * @param {string} options.search - Tìm kiếm theo tên công ty
+   * @param {string} options.status - Lọc theo trạng thái trả hồ sơ
+   * @param {string} options.employee - Lọc theo tên nhân viên
+   * @param {string} options.priority - Lọc theo mức ưu tiên
+   * @param {string} options.sortBy - Cột để sắp xếp
+   * @param {string} options.sortOrder - Thứ tự sắp xếp (asc/desc)
+   * @returns {Promise<{data: Array, count: number, error: string|null}>}
+   */
+  static async getTraHoSoData(options = {}) {
+    try {
+      const {
+        page = 1,
+        limit = 50,
+        search = '',
+        status = '',
+        examStatus = '',
+        employee = '',
+        priority = '',
+        sortBy = 'ngay cuoi tra ho so',
+        sortOrder = 'desc'
+      } = options
+
+      const offset = (page - 1) * limit
+
+      let query = supabase
+        .from(this.tableName)
+        .select('*')
+
+      // Apply filters
+      if (search.trim()) {
+        query = query.ilike('"ten cong ty"', `%${search.trim()}%`)
+      }
+
+      if (employee.trim()) {
+        query = query.ilike('"ten nhan vien"', `%${employee.trim()}%`)
+      }
+
+      // Status filter sẽ được áp dụng ở client-side sau khi tính toán trạng thái
+
+      // Column mapping for sorting
+      const columnMapping = {
+        'Tên Công Ty': '"ten cong ty"',
+        'Ngày Cuối Trả': '"ngay cuoi tra ho so"',
+        'Số Người Khám': '"so nguoi kham"',
+        'Trạng Thái Khám': '"trang thai kham"',
+        'Nhân Viên': '"ten nhan vien"',
+        'Ngày Kết Thúc Khám': '"ngay ket thuc kham"'
+      }
+      const actualSortBy = columnMapping[sortBy] || `"${sortBy}"`
+      query = query.order(actualSortBy, { ascending: sortOrder === 'asc' })
+
+      // Pagination
+      query = query.range(offset, offset + limit - 1)
+
+      const { data, error } = await query
+
+      // Debug logging
+      console.log('TraHoSo query result:', { 
+        data: data?.slice(0, 2), 
+        error, 
+        dataLength: data?.length, 
+        tableName: this.tableName,
+        totalRecords: data?.length
+      })
+
+      if (error) {
+        console.error('TraHoSo query error:', error)
+        return { data: [], count: 0, error: error.message }
+      }
+
+      // TEMPORARY: Mock data for demo purposes khi chưa có dữ liệu thực
+      let mockData = data || [];
+      if (mockData.length === 0) {
+        console.log('No real data found, using mock data for demo...')
+        mockData = [
+          {
+            "ID": "demo1",
+            "ten nhan vien": "Lê Thị Thúy Hồng",
+            "ten cong ty": "CÔNG TY TRÁCH NHIỆM HỮU HẠN AIMNEXT VIỆT NAM",
+            "so nguoi kham": 7,
+            "ngay ket thuc kham": "2024-12-28",
+            "ngay cuoi tra ho so": "2025-01-07", 
+            "trang thai kham": "Đã khám xong",
+            "gold": "",
+            "ngay ket thuc kham thuc te": null,
+            "ghi chu": "Cần gấp",
+            "tra ho so": "",
+            "ngay tra ho so": null,
+            "ngay gui bang ke": null
+          },
+          {
+            "ID": "demo2", 
+            "ten nhan vien": "Trần Thị Khanh",
+            "ten cong ty": "CÔNG TY TNHH XÂY DỰNG TÀI VIỆT TÍN",
+            "so nguoi kham": 31,
+            "ngay ket thuc kham": "2024-12-20",
+            "ngay cuoi tra ho so": "2024-12-30",
+            "trang thai kham": "Đã khám xong", 
+            "gold": "",
+            "ngay ket thuc kham thuc te": null,
+            "ghi chu": "",
+            "tra ho so": "",
+            "ngay tra ho so": null,
+            "ngay gui bang ke": null
+          },
+          {
+            "ID": "demo3",
+            "ten nhan vien": "Phạm Thị Thanh Thúy", 
+            "ten cong ty": "CÔNG TY TNHH MI LOGIX",
+            "so nguoi kham": 7,
+            "ngay ket thuc kham": "2025-01-15",
+            "ngay cuoi tra ho so": "2025-01-25",
+            "trang thai kham": "Đã khám xong",
+            "gold": "X",
+            "ngay ket thuc kham thuc te": null,
+            "ghi chu": "Khách VIP",
+            "tra ho so": "",
+            "ngay tra ho so": null,
+            "ngay gui bang ke": null
+          },
+          {
+            "ID": "demo4",
+            "ten nhan vien": "Bùi Thị Như Quỳnh",
+            "ten cong ty": "CÔNG TY TNHH EUREKA BLUE SKY VIETNAM", 
+            "so nguoi kham": 15,
+            "ngay ket thuc kham": "2024-11-20",
+            "ngay cuoi tra ho so": "2024-11-30",
+            "trang thai kham": "Đã khám xong",
+            "gold": "",
+            "ngay ket thuc kham thuc te": null,
+            "ghi chu": "",
+            "tra ho so": "Đã trả",
+            "ngay tra ho so": "2024-11-28",
+            "ngay gui bang ke": null
+          }
+        ]
+      }
+
+      // Process data to add calculated fields
+      const processedData = this.processTraHoSoData(mockData || [])
+
+      // Apply client-side filters after calculations
+      let filteredData = processedData
+      if (status) {
+        filteredData = filteredData.filter(item => item.traHoSoStatus === status)
+      }
+      if (examStatus) {
+        filteredData = filteredData.filter(item => item['trang thai kham'] === examStatus)
+      }
+      if (employee) {
+        filteredData = filteredData.filter(item => item['ten nhan vien'] === employee)
+      }
+      if (priority) {
+        filteredData = filteredData.filter(item => item.uuTien === priority)
+      }
+
+      // Sắp xếp theo ưu tiên và số ngày trễ như AppSheet
+      filteredData = this.sortByPriorityAndDays(filteredData)
+
+      return { 
+        data: filteredData, 
+        count: filteredData.length, 
+        error: null 
+      }
+    } catch (err) {
+      console.error('TraHoSo service error:', err)
+      return { data: [], count: 0, error: err.message }
+    }
+  }
+
+  /**
+   * Process raw data để tính toán các trường derived
+   * @param {Array} rawData - Dữ liệu thô từ Supabase
+   * @returns {Array} - Dữ liệu đã được xử lý
+   */
+  static processTraHoSoData(rawData) {
+    const today = new Date()
+    
+    return rawData.map(record => {
+      // Tính số ngày trễ (logic từ AppSheet)
+      const soNgayTre = this.calculateSoNgayTre(record, today)
+      
+      // Tính ưu tiên
+      const uuTien = this.calculateUuTien(record, soNgayTre)
+      
+      // Tính trạng thái trả hồ sơ
+      const traHoSoStatus = this.calculateTraHoSoStatus(record)
+      
+      return {
+        ...record,
+        soNgayTre,
+        uuTien,
+        traHoSoStatus
+      }
+    })
+  }
+
+  /**
+   * Tính số ngày trễ theo logic AppSheet
+   */
+  static calculateSoNgayTre(record, today) {
+    // Debug: Log record structure for first few records
+    if (Math.random() < 0.1) { // 10% chance to log
+      console.log('DEBUG calculateSoNgayTre:', {
+        company: record['ten cong ty'],
+        examStatus: record['trang thai kham'],
+        returnStatus: record['tra ho so'],
+        actualEndDate: record['ngay ket thuc kham thuc te'],
+        deadline: record['ngay cuoi tra ho so'],
+        today: today.toISOString().split('T')[0]
+      })
+    }
+
+    // IF(AND([trang thai kham] = "Đã khám xong", [tra ho so] = "Đã trả"), "OK", ...)
+    if (record['trang thai kham'] === 'Đã khám xong' && record['tra ho so'] === 'Đã trả') {
+      return 'OK'
+    }
+
+    // Tính deadline: nếu có [ngay ket thuc kham thuc te] thì +10 ngày, không thì dùng [ngay cuoi tra ho so]
+    let deadline
+    if (record['ngay ket thuc kham thuc te']) {
+      const actualEndDate = new Date(record['ngay ket thuc kham thuc te'])
+      deadline = new Date(actualEndDate)
+      deadline.setDate(deadline.getDate() + 10)
+    } else if (record['ngay cuoi tra ho so']) {
+      deadline = new Date(record['ngay cuoi tra ho so'])
+    } else {
+      // Fallback: dùng ngay ket thuc kham + 10 ngày nếu không có deadline
+      if (record['ngay ket thuc kham']) {
+        const examEndDate = new Date(record['ngay ket thuc kham'])
+        deadline = new Date(examEndDate)
+        deadline.setDate(deadline.getDate() + 10)
+      } else {
+        return '' // Không có deadline
+      }
+    }
+
+    // Nếu chưa đến hạn
+    if (deadline > today) {
+      return ''
+    }
+
+    // Tính số ngày trễ
+    const diffTime = today - deadline
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+    
+    return diffDays.toString()
+  }
+
+  /**
+   * Tính mức ưu tiên theo logic AppSheet
+   */
+  static calculateUuTien(record, soNgayTre) {
+    // IF(ISNOTBLANK([gold]), "X", ...)
+    if (record.gold && record.gold.trim()) {
+      return 'X'
+    }
+
+    // IF([so ngay tre] = "OK", "X", ...)
+    if (soNgayTre === 'OK') {
+      return 'X'
+    }
+
+    // IF(ISBLANK([so ngay tre]), "Ưu tiên 3", ...)
+    if (!soNgayTre) {
+      return 'Ưu tiên 3'
+    }
+
+    // Check if it's a number and >= 5 for Ưu tiên 1, else Ưu tiên 2
+    const daysLate = parseInt(soNgayTre)
+    if (!isNaN(daysLate)) {
+      return daysLate >= 5 ? 'Ưu tiên 1' : 'Ưu tiên 2'
+    }
+
+    return 'Ưu tiên 3'
+  }
+
+  /**
+   * Tính trạng thái trả hồ sơ theo logic AppSheet
+   */
+  static calculateTraHoSoStatus(record) {
+    // IF(ISNOTBLANK([gold]), "Đã trả", ...)
+    if (record.gold && record.gold.trim()) {
+      return 'Đã trả'
+    }
+
+    // IF(ISBLANK([tra ho so]), "Chưa trả", [tra ho so])
+    if (!record['tra ho so'] || !record['tra ho so'].trim()) {
+      return 'Chưa trả'
+    }
+
+    return record['tra ho so']
+  }
+
+  /**
+   * Lấy thống kê tổng quan cho trả hồ sơ
+   */
+  static async getTraHoSoStatistics() {
+    try {
+      const { data, error } = await supabase
+        .from(this.tableName)
+        .select('*')
+
+      if (error) {
+        console.error('TraHoSo statistics error:', error)
+        return { stats: {}, error: error.message }
+      }
+
+      const processedData = this.processTraHoSoData(data || [])
+
+      // Tính thống kê
+      const stats = {
+        totalRecords: processedData.length,
+        priorityStats: this.calculatePriorityStats(processedData),
+        statusStats: this.calculateStatusStats(processedData),
+        overdueStats: this.calculateOverdueStats(processedData)
+      }
+
+      return { stats, error: null }
+    } catch (err) {
+      console.error('TraHoSo statistics service error:', err)
+      return { stats: {}, error: err.message }
+    }
+  }
+
+  /**
+   * Tính thống kê theo mức ưu tiên
+   */
+  static calculatePriorityStats(processedData) {
+    const priorityStats = {
+      'Ưu tiên 1': 0,
+      'Ưu tiên 2': 0,
+      'Ưu tiên 3': 0,
+      'X': 0
+    }
+
+    processedData.forEach(record => {
+      const priority = record.uuTien
+      if (priorityStats.hasOwnProperty(priority)) {
+        priorityStats[priority]++
+      }
+    })
+
+    return priorityStats
+  }
+
+  /**
+   * Tính thống kê theo trạng thái
+   */
+  static calculateStatusStats(processedData) {
+    const statusStats = {}
+
+    processedData.forEach(record => {
+      const status = record.traHoSoStatus
+      statusStats[status] = (statusStats[status] || 0) + 1
+    })
+
+    return statusStats
+  }
+
+  /**
+   * Tính thống kê trễ hạn
+   */
+  static calculateOverdueStats(processedData) {
+    let totalOverdue = 0
+    let maxDaysOverdue = 0
+
+    processedData.forEach(record => {
+      if (record.soNgayTre && record.soNgayTre !== 'OK' && record.soNgayTre !== '') {
+        const days = parseInt(record.soNgayTre)
+        if (!isNaN(days) && days > 0) {
+          totalOverdue++
+          maxDaysOverdue = Math.max(maxDaysOverdue, days)
+        }
+      }
+    })
+
+    return {
+      totalOverdue,
+      maxDaysOverdue,
+      overdueRate: processedData.length > 0 ? (totalOverdue / processedData.length * 100).toFixed(1) : 0
+    }
+  }
+
+  /**
+   * Sắp xếp data theo ưu tiên và số ngày trễ như AppSheet
+   * @param {Array} data - Processed data
+   * @returns {Array} - Sorted data
+   */
+  static sortByPriorityAndDays(data) {
+    return data.sort((a, b) => {
+      // Sort by ưu tiên trước (1 → 2 → 3 → X)
+      const priorityOrder = { 'Ưu tiên 1': 1, 'Ưu tiên 2': 2, 'Ưu tiên 3': 3, 'X': 4 }
+      const priorityA = priorityOrder[a.uuTien] || 999
+      const priorityB = priorityOrder[b.uuTien] || 999
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB // 1,2,3,X order
+      }
+      
+      // Trong cùng ưu tiên, sort by 'so ngay tre' (descending - nhiều nhất lên trên)
+      const daysA = parseInt(a.soNgayTre) || 0
+      const daysB = parseInt(b.soNgayTre) || 0
+      
+      // Special handling for "OK" status - đưa xuống cuối
+      if (a.soNgayTre === 'OK' && b.soNgayTre !== 'OK') return 1
+      if (b.soNgayTre === 'OK' && a.soNgayTre !== 'OK') return -1
+      if (a.soNgayTre === 'OK' && b.soNgayTre === 'OK') {
+        // Both are OK, sort by ngay ket thuc kham (ascending)
+        const dateA = new Date(a['ngay ket thuc kham'] || '1900-01-01')
+        const dateB = new Date(b['ngay ket thuc kham'] || '1900-01-01')
+        return dateA - dateB
+      }
+      
+      if (daysA !== daysB) {
+        return daysB - daysA // Descending order for so ngay tre
+      }
+
+      // If same so ngay tre, sort by ngay ket thuc kham (ascending)
+      const dateA = new Date(a['ngay ket thuc kham'] || '1900-01-01')
+      const dateB = new Date(b['ngay ket thuc kham'] || '1900-01-01')
+      return dateA - dateB
+    })
+  }
+
+  /**
+   * Export trả hồ sơ data to Excel
+   * @param {Array} data - Processed data với calculated fields
+   * @param {string} filename - Tên file
+   */
+  static downloadTraHoSoExcel(data, filename = 'tra_ho_so_export.xlsx') {
+    if (!data || data.length === 0) {
+      console.error('Không thể tạo file Excel: Dữ liệu trống')
+      return
+    }
+
+    // Định nghĩa headers cho Excel
+    const excelData = data.map(record => ({
+      'ID': record.ID || '',
+      'Tên Nhân Viên': record['ten nhan vien'] || '',
+      'Tên Công Ty': record['ten cong ty'] || '',
+      'Số Người Khám': record['so nguoi kham'] || '',
+      'Ngày Kết Thúc Khám': record['ngay ket thuc kham'] || '',
+      'Ngày Cuối Trả Hồ Sơ': record['ngay cuoi tra ho so'] || '',
+      'Ngày Kết Thúc Khám Thực Tế': record['ngay ket thuc kham thuc te'] || '',
+      'Trạng Thái Khám': record['trang thai kham'] || '',
+      'Gold': record.gold || '',
+      'Trạng Thái Trả Hồ Sơ': record.traHoSoStatus || '',
+      'Ngày Trả Hồ Sơ': record['ngay tra ho so'] || '',
+      'Ngày Gửi Bảng Kê': record['ngay gui bang ke'] || '',
+      'Ghi Chú': record['ghi chu'] || '',
+      'Số Ngày Trễ': record.soNgayTre || '',
+      'Ưu Tiên': record.uuTien || ''
+    }))
+
+    // Tạo worksheet
+    const worksheet = XLSX.utils.json_to_sheet(excelData)
+    
+    // Tạo workbook
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trả Hồ Sơ')
+    
+    // Download file
+    XLSX.writeFile(workbook, filename)
+  }
+}
+
 export default LichKhamService
