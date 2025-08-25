@@ -6,10 +6,14 @@ import Benchmark from './Benchmark'
 import TraHoSo from './TraHoSo'
 import GlobalFilters from './GlobalFilters'
 import { getCurrentMonth } from '../utils/vietnamese'
+import useEmployeeList from '../hooks/useEmployeeList'
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('table')
   const [refreshKey, setRefreshKey] = useState(0)
+  
+  // Get employee list for global filters
+  const { employeeList } = useEmployeeList()
   
   // Global filter states
   const [globalFilters, setGlobalFilters] = useState({
@@ -134,6 +138,7 @@ const Dashboard = () => {
                 searchTerm={globalFilters.searchTerm}
                 statusFilter={globalFilters.statusFilter}
                 employeeFilter={globalFilters.employeeFilter}
+                employeeList={employeeList}
                 showGold={globalFilters.showGold}
                 monthFilter={globalFilters.monthFilter}
                 dateFilter={globalFilters.dateFilter}
@@ -162,6 +167,7 @@ const Dashboard = () => {
                 searchTerm={globalFilters.searchTerm}
                 statusFilter={globalFilters.statusFilter}
                 employeeFilter={globalFilters.employeeFilter}
+                employeeList={employeeList}
                 showGold={globalFilters.showGold}
                 monthFilter={globalFilters.monthFilter}
                 dateFilter={globalFilters.dateFilter}
@@ -173,7 +179,7 @@ const Dashboard = () => {
                 onGoldChange={(value) => updateGlobalFilter('showGold', value)}
                 onReset={resetGlobalFilters}
               />
-              <Benchmark key={refreshKey} filters={globalFilters} />
+              <Benchmark key={refreshKey} filters={globalFilters} employeeList={employeeList} />
             </>
           )}
           {activeTab === 'tra-ho-so' && (

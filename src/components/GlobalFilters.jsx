@@ -9,6 +9,7 @@ const GlobalFilters = ({
   onStatusChange,
   employeeFilter,
   onEmployeeChange,
+  employeeList = [],
   showGold,
   onGoldChange,
   monthFilter,
@@ -94,13 +95,16 @@ const GlobalFilters = ({
 
         {/* Employee Filter */}
         <div className="order-4 w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Lọc nhân viên..."
+          <select
             value={employeeFilter}
             onChange={(e) => onEmployeeChange(e.target.value)}
-            className="px-2 py-1 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[110px] md:w-[125px] lg:w-[135px]"
-          />
+            className="px-2 py-1 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out cursor-pointer w-full sm:w-[110px] md:w-[125px] lg:w-[135px]"
+          >
+            <option value="">Tất cả nv</option>
+            {employeeList.map(employee => (
+              <option key={employee} value={employee}>{employee}</option>
+            ))}
+          </select>
         </div>
 
         {/* Status Filter */}

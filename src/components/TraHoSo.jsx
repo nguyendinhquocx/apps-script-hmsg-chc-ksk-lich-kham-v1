@@ -143,7 +143,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
               onChange={(e) => updateFilter('employee', e.target.value)}
               className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
             >
-              <option value="">Tất cả nhân viên</option>
+              <option value="">Tất cả nv</option>
               {employeeList.map(employee => (
                 <option key={employee} value={employee}>{employee}</option>
               ))}
