@@ -231,10 +231,10 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                   Ngày kết thúc
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-black">
-                  Thức tế
+                  Thực tế
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-black">
-                  TRỂ
+                  Số ngày trễ
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Trạng thái khám
