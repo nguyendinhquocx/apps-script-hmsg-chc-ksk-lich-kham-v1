@@ -82,7 +82,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
 
         <div className="bg-white rounded-lg p-6">
           <p className="text-sm font-bold text-black mb-1">Hoàn thành</p>
-          <p className="text-3xl font-bold text-black">{priorityStats['X'] || 0}</p>
+          <p className="text-3xl font-bold text-black">{priorityStats['X'] || "[x]"}</p>
         </div>
       </div>
     )
