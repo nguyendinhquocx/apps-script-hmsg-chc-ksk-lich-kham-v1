@@ -624,6 +624,9 @@ export class TraHoSoService {
         filteredData = processedData.filter(item => item.uuTien === priority)
       }
 
+      // Sắp xếp theo ưu tiên và số ngày trễ như AppSheet
+      filteredData = this.sortByPriorityAndDays(filteredData)
+
       return { 
         data: filteredData, 
         count: filteredData.length, 
@@ -828,6 +831,42 @@ export class TraHoSoService {
       maxDaysOverdue,
       overdueRate: processedData.length > 0 ? (totalOverdue / processedData.length * 100).toFixed(1) : 0
     }
+  }
+
+  /**
+   * Sắp xếp data theo ưu tiên và số ngày trễ như AppSheet
+   * @param {Array} data - Processed data
+   * @returns {Array} - Sorted data
+   */
+  static sortByPriorityAndDays(data) {
+    // Define priority order
+    const priorityOrder = {
+      'Ưu tiên 1': 1,
+      'Ưu tiên 2': 2, 
+      'Ưu tiên 3': 3,
+      'X': 4 // Hoàn thành cuối cùng
+    }
+
+    return data.sort((a, b) => {
+      // Sort by priority first
+      const priorityA = priorityOrder[a.uuTien] || 999
+      const priorityB = priorityOrder[b.uuTien] || 999
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB
+      }
+
+      // Within same priority, sort by days late (descending - nhiều nhất lên trên)
+      const daysA = parseInt(a.soNgayTre) || 0
+      const daysB = parseInt(b.soNgayTre) || 0
+      
+      // Special handling for "OK" status
+      if (a.soNgayTre === 'OK' && b.soNgayTre !== 'OK') return 1
+      if (b.soNgayTre === 'OK' && a.soNgayTre !== 'OK') return -1
+      if (a.soNgayTre === 'OK' && b.soNgayTre === 'OK') return 0
+      
+      return daysB - daysA // Descending order
+    })
   }
 
   /**

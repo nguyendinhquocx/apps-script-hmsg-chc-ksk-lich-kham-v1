@@ -1,5 +1,22 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { TraHoSoService } from '../services/supabase'
+
+// Debounce hook
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [value, delay])
+
+  return debouncedValue
+}
 
 export const useTraHoSoData = (initialFilters = {}) => {
   // State management
@@ -25,6 +42,9 @@ export const useTraHoSoData = (initialFilters = {}) => {
     ...initialFilters
   })
 
+  // Debounce search term
+  const debouncedSearchTerm = useDebounce(filters.search, 300)
+
   // Fetch data từ Supabase
   const fetchData = useCallback(async () => {
     try {
@@ -34,7 +54,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
       const options = {
         page: currentPage,
         limit: pageSize,
-        search: filters.search,
+        search: debouncedSearchTerm, // Use debounced search
         status: filters.status,
         employee: filters.employee,
         priority: filters.priority,
@@ -61,7 +81,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, pageSize, filters])
+  }, [currentPage, pageSize, debouncedSearchTerm, filters.status, filters.employee, filters.priority, filters.sortBy, filters.sortOrder])
 
   // Fetch statistics
   const fetchStatistics = useCallback(async () => {

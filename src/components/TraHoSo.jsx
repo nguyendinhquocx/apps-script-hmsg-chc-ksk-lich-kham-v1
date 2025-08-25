@@ -248,13 +248,19 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                   Số người
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-black">
-                  Ngày cuối trả
+                  Ngày kết thúc
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-black">
-                  Số ngày trễ
+                  Thức tế
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-black">
-                  Trạng thái
+                  TRỂ
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                  Trạng thái khám
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                  Trả hồ sơ
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-bold text-black">
                   Ghi chú
@@ -262,52 +268,87 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
               </tr>
             </thead>
             <tbody className="bg-white">
-              {data.map((record) => (
-                <tr 
-                  key={record.ID}
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => setSelectedRecord(record)}
-                >
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-black">
-                      {record.uuTien}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-black">
-                      {record['ten nhan vien'] || '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-black max-w-xs truncate">
-                      {record['ten cong ty'] || '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-black">
-                    {record['so nguoi kham'] || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-black">
-                    {formatDate(record['ngay cuoi tra ho so'])}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-black">
-                      {record.soNgayTre === 'OK' ? 'OK' : 
-                       record.soNgayTre ? `${record.soNgayTre} ngày` : 
-                       'Chưa đến hạn'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-black">
-                      {record.traHoSoStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-black max-w-xs truncate">
-                      {record['ghi chu'] || '-'}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {(() => {
+                let currentPriority = null
+                return data.map((record, index) => {
+                  const showGroupHeader = currentPriority !== record.uuTien
+                  if (showGroupHeader) {
+                    currentPriority = record.uuTien
+                  }
+
+                  return (
+                    <React.Fragment key={record.ID}>
+                      {showGroupHeader && (
+                        <tr className="bg-gray-100">
+                          <td colSpan="10" className="px-6 py-2">
+                            <span className="text-sm font-bold text-black">
+                              {record.uuTien} ({data.filter(r => r.uuTien === record.uuTien).length})
+                            </span>
+                          </td>
+                        </tr>
+                      )}
+                      <tr 
+                        className="hover:bg-gray-50 cursor-pointer"
+                        onClick={() => setSelectedRecord(record)}
+                      >
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-bold text-black">
+                            {record.uuTien}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-black">
+                            {record['ten nhan vien'] || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-black max-w-xs truncate">
+                            {record['ten cong ty'] || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-black">
+                          {record['so nguoi kham'] || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-black">
+                          {formatDate(record['ngay ket thuc kham'])}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-black">
+                          {formatDate(record['ngay ket thuc kham thuc te'])}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-black">
+                            {record.soNgayTre === 'OK' ? 'OK' : 
+                             record.soNgayTre ? `${record.soNgayTre}` : 
+                             'Chưa đến hạn'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-sm ${
+                            record['trang thai kham'] === 'Đã khám xong' ? 'text-blue-600' :
+                            'text-black'
+                          }`}>
+                            {record['trang thai kham'] || '-'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`text-sm ${
+                            record.traHoSoStatus === 'Chưa trả' ? 'text-red-600' :
+                            record.traHoSoStatus === 'Đã trả' ? 'text-blue-600' :
+                            'text-black'
+                          }`}>
+                            {record.traHoSoStatus}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-black max-w-xs truncate">
+                            {record['ghi chu'] || '-'}
+                          </div>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  )
+                })
+              })()}
             </tbody>
           </table>
         </div>
@@ -378,56 +419,102 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
 
       {/* Detail Modal */}
       {selectedRecord && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setSelectedRecord(null)}>
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Chi tiết hồ sơ</h3>
-              <button 
-                onClick={() => setSelectedRecord(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedRecord(null)
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-lg" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="mb-4">
+              <h3 className="text-base font-semibold text-gray-900 break-words uppercase">
+                {selectedRecord['ten cong ty']}
+              </h3>
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="font-medium">Công ty:</span>
-                  <p className="text-gray-900">{selectedRecord['ten cong ty'] || '-'}</p>
-                </div>
-                <div>
-                  <span className="font-medium">Nhân viên:</span>
-                  <p className="text-gray-900">{selectedRecord['ten nhan vien'] || '-'}</p>
-                </div>
-                <div>
-                  <span className="font-medium">Số người khám:</span>
-                  <p className="text-gray-900">{selectedRecord['so nguoi kham'] || '-'}</p>
-                </div>
-                <div>
-                  <span className="font-medium">Ưu tiên:</span>
-                  <p className="text-gray-900">{selectedRecord.uuTien || '-'}</p>
-                </div>
-                <div>
-                  <span className="font-medium">Ngày kết thúc khám:</span>
-                  <p className="text-gray-900">{formatDate(selectedRecord['ngay ket thuc kham'])}</p>
-                </div>
-                <div>
-                  <span className="font-medium">Ngày cuối trả hồ sơ:</span>
-                  <p className="text-gray-900">{formatDate(selectedRecord['ngay cuoi tra ho so'])}</p>
-                </div>
-                <div>
-                  <span className="font-medium">Trạng thái trả:</span>
-                  <p className="text-gray-900">{selectedRecord.traHoSoStatus || '-'}</p>
-                </div>
-                <div>
-                  <span className="font-medium">Số ngày trễ:</span>
-                  <p className="text-gray-900">{selectedRecord.soNgayTre || '-'}</p>
-                </div>
+
+            {/* Record Details */}
+            <div className="space-y-2">
+              {/* Priority */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Ưu tiên:</span>
+                <span className="text-sm text-gray-900">{selectedRecord.uuTien || '-'}</span>
               </div>
+              
+              {/* Employee */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Nhân viên phụ trách:</span>
+                <span className="text-sm text-gray-900">{selectedRecord['ten nhan vien'] || '-'}</span>
+              </div>
+              
+              {/* Number of people */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Số người khám:</span>
+                <span className="text-sm text-gray-900">{selectedRecord['so nguoi kham'] ? selectedRecord['so nguoi kham'].toLocaleString('vi-VN') : '-'} người</span>
+              </div>
+              
+              {/* End date */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Ngày kết thúc khám:</span>
+                <span className="text-sm text-gray-900">{formatDate(selectedRecord['ngay ket thuc kham'])}</span>
+              </div>
+              
+              {/* Actual end date - only show if exists and different */}
+              {selectedRecord['ngay ket thuc kham thuc te'] && selectedRecord['ngay ket thuc kham thuc te'] !== selectedRecord['ngay ket thuc kham'] && (
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-sm text-gray-600">Ngày kết thúc thực tế:</span>
+                  <span className="text-sm text-gray-900">{formatDate(selectedRecord['ngay ket thuc kham thuc te'])}</span>
+                </div>
+              )}
+              
+              {/* Return deadline */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Ngày cuối trả hồ sơ:</span>
+                <span className="text-sm text-gray-900">{formatDate(selectedRecord['ngay cuoi tra ho so'])}</span>
+              </div>
+              
+              {/* Days overdue */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Số ngày trễ:</span>
+                <span className="text-sm text-gray-900">
+                  {selectedRecord.soNgayTre === 'OK' ? 'OK' : 
+                   selectedRecord.soNgayTre ? `${selectedRecord.soNgayTre} ngày` : 
+                   'Chưa đến hạn'}
+                </span>
+              </div>
+              
+              {/* Exam status */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Trạng thái khám:</span>
+                <span className={`text-sm ${selectedRecord['trang thai kham'] === 'Đã khám xong' ? 'text-blue-600' : 'text-gray-900'}`}>
+                  {selectedRecord['trang thai kham'] || '-'}
+                </span>
+              </div>
+              
+              {/* Return status */}
+              <div className="flex justify-between py-1.5 border-b border-gray-100">
+                <span className="text-sm text-gray-600">Trạng thái trả:</span>
+                <span className={`text-sm ${
+                  selectedRecord.traHoSoStatus === 'Chưa trả' ? 'text-red-600' :
+                  selectedRecord.traHoSoStatus === 'Đã trả' ? 'text-blue-600' :
+                  'text-gray-900'
+                }`}>
+                  {selectedRecord.traHoSoStatus || '-'}
+                </span>
+              </div>
+              
+              {/* Notes - only show if exists */}
               {selectedRecord['ghi chu'] && (
-                <div>
-                  <span className="font-medium">Ghi chú:</span>
-                  <p className="text-gray-900 mt-1">{selectedRecord['ghi chu']}</p>
+                <div className="flex justify-between py-1.5">
+                  <span className="text-sm text-gray-600">Ghi chú:</span>
+                  <span className="text-sm text-gray-900 text-right max-w-xs break-words">
+                    {selectedRecord['ghi chu']}
+                  </span>
                 </div>
               )}
             </div>
