@@ -490,6 +490,7 @@ export class TraHoSoService {
         limit = 50,
         search = '',
         status = '',
+        examStatus = '',
         employee = '',
         priority = '',
         sortBy = 'ngay cuoi tra ho so',
@@ -618,10 +619,13 @@ export class TraHoSoService {
       // Apply client-side filters after calculations
       let filteredData = processedData
       if (status) {
-        filteredData = processedData.filter(item => item.traHoSoStatus === status)
+        filteredData = filteredData.filter(item => item.traHoSoStatus === status)
+      }
+      if (examStatus) {
+        filteredData = filteredData.filter(item => item['trang thai kham'] === examStatus)
       }
       if (priority) {
-        filteredData = processedData.filter(item => item.uuTien === priority)
+        filteredData = filteredData.filter(item => item.uuTien === priority)
       }
 
       // Sắp xếp theo ưu tiên và số ngày trễ như AppSheet

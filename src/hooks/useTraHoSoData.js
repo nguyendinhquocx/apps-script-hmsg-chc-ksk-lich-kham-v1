@@ -23,6 +23,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
   const [data, setData] = useState([])
   const [filteredData, setFilteredData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searchLoading, setSearchLoading] = useState(false)
   const [error, setError] = useState(null)
   const [statistics, setStatistics] = useState({})
 
@@ -34,7 +35,8 @@ export const useTraHoSoData = (initialFilters = {}) => {
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
-    status: '',
+    status: 'Chưa trả', // Default to 'Chưa trả' for return status
+    examStatus: 'Đã khám xong', // Default to 'Đã khám xong' for exam status
     employee: '',
     priority: '',
     sortBy: 'ngay cuoi tra ho so',
@@ -56,6 +58,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
         limit: pageSize,
         search: debouncedSearchTerm, // Use debounced search
         status: filters.status,
+        examStatus: filters.examStatus,
         employee: filters.employee,
         priority: filters.priority,
         sortBy: filters.sortBy,
@@ -81,7 +84,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, pageSize, debouncedSearchTerm, filters.status, filters.employee, filters.priority, filters.sortBy, filters.sortOrder])
+  }, [currentPage, pageSize, debouncedSearchTerm, filters.status, filters.examStatus, filters.employee, filters.priority, filters.sortBy, filters.sortOrder])
 
   // Fetch statistics
   const fetchStatistics = useCallback(async () => {
@@ -123,7 +126,8 @@ export const useTraHoSoData = (initialFilters = {}) => {
   const resetFilters = useCallback(() => {
     setFilters({
       search: '',
-      status: '',
+      status: 'Chưa trả',
+      examStatus: 'Đã khám xong',
       employee: '',
       priority: '',
       sortBy: 'ngay cuoi tra ho so',
@@ -197,6 +201,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
     // Data
     data: filteredData,
     loading,
+    searchLoading,
     error,
     statistics,
 

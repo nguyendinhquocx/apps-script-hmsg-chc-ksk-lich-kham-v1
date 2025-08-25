@@ -2,13 +2,13 @@ import React, { useState } from 'react'
 import useTraHoSoData from '../hooks/useTraHoSoData'
 
 const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
-  const [showFilters, setShowFilters] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState(null)
 
   // Initialize hook với global filters
   const {
     data,
     loading,
+    searchLoading,
     error,
     statistics,
     currentPage,
@@ -89,7 +89,8 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
   }
 
   // Loading state - theo triết lý tối giản
-  if (loading) {
+  // Chỉ hiển thị loading khi initial load hoặc khi không có data
+  if (loading && data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <span className="text-black">Đang tải dữ liệu...</span>
@@ -120,114 +121,96 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
       {/* Priority Summary Cards */}
       <PrioritySummary />
 
-      {/* Controls - theo triết lý tối giản */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          {/* Search - không icon */}
-          <input
-            type="text"
-            placeholder="Tìm kiếm công ty..."
-            value={filters.search}
-            onChange={(e) => updateFilter('search', e.target.value)}
-            className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-50 transition-colors outline-none"
-          />
+      {/* Filters - theo style GlobalFilters */}
+      <div className="w-full p-3 sm:p-4 lg:p-6 mb-6 lg:mb-8">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 lg:gap-4 items-end">
+          
+          {/* Search */}
+          <div className="order-1 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Tìm công ty..."
+              value={filters.search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+            />
+          </div>
 
-          {/* Filter Toggle - không icon */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors ${
-              showFilters ? 'font-bold' : ''
-            }`}
-          >
-            Bộ lọc
-          </button>
+          {/* Employee Filter */}
+          <div className="order-2 w-full sm:w-auto">
+            <select
+              value={filters.employee}
+              onChange={(e) => updateFilter('employee', e.target.value)}
+              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+            >
+              <option value="">Tất cả nhân viên</option>
+              {employeeList.map(employee => (
+                <option key={employee} value={employee}>{employee}</option>
+              ))}
+            </select>
+          </div>
 
-          {/* Refresh - không icon */}
-          <button
-            onClick={refresh}
-            className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            Làm mới
-          </button>
+          {/* Exam Status Filter */}
+          <div className="order-3 w-full sm:w-auto">
+            <select
+              value={filters.examStatus}
+              onChange={(e) => updateFilter('examStatus', e.target.value)}
+              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+            >
+              <option value="">Tất cả trạng thái khám</option>
+              <option value="Đã khám xong">Đã khám xong</option>
+              <option value="Chưa khám xong">Chưa khám xong</option>
+            </select>
+          </div>
+
+          {/* Return Status Filter */}
+          <div className="order-4 w-full sm:w-auto">
+            <select
+              value={filters.status}
+              onChange={(e) => updateFilter('status', e.target.value)}
+              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+            >
+              <option value="">Trả hồ sơ</option>
+              {statusList.map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Priority Filter */}
+          <div className="order-5 w-full sm:w-auto">
+            <select
+              value={filters.priority}
+              onChange={(e) => updateFilter('priority', e.target.value)}
+              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+            >
+              <option value="">Tất cả ưu tiên</option>
+              {priorityList.map(priority => (
+                <option key={priority} value={priority}>{priority}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-1 order-6">
+            <button
+              onClick={resetFilters}
+              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm transition-all duration-300 ease-out"
+            >
+              Reset
+            </button>
+            <button
+              onClick={exportToExcel}
+              disabled={data.length === 0}
+              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-out"
+            >
+              Xuất Excel
+            </button>
+          </div>
+
         </div>
-
-        {/* Export - không icon */}
-        <button
-          onClick={exportToExcel}
-          disabled={!data || data.length === 0}
-          className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Xuất Excel
-        </button>
       </div>
 
-      {/* Advanced Filters - theo triết lý tối giản */}
-      {showFilters && (
-        <div className="bg-white rounded-lg p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Employee Filter */}
-            <div>
-              <label className="block text-sm font-bold text-black mb-2">
-                Nhân viên
-              </label>
-              <select
-                value={filters.employee}
-                onChange={(e) => updateFilter('employee', e.target.value)}
-                className="w-full px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50 transition-colors outline-none"
-              >
-                <option value="">Tất cả</option>
-                {employeeList.map(employee => (
-                  <option key={employee} value={employee}>{employee}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-bold text-black mb-2">
-                Trạng thái
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => updateFilter('status', e.target.value)}
-                className="w-full px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50 transition-colors outline-none"
-              >
-                <option value="">Tất cả</option>
-                {statusList.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Priority Filter */}
-            <div>
-              <label className="block text-sm font-bold text-black mb-2">
-                Ưu tiên
-              </label>
-              <select
-                value={filters.priority}
-                onChange={(e) => updateFilter('priority', e.target.value)}
-                className="w-full px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-50 transition-colors outline-none"
-              >
-                <option value="">Tất cả</option>
-                {priorityList.map(priority => (
-                  <option key={priority} value={priority}>{priority}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Reset Button */}
-            <div className="flex items-end">
-              <button
-                onClick={resetFilters}
-                className="w-full px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                Xóa bộ lọc
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Table - theo triết lý AGENTS.md: không viền, text đen, chỉ 1 đường xám nhạt dưới tiêu đề */}
       <div className="bg-white rounded-lg">
@@ -235,34 +218,31 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
-                  Ưu tiên
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Nhân viên
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Công ty
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Số người
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Ngày kết thúc
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Thức tế
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   TRỂ
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Trạng thái khám
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Trả hồ sơ
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-black">
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Ghi chú
                 </th>
               </tr>
@@ -280,7 +260,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                     <React.Fragment key={record.ID}>
                       {showGroupHeader && (
                         <tr className="bg-gray-100">
-                          <td colSpan="10" className="px-6 py-2">
+                          <td colSpan="9" className="px-4 py-2">
                             <span className="text-sm font-bold text-black">
                               {record.uuTien} ({data.filter(r => r.uuTien === record.uuTien).length})
                             </span>
@@ -291,47 +271,42 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                         className="hover:bg-gray-50 cursor-pointer"
                         onClick={() => setSelectedRecord(record)}
                       >
-                        <td className="px-6 py-4">
-                          <span className="text-sm font-bold text-black">
-                            {record.uuTien}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-black">
+                        <td className="px-4 py-3">
+                          <div className="text-xs text-black">
                             {record['ten nhan vien'] || '-'}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-black max-w-xs truncate">
+                        <td className="px-4 py-3">
+                          <div className="text-xs text-black max-w-xs truncate">
                             {record['ten cong ty'] || '-'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-black">
+                        <td className="px-4 py-3 text-xs text-black">
                           {record['so nguoi kham'] || '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-black">
+                        <td className="px-4 py-3 text-xs text-black">
                           {formatDate(record['ngay ket thuc kham'])}
                         </td>
-                        <td className="px-6 py-4 text-sm text-black">
+                        <td className="px-4 py-3 text-xs text-black">
                           {formatDate(record['ngay ket thuc kham thuc te'])}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-black">
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-black">
                             {record.soNgayTre === 'OK' ? 'OK' : 
                              record.soNgayTre ? `${record.soNgayTre}` : 
                              'Chưa đến hạn'}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`text-sm ${
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${
                             record['trang thai kham'] === 'Đã khám xong' ? 'text-blue-600' :
                             'text-black'
                           }`}>
                             {record['trang thai kham'] || '-'}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`text-sm ${
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${
                             record.traHoSoStatus === 'Chưa trả' ? 'text-red-600' :
                             record.traHoSoStatus === 'Đã trả' ? 'text-blue-600' :
                             'text-black'
@@ -339,8 +314,8 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                             {record.traHoSoStatus}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-black max-w-xs truncate">
+                        <td className="px-4 py-3">
+                          <div className="text-xs text-black max-w-xs truncate">
                             {record['ghi chu'] || '-'}
                           </div>
                         </td>
@@ -360,61 +335,6 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
           </div>
         )}
 
-        {/* Pagination - theo triết lý tối giản, không viền */}
-        {totalRecords > 0 && (
-          <div className="bg-white px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
-                  onClick={prevPage}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Trước
-                </button>
-                <button
-                  onClick={nextPage}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Sau
-                </button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-black">
-                    Hiển thị{' '}
-                    <span className="font-bold">{startRecord}</span>
-                    {' '}-{' '}
-                    <span className="font-bold">{endRecord}</span>
-                    {' '}trong{' '}
-                    <span className="font-bold">{totalRecords}</span>
-                    {' '}kết quả
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={prevPage}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Trước
-                  </button>
-                  <span className="px-4 py-2 bg-white text-black rounded-lg">
-                    {currentPage} / {totalPages}
-                  </span>
-                  <button
-                    onClick={nextPage}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-2 bg-white text-black rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Sau
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Detail Modal */}
