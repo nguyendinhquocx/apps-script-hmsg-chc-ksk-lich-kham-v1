@@ -30,16 +30,16 @@ export const useTraHoSoData = (initialFilters = {}) => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState(0)
-  const [pageSize] = useState(50)
+  const [pageSize] = useState(1000) // Debug: hiển thị tất cả để thấy ưu tiên 1,2
 
   // Filter state
   const [filters, setFilters] = useState({
     search: '',
-    status: 'Chưa trả', // Default to 'Chưa trả' for return status
-    examStatus: 'Đã khám xong', // Default to 'Đã khám xong' for exam status
+    status: 'Chưa trả', // Focus on unreturned files to see priorities 1,2,3
+    examStatus: 'Đã khám xong', // Focus on completed exams
     employee: '',
     priority: '',
-    sortBy: 'ngay cuoi tra ho so',
+    sortBy: 'ngay cuoi tra ho so', // Server đã sắp xếp theo priority
     sortOrder: 'desc',
     ...initialFilters
   })
@@ -86,27 +86,59 @@ export const useTraHoSoData = (initialFilters = {}) => {
     }
   }, [currentPage, pageSize, debouncedSearchTerm, filters.status, filters.examStatus, filters.employee, filters.priority, filters.sortBy, filters.sortOrder])
 
-  // Fetch statistics
+  // Fetch statistics separately for ALL filtered data (không phân trang)
   const fetchStatistics = useCallback(async () => {
     try {
-      const result = await TraHoSoService.getTraHoSoStatistics()
+      const options = {
+        page: 1,
+        limit: 10000, // Lấy tất cả để tính statistics
+        search: debouncedSearchTerm,
+        status: filters.status,
+        examStatus: filters.examStatus,
+        employee: filters.employee,
+        priority: filters.priority,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      }
+
+      const result = await TraHoSoService.getTraHoSoData(options)
       
       if (result.error) {
-        console.warn('Statistics error:', result.error)
-      } else {
-        setStatistics(result.stats)
+        console.error('Statistics fetch error:', result.error)
+        return
       }
+
+      // Tính toán statistics từ toàn bộ data
+      const priorityStats = {
+        'Ưu tiên 1': 0,
+        'Ưu tiên 2': 0, 
+        'Ưu tiên 3': 0,
+        'X': 0
+      }
+
+      result.data.forEach(record => {
+        const priority = record.uuTien
+        if (priorityStats.hasOwnProperty(priority)) {
+          priorityStats[priority]++
+        }
+      })
+
+      setStatistics({
+        totalRecords: result.data.length,
+        priorityStats
+      })
+
     } catch (err) {
       console.error('Error fetching statistics:', err)
     }
-  }, [])
+  }, [debouncedSearchTerm, filters.status, filters.examStatus, filters.employee, filters.priority, filters.sortBy, filters.sortOrder])
 
   // Load data on mount và khi dependencies thay đổi
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  // Load statistics on mount
+  // Fetch statistics when filters change
   useEffect(() => {
     fetchStatistics()
   }, [fetchStatistics])
@@ -130,7 +162,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
       examStatus: 'Đã khám xong',
       employee: '',
       priority: '',
-      sortBy: 'ngay cuoi tra ho so',
+      sortBy: 'ngay cuoi tra ho so', // Server sắp xếp theo priority rồi
       sortOrder: 'desc'
     })
     setCurrentPage(1)
@@ -157,8 +189,7 @@ export const useTraHoSoData = (initialFilters = {}) => {
   // Refresh data
   const refresh = useCallback(() => {
     fetchData()
-    fetchStatistics()
-  }, [fetchData, fetchStatistics])
+  }, [fetchData])
 
   // Export functions
   const exportToExcel = useCallback(() => {

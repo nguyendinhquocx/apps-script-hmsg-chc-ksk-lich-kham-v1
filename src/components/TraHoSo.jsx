@@ -132,7 +132,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
               placeholder="Tìm công ty..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+              className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
             />
           </div>
 
@@ -141,7 +141,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
             <select
               value={filters.employee}
               onChange={(e) => updateFilter('employee', e.target.value)}
-              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+              className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
             >
               <option value="">Tất cả nhân viên</option>
               {employeeList.map(employee => (
@@ -155,7 +155,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
             <select
               value={filters.examStatus}
               onChange={(e) => updateFilter('examStatus', e.target.value)}
-              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+              className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
             >
               <option value="">Tất cả trạng thái khám</option>
               <option value="Đã khám xong">Đã khám xong</option>
@@ -168,7 +168,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
             <select
               value={filters.status}
               onChange={(e) => updateFilter('status', e.target.value)}
-              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+              className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
             >
               <option value="">Trả hồ sơ</option>
               {statusList.map(status => (
@@ -182,7 +182,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
             <select
               value={filters.priority}
               onChange={(e) => updateFilter('priority', e.target.value)}
-              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
+              className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-out w-full sm:w-[140px] md:w-[160px] lg:w-[180px]"
             >
               <option value="">Tất cả ưu tiên</option>
               {priorityList.map(priority => (
@@ -195,14 +195,14 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
           <div className="flex gap-1 order-6">
             <button
               onClick={resetFilters}
-              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm transition-all duration-300 ease-out"
+              className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm transition-all duration-300 ease-out"
             >
               Reset
             </button>
             <button
               onClick={exportToExcel}
               disabled={data.length === 0}
-              className="px-3 py-2 bg-white text-sm rounded-lg hover:bg-gray-100 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-out"
+              className="px-3 py-2 bg-white text-xs rounded-lg hover:bg-gray-100 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ease-out"
             >
               Xuất Excel
             </button>
@@ -245,6 +245,9 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-black">
                   Ghi chú
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-black">
+                  Bảng kê
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white">
@@ -260,7 +263,7 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                     <React.Fragment key={record.ID}>
                       {showGroupHeader && (
                         <tr className="bg-gray-100">
-                          <td colSpan="9" className="px-4 py-2">
+                          <td colSpan="10" className="px-4 py-2">
                             <span className="text-sm font-bold text-black">
                               {record.uuTien} ({data.filter(r => r.uuTien === record.uuTien).length})
                             </span>
@@ -317,6 +320,11 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
                         <td className="px-4 py-3">
                           <div className="text-xs text-black max-w-xs truncate">
                             {record['ghi chu'] || '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="text-xs text-black">
+                            {record['ngay gui bang ke'] ? 'Có' : 'Chưa'}
                           </div>
                         </td>
                       </tr>
@@ -430,13 +438,24 @@ const TraHoSo = ({ globalFilters = {}, refreshKey = 0 }) => {
               
               {/* Notes - only show if exists */}
               {selectedRecord['ghi chu'] && (
-                <div className="flex justify-between py-1.5">
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
                   <span className="text-sm text-gray-600">Ghi chú:</span>
                   <span className="text-sm text-gray-900 text-right max-w-xs break-words">
                     {selectedRecord['ghi chu']}
                   </span>
                 </div>
               )}
+              
+              {/* Bảng kê */}
+              <div className="flex justify-between py-1.5">
+                <span className="text-sm text-gray-600">Bảng kê:</span>
+                <span className="text-sm text-gray-900">
+                  {selectedRecord['ngay gui bang ke'] ? 
+                    `Đã gửi (${formatDate(selectedRecord['ngay gui bang ke'])})` : 
+                    'Chưa gửi'
+                  }
+                </span>
+              </div>
             </div>
           </div>
         </div>

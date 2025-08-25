@@ -624,6 +624,9 @@ export class TraHoSoService {
       if (examStatus) {
         filteredData = filteredData.filter(item => item['trang thai kham'] === examStatus)
       }
+      if (employee) {
+        filteredData = filteredData.filter(item => item['ten nhan vien'] === employee)
+      }
       if (priority) {
         filteredData = filteredData.filter(item => item.uuTien === priority)
       }
@@ -673,6 +676,18 @@ export class TraHoSoService {
    * Tính số ngày trễ theo logic AppSheet
    */
   static calculateSoNgayTre(record, today) {
+    // Debug: Log record structure for first few records
+    if (Math.random() < 0.1) { // 10% chance to log
+      console.log('DEBUG calculateSoNgayTre:', {
+        company: record['ten cong ty'],
+        examStatus: record['trang thai kham'],
+        returnStatus: record['tra ho so'],
+        actualEndDate: record['ngay ket thuc kham thuc te'],
+        deadline: record['ngay cuoi tra ho so'],
+        today: today.toISOString().split('T')[0]
+      })
+    }
+
     // IF(AND([trang thai kham] = "Đã khám xong", [tra ho so] = "Đã trả"), "OK", ...)
     if (record['trang thai kham'] === 'Đã khám xong' && record['tra ho so'] === 'Đã trả') {
       return 'OK'
@@ -687,7 +702,14 @@ export class TraHoSoService {
     } else if (record['ngay cuoi tra ho so']) {
       deadline = new Date(record['ngay cuoi tra ho so'])
     } else {
-      return '' // Không có deadline
+      // Fallback: dùng ngay ket thuc kham + 10 ngày nếu không có deadline
+      if (record['ngay ket thuc kham']) {
+        const examEndDate = new Date(record['ngay ket thuc kham'])
+        deadline = new Date(examEndDate)
+        deadline.setDate(deadline.getDate() + 10)
+      } else {
+        return '' // Không có deadline
+      }
     }
 
     // Nếu chưa đến hạn
@@ -843,33 +865,38 @@ export class TraHoSoService {
    * @returns {Array} - Sorted data
    */
   static sortByPriorityAndDays(data) {
-    // Define priority order
-    const priorityOrder = {
-      'Ưu tiên 1': 1,
-      'Ưu tiên 2': 2, 
-      'Ưu tiên 3': 3,
-      'X': 4 // Hoàn thành cuối cùng
-    }
-
     return data.sort((a, b) => {
-      // Sort by priority first
+      // Sort by ưu tiên trước (1 → 2 → 3 → X)
+      const priorityOrder = { 'Ưu tiên 1': 1, 'Ưu tiên 2': 2, 'Ưu tiên 3': 3, 'X': 4 }
       const priorityA = priorityOrder[a.uuTien] || 999
       const priorityB = priorityOrder[b.uuTien] || 999
       
       if (priorityA !== priorityB) {
-        return priorityA - priorityB
+        return priorityA - priorityB // 1,2,3,X order
       }
-
-      // Within same priority, sort by days late (descending - nhiều nhất lên trên)
+      
+      // Trong cùng ưu tiên, sort by 'so ngay tre' (descending - nhiều nhất lên trên)
       const daysA = parseInt(a.soNgayTre) || 0
       const daysB = parseInt(b.soNgayTre) || 0
       
-      // Special handling for "OK" status
+      // Special handling for "OK" status - đưa xuống cuối
       if (a.soNgayTre === 'OK' && b.soNgayTre !== 'OK') return 1
       if (b.soNgayTre === 'OK' && a.soNgayTre !== 'OK') return -1
-      if (a.soNgayTre === 'OK' && b.soNgayTre === 'OK') return 0
+      if (a.soNgayTre === 'OK' && b.soNgayTre === 'OK') {
+        // Both are OK, sort by ngay ket thuc kham (ascending)
+        const dateA = new Date(a['ngay ket thuc kham'] || '1900-01-01')
+        const dateB = new Date(b['ngay ket thuc kham'] || '1900-01-01')
+        return dateA - dateB
+      }
       
-      return daysB - daysA // Descending order
+      if (daysA !== daysB) {
+        return daysB - daysA // Descending order for so ngay tre
+      }
+
+      // If same so ngay tre, sort by ngay ket thuc kham (ascending)
+      const dateA = new Date(a['ngay ket thuc kham'] || '1900-01-01')
+      const dateB = new Date(b['ngay ket thuc kham'] || '1900-01-01')
+      return dateA - dateB
     })
   }
 
